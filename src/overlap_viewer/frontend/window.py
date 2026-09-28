@@ -8,7 +8,7 @@ window owns what they share: the theme, the rescan, the help, the status bar the
 pages write to, and the instance windows the pages open.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from functools import partial
 from pathlib import Path
 
@@ -145,7 +145,7 @@ class MainWindow(QMainWindow):
         self.timelines.open_requested.connect(self.open_instances)
         self.availability.open_requested.connect(self._open_bar)
         self.map.open_requested.connect(self.open_instances)
-        self.dispersion.open_requested.connect(self._open_on_features)
+        self.dispersion.open_requested.connect(self.open_instances)
         self.faults.open_requested.connect(self._open_on_feature)
         self.features.open_requested.connect(self._open_on_feature)
         self.map.results_changed.connect(self._on_map_results)
@@ -397,15 +397,19 @@ class MainWindow(QMainWindow):
             )
         self._help.show_tab(HELP_TABS.get(type(self._tabs.currentWidget()), "Fault classes"))
 
-    def open_instances(self, data: WellData, index: int):
+    def open_instances(self, data: WellData, index: int, features: Sequence[str] = ()):
         """Open the time series of one bar of a timeline and of every bar it overlaps.
 
-        Returns the window, or ``None`` when its files could not be read.
+        ``features`` are the sensors drawn, when the page asking chose any, in
+        place of the window's own default. Returns the window, or ``None`` when
+        its files could not be read.
         """
         from overlap_viewer.frontend.instance_window import InstanceWindow
 
         try:
-            window = InstanceWindow(data, index, self.info, self._frames, passes=self._passes)
+            window = InstanceWindow(
+                data, index, self.info, self._frames, passes=self._passes, features=features
+            )
         except Exception as error:  # noqa: BLE001 - one unreadable file must not take the app down
             QMessageBox.warning(
                 self, "Could not open the instances", f"{type(error).__name__}: {error}"
@@ -427,13 +431,7 @@ class MainWindow(QMainWindow):
 
     def _open_on_feature(self, data: WellData, index: int, sensor) -> None:
         """Open one bar with ``sensor`` drawn, or on the window's own default without one."""
-        self._open_on_features(data, index, [sensor] if sensor else [])
-
-    def _open_on_features(self, data: WellData, index: int, sensors) -> None:
-        """Open one bar with ``sensors`` drawn, or on the window's own default without any."""
-        window = self.open_instances(data, index)
-        if window is not None and sensors:
-            window.select_features(sensors)
+        self.open_instances(data, index, [sensor] if sensor else ())
 
     def _export_file_list(self) -> None:
         """Write the instances the current page has on show as a Toolkit file list, where the user says."""

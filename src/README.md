@@ -767,9 +767,10 @@ window.
   `of(view, positions)`.
 - `InstanceWindow(QMainWindow)`: builds both the "apart" and "joined" drawings up front so toggling
   *Join* is instant. `_adopt(joined)` switches which drawing is active and reloads frames.
-  `select_features(names)` is the external API other pages use to open the window with preset
-  sensors (one from the Availability, Faults and Features pages, X and Y from the Dispersions
-  page). `dots_shown` is the *Measurement dots* box of the Views row: unticked, a trace is drawn
+  `features`, a constructor argument, is what other pages open the window on in place of the
+  default (one sensor from the Availability, Faults and Features pages, X and Y from the
+  Dispersions page), so the window is drawn once; `select_features(names)` changes the selection
+  of a window already open. `dots_shown` is the *Measurement dots* box of the Views row: unticked, a trace is drawn
   as the plain line the file holds rather than marking the samples the historian archived. `_lay_out_stack()` is the master layout builder (coverage band, per-block header, state/
   class/model bands, per-feature trace + optional histogram/spectrum row). `_refresh_stretch()`
   recomputes histograms/spectra for the on-screen time range as the user pans and zooms.
@@ -787,7 +788,7 @@ rescan, help, status bar, the passes, model-output loading, file-list export) an
   window. `set_theme_mode(mode)` persists the mode and lays the page on show out again, leaving
   the other pages stale until they are next shown (`set_catalogue(lazy=True)`, `_on_page_changed`):
   pyqtgraph bakes colors in at build time, so a theme change cannot be repainted in place, and
-  laying every page out at once was most of a nine-second switch. `open_instances(data, index)`
-  constructs and tracks an `InstanceWindow`; `_open_on_features(data, index, sensors)` then ticks
-  the sensors a page asked for (`_open_on_feature` for one). `_export_file_list()` writes the
-  current page's `shown_files()` via `backend.export.write_file_list`.
+  laying every page out at once was most of a nine-second switch. `open_instances(data, index,
+  features)` constructs and tracks an `InstanceWindow`, on the sensors a page asked for when it
+  asked for any (`_open_on_feature` for one). `_export_file_list()` writes the current page's
+  `shown_files()` via `backend.export.write_file_list`.

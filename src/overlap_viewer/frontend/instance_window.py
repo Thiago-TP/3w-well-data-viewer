@@ -347,6 +347,7 @@ class InstanceWindow(QMainWindow):
         info: DatasetInfo,
         frames: FrameCache,
         passes=None,
+        features: Sequence[str] = (),
         parent=None,
     ):
         super().__init__(parent)
@@ -401,7 +402,9 @@ class InstanceWindow(QMainWindow):
         self._stretch_timer.timeout.connect(self._refresh_stretch)
 
         self._adopt(self._plain is None)
-        self._build_ui()
+        # The sensors the page that opened the window asked for, when it chose
+        # any, ticked in place of the default so the window is drawn once.
+        self._build_ui(set(features) or None)
         self._rebuild()
 
     # -- data
@@ -578,7 +581,7 @@ class InstanceWindow(QMainWindow):
         return [name for name, check in self._checks.items() if check.isChecked()]
 
     def select_features(self, names: Sequence[str]) -> None:
-        """Tick exactly ``names`` (those recorded here) and draw them; what another page asked for."""
+        """Tick exactly ``names`` (those recorded here) and draw them, in a window already open."""
         wanted = set(names)
         for name, check in self._checks.items():
             check.blockSignals(True)
@@ -602,7 +605,7 @@ class InstanceWindow(QMainWindow):
 
     # -- construction
 
-    def _build_ui(self) -> None:
+    def _build_ui(self, features: set[str] | None = None) -> None:
         toolbar = QToolBar("View")
         toolbar.setMovable(False)
         self.addToolBar(toolbar)
@@ -686,7 +689,7 @@ class InstanceWindow(QMainWindow):
         self._body = QHBoxLayout()
         body = self._body
         body.setSpacing(8)
-        self._panel = self._build_feature_panel()
+        self._panel = self._build_feature_panel(features)
         self._panel.setVisible(self._features_shown)
         body.addWidget(self._panel)
         self._layout_widget = PlotStack()
