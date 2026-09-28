@@ -1,0 +1,31 @@
+{
+  "path": "H:\\projetos\\3W\\dataset",
+  "split": "list",
+  "file_list": [
+    "4/WELL-00014_20170915080021.parquet",
+    "4/WELL-00014_20170915100033.parquet",
+    "4/WELL-00014_20170915120107.parquet",
+    "4/WELL-00014_20170915140059.parquet",
+    "4/WELL-00014_20170915160012.parquet",
+    "4/WELL-00014_20170915180050.parquet",
+    "4/WELL-00014_20170915200116.parquet",
+    "4/WELL-00014_20170916170016.parquet",
+    "4/WELL-00014_20170916190112.parquet",
+    "4/WELL-00014_20170916210059.parquet",
+    "4/WELL-00014_20170916230042.parquet",
+    "4/WELL-00014_20170917010012.parquet",
+    "4/WELL-00014_20170917030228.parquet",
+    "4/WELL-00014_20170917050111.parquet",
+    "4/WELL-00014_20170917070112.parquet",
+    "4/WELL-00014_20170917090055.parquet",
+    "4/WELL-00014_20170917110016.parquet",
+    "4/WELL-00014_20170923150033.parquet",
+    "4/WELL-00014_20170923170059.parquet",
+    "4/WELL-00014_20170923190120.parquet",
+    "4/WELL-00014_20170924160050.parquet"
+  ],
+  "event_type": [
+    "real"
+  ],
+  "version": "2.0.0"
+}

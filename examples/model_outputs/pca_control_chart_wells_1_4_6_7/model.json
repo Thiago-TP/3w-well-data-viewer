@@ -1,0 +1,90 @@
+{
+  "name": "PCA control chart, fitted per well",
+  "kind": "detection",
+  "labels": {
+    "0": "normal",
+    "1": "anomalous"
+  },
+  "description": "Hotelling's T\u00b2 and the squared prediction error Q of a principal-component model (one model per well, fitted on every sample of the well's Normal Operation instances (class 0) and scoring every instance of the well ) over the analog sensors live in every training instance (readings outside the plausible range masked, gaps filled forward then backward, standardized on the training samples); the components kept explain 90% of the training variance. A sample is anomalous when T\u00b2 or Q exceeds the 99% quantile of its statistic over the training samples; the score is the larger of the two ratios to their limits, 1 at the limit, rounded to 3 decimals after the label is decided. A sensor an instance lacks sits at the training mean.",
+  "provenance": {
+    "producer": "scripts/pca_control_chart.py of the 3W Real Instances Viewer",
+    "command": "python scripts/pca_control_chart.py --raw-dir ../3W/dataset --well 1 --well 4 --well 6 --well 7 --fit well -o examples/model_outputs/pca_control_chart_wells_1_4_6_7",
+    "parameters": {
+      "fit": "well",
+      "min_training_samples": 600,
+      "variance_kept": 0.9,
+      "limit_quantile": 0.99,
+      "score_decimals": 3
+    },
+    "dataset": "..\\3W\\dataset",
+    "dataset_version": "2.0.0",
+    "reference": "The PCA control chart of multivariate statistical process monitoring, as in A. Melo's doctoral thesis (chapter 4) and his BibMon package.",
+    "skipped": [],
+    "models": {
+      "1": {
+        "training_instances": 93,
+        "training_samples": 2000175,
+        "sensors": [
+          "P-ANULAR",
+          "P-MON-CKP",
+          "P-TPT",
+          "T-JUS-CKP",
+          "T-TPT"
+        ],
+        "components": 1,
+        "t2_limit": 1.9908,
+        "q_limit": 0.6907
+      },
+      "4": {
+        "training_instances": 12,
+        "training_samples": 128705,
+        "sensors": [
+          "ABER-CKP",
+          "P-ANULAR",
+          "P-MON-CKP",
+          "P-TPT",
+          "T-JUS-CKP",
+          "T-TPT"
+        ],
+        "components": 5,
+        "t2_limit": 13.1808,
+        "q_limit": 2.4111
+      },
+      "6": {
+        "training_instances": 113,
+        "training_samples": 2429267,
+        "sensors": [
+          "P-MON-CKP",
+          "T-JUS-CKP",
+          "T-TPT"
+        ],
+        "components": 1,
+        "t2_limit": 1.4411,
+        "q_limit": 0.0596
+      },
+      "7": {
+        "training_instances": 2,
+        "training_samples": 21570,
+        "sensors": [
+          "ABER-CKGL",
+          "ABER-CKP",
+          "P-JUS-CKGL",
+          "P-MON-CKP",
+          "P-PDG",
+          "P-TPT",
+          "QGL",
+          "T-JUS-CKP",
+          "T-PDG",
+          "T-TPT"
+        ],
+        "components": 6,
+        "t2_limit": 18.6008,
+        "q_limit": 3.5071
+      }
+    },
+    "written_at": "2026-09-21T21:02:54+00:00",
+    "instances": 319
+  },
+  "label_column": "label",
+  "score_column": "score"
+}

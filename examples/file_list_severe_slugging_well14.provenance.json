@@ -1,0 +1,9 @@
+{
+  "written_by": "3W Real Instances Viewer",
+  "written_at": "2026-09-20T22:15:57+00:00",
+  "dataset": "H:\\projetos\\3W\\dataset",
+  "dataset_version": "2.0.0",
+  "source": "scripts/export_file_list.py --fault 4 --well 14",
+  "n_files": 21,
+  "load_with": "ThreeWToolkit.dataset.parquet_dataset.ParquetDatasetConfig(**config)"
+}

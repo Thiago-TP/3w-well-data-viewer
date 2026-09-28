@@ -1,0 +1,49 @@
+[project]
+name = "overlap-viewer"
+version = "0.1.0"
+description = "GUI to inspect how the real instances of a 3W well overlap in time and how their fault labels differ."
+readme = "README.md"
+authors = [
+    { name = "Thiago-TP", email = "thiagotomasdepaula@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.0",
+    "pandas>=2.2",
+    "pyarrow>=17.0",
+    "pyqtgraph>=0.13.7",
+    "PySide6>=6.8",
+]
+
+# Optional groups, one per capability. The viewer runs without them; a control
+# that needs one is greyed with a tooltip naming the group and this command:
+#     uv sync --extra <group>        (or: uv sync --all-extras)
+# What each enables is listed in src/overlap_viewer/backend/extras.py and in the
+# README, and the tests check that the two lists and this one agree.
+[project.optional-dependencies]
+analysis = ["scikit-learn>=1.5"]
+umap = ["umap-learn>=0.5.7"]
+dtw = ["dtaidistance>=2.3.12"]
+
+[project.scripts]
+overlap-viewer = "overlap_viewer.app:main"
+
+[build-system]
+requires = ["uv_build>=0.11,<0.13"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint.isort]
+known-first-party = ["overlap_viewer"]
+
+[tool.ruff.format]
+quote-style = "double"
