@@ -8,10 +8,10 @@ draws that cloud for any pair of sensors over every real instance, one fault
 class or one well (or the joined bars) and lets it be read rather than
 looked at: every dot is a sample that names its instance and its instant on
 hover, lights up every other dot of that instance while the rest of the
-cloud fades, and opens it on click; the density of the samples sits behind
-the dots; the label periods are switched on and off; the dots can be the
-measurements alone. The reading is done once per scope, every analog sensor
-at once, so that everything else is instant.
+cloud fades, and opens it on click, on the two sensors of the plot; the
+density of the samples sits behind the dots; the label periods are switched
+on and off; the dots can be the measurements alone. The reading is done once
+per scope, every analog sensor at once, so that everything else is instant.
 """
 
 import time
@@ -52,8 +52,9 @@ from overlap_viewer.frontend.passes import Passes
 
 HINT = (
     "Every dot is one sample of two sensors | hover a dot for its instance, its instant and its "
-    "readings, and to light up every dot of that instance | click it to open the instance | the "
-    "shading behind is the density of the samples | drag to pan | Ctrl + wheel to zoom | F1 for help"
+    "readings, and to light up every dot of that instance | click it to open the instance on "
+    "these two sensors | the shading behind is the density of the samples | drag to pan | "
+    "Ctrl + wheel to zoom | F1 for help"
 )
 COLORINGS = ("Fault class", "Well", "Label period", "Density")
 DOT_PX = 3
@@ -112,13 +113,13 @@ class DispersionPage(QWidget):
         What the main window's status bar should say.
     summary_changed()
         The one-line description of the cloud has changed.
-    open_requested(WellData, int)
-        A dot was clicked: the view and the bar to open.
+    open_requested(WellData, int, list)
+        A dot was clicked: the view, the bar to open and the sensors to draw, X and Y.
     """
 
     status = Signal(str)
     summary_changed = Signal()
-    open_requested = Signal(object, int)
+    open_requested = Signal(object, int, object)
 
     def hint(self) -> str:
         return HINT
@@ -776,7 +777,9 @@ class DispersionPage(QWidget):
         ref = self._cloud.ref(int(self._pair.rows[index]))
         data = next((w for w in self._view_wells(self.joined) if w.well == ref.well), None)
         if data is not None:
-            self.open_requested.emit(data, ref.position)
+            # On the two sensors of the plot, so the relation read in the plane
+            # can be followed in time.
+            self.open_requested.emit(data, ref.position, [self.x, self.y])
 
     def describe(self, index: int) -> str:
         """One line about a dot: its instance, its instant, its label period and its two readings."""

@@ -145,7 +145,7 @@ class MainWindow(QMainWindow):
         self.timelines.open_requested.connect(self.open_instances)
         self.availability.open_requested.connect(self._open_bar)
         self.map.open_requested.connect(self.open_instances)
-        self.dispersion.open_requested.connect(self.open_instances)
+        self.dispersion.open_requested.connect(self._open_on_features)
         self.faults.open_requested.connect(self._open_on_feature)
         self.features.open_requested.connect(self._open_on_feature)
         self.map.results_changed.connect(self._on_map_results)
@@ -427,9 +427,13 @@ class MainWindow(QMainWindow):
 
     def _open_on_feature(self, data: WellData, index: int, sensor) -> None:
         """Open one bar with ``sensor`` drawn, or on the window's own default without one."""
+        self._open_on_features(data, index, [sensor] if sensor else [])
+
+    def _open_on_features(self, data: WellData, index: int, sensors) -> None:
+        """Open one bar with ``sensors`` drawn, or on the window's own default without any."""
         window = self.open_instances(data, index)
-        if window is not None and sensor:
-            window.select_features([sensor])
+        if window is not None and sensors:
+            window.select_features(sensors)
 
     def _export_file_list(self) -> None:
         """Write the instances the current page has on show as a Toolkit file list, where the user says."""

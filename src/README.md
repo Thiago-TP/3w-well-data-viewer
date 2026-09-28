@@ -738,7 +738,8 @@ The Dispersions page: draws two chosen sensors against each other as a point clo
 (all/one class/one well, optionally joined), with density shading, coloring modes,
 measurements-only filtering, label-period filters, and hover/click on individual samples.
 
-- `DispersionPage(QWidget)`: signals `status`, `summary_changed`, `open_requested(WellData, index)`.
+- `DispersionPage(QWidget)`: signals `status`, `summary_changed`,
+  `open_requested(WellData, index, sensors)`, a clicked dot's bar with the plot's X and Y.
   `_load_cloud()` reads every analog sensor of every instance in scope via
   `algorithms.dispersion.DispersionPass`, progress-dialog-gated and cached by scope.
   `_redraw()` draws the density image (a log-scaled 2D histogram) and, per color group, a
@@ -766,8 +767,9 @@ window.
   `of(view, positions)`.
 - `InstanceWindow(QMainWindow)`: builds both the "apart" and "joined" drawings up front so toggling
   *Join* is instant. `_adopt(joined)` switches which drawing is active and reloads frames.
-  `select_features(names)` is the external API other pages use to open the window with a preset
-  sensor. `dots_shown` is the *Measurement dots* box of the Views row: unticked, a trace is drawn
+  `select_features(names)` is the external API other pages use to open the window with preset
+  sensors (one from the Availability, Faults and Features pages, X and Y from the Dispersions
+  page). `dots_shown` is the *Measurement dots* box of the Views row: unticked, a trace is drawn
   as the plain line the file holds rather than marking the samples the historian archived. `_lay_out_stack()` is the master layout builder (coverage band, per-block header, state/
   class/model bands, per-feature trace + optional histogram/spectrum row). `_refresh_stretch()`
   recomputes histograms/spectra for the on-screen time range as the user pans and zooms.
@@ -786,5 +788,6 @@ rescan, help, status bar, the passes, model-output loading, file-list export) an
   the other pages stale until they are next shown (`set_catalogue(lazy=True)`, `_on_page_changed`):
   pyqtgraph bakes colors in at build time, so a theme change cannot be repainted in place, and
   laying every page out at once was most of a nine-second switch. `open_instances(data, index)`
-  constructs and tracks an `InstanceWindow`. `_export_file_list()` writes the current page's
-  `shown_files()` via `backend.export.write_file_list`.
+  constructs and tracks an `InstanceWindow`; `_open_on_features(data, index, sensors)` then ticks
+  the sensors a page asked for (`_open_on_feature` for one). `_export_file_list()` writes the
+  current page's `shown_files()` via `backend.export.write_file_list`.

@@ -36,6 +36,8 @@ the measurements alone
   each was measured or filled in. Every other dot of that instance is brought forward and the rest
   of the cloud fades, so one recording's trajectory through the plane can be followed with the
   eye; the status bar counts the dots of it on show and the samples in the density cell under the
-  pointer. **Click** a dot to open its instance. Pooling wells carries its usual caveat: two
+  pointer. **Click** a dot to open its instance in the instance window on the two sensors of the
+  plot, X and Y ticked and nothing else, so that the relation read in the plane can be followed in
+  time (the feature boxes take it from there). Pooling wells carries its usual caveat: two
   clouds side by side may be two wells rather than one relation, and *Color by: Well* tells them
   apart.
