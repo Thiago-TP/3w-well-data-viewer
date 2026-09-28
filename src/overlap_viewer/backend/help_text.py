@@ -1754,8 +1754,9 @@ USAGE = {
         (
             "'Topside', 'Seabed' and 'Subsurface' tick every recorded sensor measured at one placement of the production system: on the platform above water (the production choke and shutdown valve, the gas-lift and service lines), at the christmas tree on the seabed, and in the well below it. A second click clears the placement; the boxes add up, and a box shows half ticked while only some of its sensors are selected. Which part of the system matters for an analysis is left to the user; the variables the papers read each event in are listed in the Fault classes tab. A window opens on the analog sensors of the seabed (P-ANULAR, "
             "P-TPT, T-TPT), the same for every event, unless it was opened on one sensor (from the "
-            "availability page, or from a plot of the Faults or Features page) or none of them was "
-            "recorded, when it opens on the first recorded feature."
+            "availability page, or from a plot of the Faults or Features page) or on two (from a "
+            "dot of the Dispersions page, its X and Y), or none of them was recorded, when it "
+            "opens on the first recorded feature."
         ),
         (
             "A crosshair follows the pointer through every plot, and the status bar reads out the "
@@ -1989,7 +1990,9 @@ USAGE = {
             "instance is brought forward and the rest of the cloud fades, so one recording's "
             "trajectory through the plane can be followed, and the status bar counts the dots of "
             "it on show and the samples in the density cell under the pointer. Click a dot to "
-            "open its instance. Drag to pan, Ctrl + wheel to zoom, Ctrl+R to see the whole cloud."
+            "open its instance on the two sensors of the plot, X and Y alone, so that the relation "
+            "read in the plane can be followed in time. Drag to pan, Ctrl + wheel to zoom, Ctrl+R "
+            "to see the whole cloud."
         ),
         (
             "'Color by' colors the dots by fault class, by well or by label period, or shows the "

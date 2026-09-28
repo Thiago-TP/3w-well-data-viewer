@@ -37,7 +37,8 @@ trace). A band at the top marks the stretches recorded by two or more of the bar
   are greyed out). A window opens on the analog sensors of the **seabed** (P-ANULAR, P-TPT, T-TPT),
   the same for every event; only when none of them was recorded does it fall back to the first
   recorded feature in alphabetical order. Opened from the availability page, the sensor clicked is
-  drawn instead, and opened from a plot of the Faults or Features page, the feature of that plot.
+  drawn instead, opened from a plot of the Faults or Features page, the feature of that plot, and
+  opened from a dot of the Dispersions page, the two sensors of its plot, X and Y.
 - **Topside**, **Seabed** and **Subsurface** tick, in one click, every recorded sensor measured at
   one placement of the production system: on the platform above water (the production choke and
   shutdown valve, the gas-lift and service lines), at the christmas tree on the seabed, and in the
