@@ -64,6 +64,7 @@ src/overlap_viewer/
     ├── dispersion_page.py    the Dispersions page: two sensors against each other over a scope, the dots, the density, the measurements alone
     ├── placements.py         the Topside, Seabed and Subsurface boxes of a feature panel
     ├── instance_window.py    the time series of a group of overlapping instances, with their distributions and spectra
+    ├── statistics_window.py  the statistics table of an instance window: mean, median, spread, quartiles, skewness, kurtosis
     └── window.py             the main window: the pages, the shared toolbar and status bar, the windows they open
 ```
 
@@ -370,6 +371,9 @@ descriptor representation uses.
   high, acf_half_s, snr, gauss_slope, gauss_offset, gauss_scatter, gaussian`; classmethod `empty()`.
 - `describe(values, step_s=1.0)`: the top-level entry point: moments and quantiles always, plus ACF
   half-time, SNR and the Gaussianity verdict given enough samples and nonzero spread.
+- `SUMMARY`: the figures the instance window's statistics table shows, as `(field, header, tooltip)`
+  in column order; `summary(descriptors)` reads them off a `Descriptors` in that order and
+  `format_figure(value)` writes one (four significant digits, a count whole, a dash when undefined).
 - `autocorrelation(values, max_lag)`: sample autocorrelation via FFT of the demeaned series.
 - `acf_half_time(values, step_s, max_lag_s)`: lag at which autocorrelation first drops to 0.5;
   infinite if it never does within the cap.
@@ -775,6 +779,20 @@ window.
   class/model bands, per-feature trace + optional histogram/spectrum row). `_refresh_stretch()`
   recomputes histograms/spectra for the on-screen time range as the user pans and zooms.
   `set_model_results(results)` adds the model band once outputs are loaded.
+  `show_statistics()` opens the statistics table on the sensors ticked, fed by `_statistics_rows`
+  (the readings of every block in their shown unit, the stretch on screen or the measurements
+  alone when asked); `_on_range_settled()`, after every pan and zoom, recounts it when it describes
+  the stretch on screen.
+
+### `statistics_window.py`
+
+The statistics table an instance window opens: one row per sensor ticked of every block, one
+column per figure of `descriptors.SUMMARY`.
+
+- `StatisticsRow(NamedTuple)`: `instance, sensor, values`, the readings of one sensor of one block.
+- `StatisticsWindow(QDialog)`: `source(measurements_only, on_screen_only)` gives the rows;
+  `refresh()` asks it again and describes them; `text()` is the table tab separated and `copy()`
+  puts it on the clipboard. The *Instance* column is hidden when one block is described.
 
 ### `window.py`
 
