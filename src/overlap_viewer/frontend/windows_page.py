@@ -159,10 +159,11 @@ COMPLETE_TIP = (
 NO_MISSING_TIP = "Only the windows in which every real sample carries a reading."
 SAME_SCALE_TIP = "Give every thumbnail of the page the same vertical scale."
 REPEATED_TIP = (
-    "Cut every instant of the well once: the samples an earlier instance already covers (on 3W, "
-    "usually the first, unlabeled hour of an instance, a copy of the last hour of the one "
-    "before) are left out of the windows. Unticked, every instance is cut whole and the windows "
-    "of two instances can repeat each other."
+    "Remove the overlaps between the instances of the well before cutting: the samples an "
+    "earlier instance already covers are left out of the windows, so no instant is in two of "
+    "them. On 3W the overlap is usually the first, unlabeled hour of an instance, a copy of the "
+    "last hour of the one before. Unticked, every instance is cut whole and the windows of two "
+    "overlapping instances repeat each other."
 )
 
 
@@ -473,7 +474,7 @@ class WindowsPage(QWidget):
         self._no_missing.toggled.connect(self._apply_filters)
         bar.addWidget(self._no_missing)
         bar.addSeparator()
-        self._drop = QCheckBox("Each instant once")
+        self._drop = QCheckBox("Remove overlaps")
         self._drop.setChecked(True)
         self._drop.setToolTip(REPEATED_TIP)
         self._drop.toggled.connect(self._rebuild_windows)

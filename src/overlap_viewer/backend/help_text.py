@@ -1446,7 +1446,7 @@ WINDOWS_NOTES = [
             "window is the label of every one of its samples. <b>Zero padding.</b> When the end "
             "of a run does not fill a window, the last window of the run is completed with zeros "
             "at its end, cross-hatched on every plot; its real samples are counted, and its "
-            "statistics are taken over them alone. <b>No overlap.</b> With <i>Each instant once</i> "
+            "statistics are taken over them alone. <b>No overlap.</b> With <i>Remove overlaps</i> "
             "ticked, the instances of the well are walked in chronological order and each loses "
             "the samples an earlier one already covered, so no instant is in two windows: on 3W "
             "the first, unlabeled hour of an instance is usually a copy, sample by sample, of the "
