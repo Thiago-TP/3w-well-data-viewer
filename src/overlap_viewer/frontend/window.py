@@ -40,6 +40,7 @@ from overlap_viewer.frontend.loading import FrameCache, catalogue_with_progress
 from overlap_viewer.frontend.map_page import MapPage
 from overlap_viewer.frontend.overview import ElidedLabel, TimelinesPage
 from overlap_viewer.frontend.passes import Passes
+from overlap_viewer.frontend.windows_page import WindowsPage
 
 # Which tab of the help answers the questions a page raises.
 HELP_TABS = {
@@ -49,6 +50,7 @@ HELP_TABS = {
     FeaturesPage: "Variables",
     MapPage: "Instances map",
     DispersionPage: "Dispersions",
+    WindowsPage: "Windows",
 }
 
 
@@ -61,7 +63,15 @@ class MainWindow(QMainWindow):
     launch, and it happens before anything is on screen.
     """
 
-    PAGE_TITLES = ("Timelines", "Availability", "Faults", "Features", "Instances", "Dispersions")
+    PAGE_TITLES = (
+        "Timelines",
+        "Availability",
+        "Faults",
+        "Features",
+        "Instances",
+        "Dispersions",
+        "Windows",
+    )
     PAGE_TIPS = (
         "Every real instance of every well, laid out in time",
         "What the sensors recorded, per fault class, per well, or instance by instance",
@@ -74,6 +84,10 @@ class MainWindow(QMainWindow):
         (
             "Two sensors against each other over every instance, one class or one well: every "
             "sample a dot, the density behind, the measurements alone on request"
+        ),
+        (
+            "One sensor of a well cut into windows of a fixed size, one label each: the table, the "
+            "thumbnails, their place along the well, and one feature of every window"
         ),
     )
 
@@ -117,6 +131,8 @@ class MainWindow(QMainWindow):
         self.map = MapPage(info, passes=self._passes)
         report("Building the Dispersions page…")
         self.dispersion = DispersionPage(info, passes=self._passes)
+        report("Building the Windows page…")
+        self.windows_page = WindowsPage(info)
         # A tab's tooltip is not a widget's, so it is bounded here rather than
         # by the filter ``styling.install_tooltips`` puts on the application.
         for index, (title, page, tip) in enumerate(
@@ -146,6 +162,7 @@ class MainWindow(QMainWindow):
         self.availability.open_requested.connect(self._open_bar)
         self.map.open_requested.connect(self.open_instances)
         self.dispersion.open_requested.connect(self.open_instances)
+        self.windows_page.open_requested.connect(self.open_instances)
         self.faults.open_requested.connect(self._open_on_feature)
         self.features.open_requested.connect(self._open_on_feature)
         self.map.results_changed.connect(self._on_map_results)
@@ -171,6 +188,7 @@ class MainWindow(QMainWindow):
             self.features,
             self.map,
             self.dispersion,
+            self.windows_page,
         )
 
     def _on_map_results(self, results) -> None:

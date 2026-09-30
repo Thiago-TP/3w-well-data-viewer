@@ -85,6 +85,18 @@ trace). A band at the top marks the stretches recorded by two or more of the bar
   survey behind them are in [`backend/config.py`](../../src/overlap_viewer/backend/config.py) and
   the help's Data availability tab. The Availability and Timelines pages mark the same instances
   in the bottom-right corner of their cells and bars.
+- **Statistics**, in the toolbar (Ctrl+T), opens a table of what the readings of every sensor
+  ticked amount to, one row per sensor of every block: the count, the mean, the median, the
+  standard deviation, the extremes, the quartiles, the skewness and the excess kurtosis, in the
+  unit the traces are drawn in (never the z-scores of *Normalize per instance*, whose mean and
+  spread are zero and one by construction). The table follows the window: a sensor ticked or
+  cleared, or the instances joined, and it is counted again. **Stretch on screen only** describes
+  the stretch of time the plots show rather than every block whole, so that zooming or panning
+  chooses the window described, the table following every pan and zoom, and a block wholly off
+  screen dropping out. **Measurements only** describes the samples the historian archived alone,
+  the ones it held or interpolated between them left out: the mean barely moves, the spread and
+  the tails can. A sensor reading outside its plausible range wears a ⚠, its figures counting the
+  garbage as it is. **Copy** puts the table on the clipboard, tab separated, for a spreadsheet.
 
 **Signal views**: two more views of every feature plot of the instance window, each placed
 where it shares an axis with the trace, and a *Domain* box on the Faults and Features pages that

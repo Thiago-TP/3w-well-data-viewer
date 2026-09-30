@@ -215,6 +215,22 @@ def main(argv=None) -> int:
         shooter.save(window._help, "help", HELP)
         window._help.close()
 
+    # -- The Windows page, on the signal and on one feature ---------------------
+    # It opens on the well with the most instances, WELL-00002 on 3W 2.0.0,
+    # whose first grid page holds normal windows, DHSV-closure transients and
+    # a padded window side by side. The feature view is WELL-00014's P-TPT under
+    # severe slugging, whose spread tells the event windows from the normal ones.
+    windows = window.windows_page
+    if page(windows, "windows", wait=1.0):
+        settle(8.0)  # reads one sensor of every instance of the well the first time
+        shooter.save(window, "windows")
+    if page(windows, "windows_feature", wait=1.0):
+        windows._well.setCurrentIndex(windows._well.findData(14))
+        settle(4.0)
+        windows._view.setCurrentIndex(windows._view.findData("std"))
+        settle(2.0)
+        shooter.save(window, "windows_feature")
+
     # -- An instance window, plain and with the signal views -------------------
     # WELL-00014 under severe slugging: overlapping windows, and a sensor that
     # oscillates, so the trace, its distribution and its spectrum all say
