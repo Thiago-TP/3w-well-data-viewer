@@ -51,8 +51,10 @@ seconds, and kept for the session.
   hover it for a window, click it to select one. The **grid** shows twelve thumbnails a page, with
   **Same scale in the grid** for one vertical scale over the page.
 - **Click** a row, a thumbnail, a window of the strip or a point of a feature to draw the window
-  large at the bottom, beside the instance it was cut from: the window outlined, the instance shaded
-  by label, the repeated head hatched. **Double-click** a row, or **Open instance**, to open the
+  large at the bottom, beside the instance it was cut from, shaded by label, the repeated head
+  hatched: the window stands out as a band with dark edges, a marker labeled with its number that
+  stays in sight when the band is a pixel wide, and its own stretch of the trace drawn full and
+  thick over the rest of the instance, faded. **Double-click** a row, or **Open instance**, to open the
   instance in an [instance window](InstanceWindow.md) on this sensor.
 
 ![Windows page on a statistic](../assets/windows_feature.png)
