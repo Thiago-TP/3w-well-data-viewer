@@ -61,16 +61,21 @@ class FrameCache:
         return load_instance(path)
 
 
-def progress_dialog(text: str, parent: QWidget | None):
+def progress_dialog(
+    text: str, parent: QWidget | None, verb: str = "Reading", noun: str = "instances"
+):
     """A cancellable progress dialog and the callback that drives it, for any pass over the files.
 
     The callback takes ``(done, total, name)`` and returns ``False`` once the
-    user has cancelled; the caller closes the dialog when it is through.
+    user has cancelled; the caller closes the dialog when it is through. The
+    dialog says ``{verb} {name}`` and counts ``{done} of {total} {noun}``.
     """
-    return _progress_dialog(text, parent)
+    return _progress_dialog(text, parent, verb, noun)
 
 
-def _progress_dialog(text: str, parent: QWidget | None):
+def _progress_dialog(
+    text: str, parent: QWidget | None, verb: str = "Reading", noun: str = "instances"
+):
     """A cancellable progress dialog and the callback that drives it, for a scan of the files."""
     dialog = QProgressDialog(text, "Cancel", 0, 100, parent)
     dialog.setWindowTitle("3W Real Instances Viewer")
@@ -83,7 +88,7 @@ def _progress_dialog(text: str, parent: QWidget | None):
     def progress(done: int, total: int, name: str) -> bool:
         dialog.setMaximum(total)
         dialog.setValue(done)
-        dialog.setLabelText(f"Reading {name}\n({done} of {total} instances)")
+        dialog.setLabelText(f"{verb} {name}\n({done} of {total} {noun})")
         QApplication.processEvents()
         return not dialog.wasCanceled()
 
