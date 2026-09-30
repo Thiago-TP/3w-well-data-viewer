@@ -2093,7 +2093,8 @@ USAGE = {
         (
             "Click a row, a thumbnail, a window of the strip or a point of a feature to draw the "
             "window large at the bottom, with its label, beside the instance it was cut from "
-            "(the window outlined, the instance shaded by label). Hover the strip for a window's "
+            "(the window a band with a labeled marker, its stretch of the trace drawn full over "
+            "the rest of the instance, faded; the instance shaded by label). Hover the strip for a window's "
             "instance, start and label. Double-click a row, or 'Open instance', to open its "
             "instance in an instance window on this sensor. Ctrl + wheel zooms the plots below "
             "and the strip; Ctrl+R shows them whole."
