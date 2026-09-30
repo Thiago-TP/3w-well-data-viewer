@@ -53,6 +53,9 @@ from overlap_viewer.backend.help_text import (
     TRANSIENT_CAPABLE,
     USAGE,
     VARIABLES,
+    WINDOWS_INTRO,
+    WINDOWS_NOTES,
+    WINDOWS_SOURCES,
 )
 from overlap_viewer.backend.palette import bar_color, fault_color, state_color
 from overlap_viewer.frontend.heatmap import SWATCH_KINDS, swatch_image
@@ -455,6 +458,15 @@ def dispersion_help_page() -> str:
     return _document("".join(parts))
 
 
+def windows_help_page() -> str:
+    """The Windows page: the division into windows, its labels and colors, the features."""
+    parts = ["<h2>Windows</h2>", f"<p>{WINDOWS_INTRO}</p>"]
+    for title, text in WINDOWS_NOTES:
+        parts.append(f"<h3>{title}</h3><p>{text}</p>")
+    parts.append(f'<hr><p class="sub">{WINDOWS_SOURCES}</p>')
+    return _document("".join(parts))
+
+
 def usage_page() -> str:
     """How to work the pages and the windows, and what the dataset underneath them is."""
     parts = ["<h2>Using the viewer</h2>"]
@@ -479,6 +491,7 @@ class HelpWindow(QDialog):
         "Data availability",
         "Instances map",
         "Dispersions",
+        "Windows",
         "Model outputs",
         "Using the viewer",
     )
@@ -500,6 +513,7 @@ class HelpWindow(QDialog):
                 availability_help_page(figures),
                 map_help_page(),
                 dispersion_help_page(),
+                windows_help_page(),
                 model_help_page(),
                 usage_page(),
             ),

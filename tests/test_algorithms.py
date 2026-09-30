@@ -4,12 +4,15 @@ import numpy as np
 import pytest
 
 from overlap_viewer.algorithms.descriptors import (
+    SUMMARY,
     acf_half_time,
     autocorrelation,
     describe,
+    format_figure,
     gaussianity,
     normal_quantile,
     signal_to_noise,
+    summary,
 )
 from overlap_viewer.algorithms.interpolation import (
     GENUINE,
@@ -126,6 +129,35 @@ def test_the_descriptors_are_what_the_thesis_defines():
     assert on_grid.median == pytest.approx(np.median(grid))
     assert describe(np.array([np.nan, np.nan])).n == 0
     assert np.isnan(describe(np.full(50, 3.0)).skew)  # flat: moments only
+
+
+def test_the_statistics_table_reads_the_descriptors_in_its_own_order():
+    """One figure per column, in the order of ``SUMMARY``, formatted to four significant digits."""
+    values = np.array([1.0, 2.0, 3.0, 4.0, 100.0, np.nan, 5.0, 6.0, 7.0])
+    figures = summary(describe(values))
+    names = [name for name, _header, _tip in SUMMARY]
+    assert len(figures) == len(SUMMARY) and names[0] == "n"
+    by_name = dict(zip(names, figures))
+    assert by_name["n"] == 8  # the missing value is left out
+    assert by_name["mean"] == pytest.approx(16.0)
+    assert by_name["median"] == pytest.approx(4.5)  # the outlier moves the mean, not the median
+    assert by_name["low"] == 1.0 and by_name["high"] == 100.0
+    assert by_name["skew"] > 2 and by_name["kurtosis"] > 2  # one far outlier: a long, heavy tail
+    # A Gaussian has neither skew nor excess kurtosis.
+    gaussian = dict(zip(names, summary(describe(RNG.normal(10.0, 2.0, 200_000)))))
+    assert gaussian["mean"] == pytest.approx(10.0, abs=0.02)
+    assert gaussian["std"] == pytest.approx(2.0, abs=0.02)
+    assert abs(gaussian["skew"]) < 0.02 and abs(gaussian["kurtosis"]) < 0.05
+    # Four significant digits, a dash for what cannot be computed, the sign of an infinity.
+    assert format_figure(3600) == "3600"
+    assert format_figure(12.34567) == "12.35"
+    assert format_figure(-0.000123456) == "-0.0001235"
+    assert format_figure(1.5e9) == "1.5e+09"
+    assert format_figure(float("nan")) == "—"
+    assert format_figure(float("inf")) == "∞" and format_figure(float("-inf")) == "−∞"
+    # A sensor that never moves has no spread, whatever the rounding of its mean says.
+    flat = describe(np.full(2013, 12.61))
+    assert flat.std == 0.0 and np.isnan(flat.skew) and np.isnan(flat.kurtosis)
 
 
 def test_the_spectrum_of_the_measurements_needs_no_grid():

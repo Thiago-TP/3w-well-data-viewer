@@ -129,6 +129,7 @@ from overlap_viewer.frontend.spectral_items import (
     spectrum_grid,
     spectrum_xy,
 )
+from overlap_viewer.frontend.statistics_window import StatisticsRow, StatisticsWindow
 from overlap_viewer.frontend.traces import add_trace
 
 AXIS_WIDTH = 84  # every left axis has this width, so all plots share the same x pixels
@@ -394,12 +395,13 @@ class InstanceWindow(QMainWindow):
         self._master: pg.PlotItem | None = None
         self._x_range: tuple[float, float] | None = None
         self._help: HelpWindow | None = None
+        self._statistics: StatisticsWindow | None = None
         # The theme this window keeps, or ``None`` to follow the main window's.
         self._theme_name: str | None = None
         self._stretch_timer = QTimer(self)
         self._stretch_timer.setSingleShot(True)
         self._stretch_timer.setInterval(STRETCH_DELAY_MS)
-        self._stretch_timer.timeout.connect(self._refresh_stretch)
+        self._stretch_timer.timeout.connect(self._on_range_settled)
 
         self._adopt(self._plain is None)
         # The sensors the page that opened the window asked for, when it chose
@@ -648,6 +650,14 @@ class InstanceWindow(QMainWindow):
         )
         self._show_features.toggled.connect(self._on_features_toggled)
         toolbar.addAction(self._show_features)
+        statistics = QAction("Statistics", self)
+        statistics.setShortcut("Ctrl+T")
+        statistics.setToolTip(
+            "A table of the mean, median, spread, quartiles, skewness and kurtosis of every "
+            "sensor on show, block by block (Ctrl+T)"
+        )
+        statistics.triggered.connect(self.show_statistics)
+        toolbar.addAction(statistics)
         # The views and their parameters get a row of their own: on one row
         # with the rest they fell behind the toolbar's overflow chevron as soon
         # as the window was narrower than a screen.
@@ -716,6 +726,9 @@ class InstanceWindow(QMainWindow):
         self._layout_widget.setBackground(colors.plot_background)
         self._note.setStyleSheet(f"color: {colors.muted}; font-size: 8pt;")
         self._header.setText(self._header_html())
+        if self._statistics is not None:
+            self._statistics.setPalette(self.palette())
+            self._statistics.restyle()
 
     def apply_theme(self) -> None:
         """Repaint this window in the theme now in force, unless it keeps one of its own.
@@ -996,6 +1009,56 @@ class InstanceWindow(QMainWindow):
                 self._help.setPalette(self.palette())
         self._help.show_tab("Variables")
 
+    @in_own_theme
+    def show_statistics(self) -> None:
+        """Open (or raise) the statistics table of the sensors on show."""
+        if self._statistics is None:
+            self._statistics = StatisticsWindow(
+                self._statistics_rows, self.windowTitle(), parent=self
+            )
+            self._statistics.setPalette(self.palette())
+        else:
+            self._statistics.refresh()
+        self._statistics.show()
+        self._statistics.raise_()
+        self._statistics.activateWindow()
+
+    def _statistics_rows(
+        self, measurements_only: bool, on_screen_only: bool
+    ) -> list[StatisticsRow]:
+        """The readings of every selected sensor of every block, in the unit the traces are drawn in.
+
+        Never the z-scores of *Normalize per instance*, whose mean and spread
+        are zero and one by construction. With ``on_screen_only`` only the
+        samples inside the stretch of time on screen, the blocks outside it
+        left out; with ``measurements_only`` the samples the historian held
+        or interpolated are left out too, an enumerated variable being kept
+        whole.
+        """
+        rows = []
+        for position in range(len(self.rows)):
+            window = self._visible_slice(position) if on_screen_only else slice(None)
+            frame = self.frames[position]
+            if not len(frame.index[window]):
+                continue  # the block lies wholly off screen
+            instance = instance_title(self.rows.iloc[position])
+            flagged = self._flagged_sensors(position)
+            for feature in self.selected_features():
+                if feature not in frame.columns:
+                    continue
+                values = frame[feature].to_numpy(dtype=float)[window]
+                values = values * self.info.shown_scale(feature)
+                if measurements_only:
+                    kinds = self._kinds_of(position, feature)
+                    if kinds is not None:
+                        values = values[kinds[window] == GENUINE]
+                unit = self.info.shown_unit(feature)
+                name = f"{feature} [{unit}]" if unit else feature
+                rows.append(
+                    StatisticsRow(instance, f"{name} ⚠" if feature in flagged else name, values)
+                )
+        return rows
+
     def _header_html(self) -> str:
         rows = self.rows
         first, last = pd.Timestamp(rows["start"].min()), pd.Timestamp(rows["end"].max())
@@ -1218,6 +1281,8 @@ class InstanceWindow(QMainWindow):
         self._placements.sync()
         self._apply_ranges()
         self._refresh_stretch()
+        if self._statistics is not None and self._statistics.isVisible():
+            self._statistics.refresh()
 
     def _lay_out_stack(self) -> None:
         """Fill the stack: the shared-coverage band, then one block per bar.
@@ -1571,6 +1636,13 @@ class InstanceWindow(QMainWindow):
             else int(frame.index.searchsorted(at_index_unit(frame, t1), side="right"))
         )
         return slice(start, max(stop, start))
+
+    def _on_range_settled(self) -> None:
+        """A pan or zoom has settled: count again what reads the stretch of time on screen."""
+        self._refresh_stretch()
+        statistics = self._statistics
+        if statistics is not None and statistics.isVisible() and statistics.on_screen_only:
+            statistics.refresh()
 
     @in_own_theme
     def _refresh_stretch(self) -> None:

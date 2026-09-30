@@ -252,13 +252,17 @@ class SegmentsItem(pg.GraphicsObject):
     one more class.
     """
 
-    def __init__(self, z: float = -10.0, label_px: int = LABEL_FONT_PX):
+    def __init__(
+        self, z: float = -10.0, label_px: int = LABEL_FONT_PX, hatch: QBrush | None = None
+    ):
         super().__init__()
         self.setZValue(z)
         # Taken when the item is built, not when it is painted, like every
         # color it draws: a window can keep a theme of its own, in force only
-        # while that window builds its plots.
-        self._hatch = hatch_brush()
+        # while that window builds its plots. Another texture than the
+        # unlabeled one can be given, for a stretch that means something else
+        # (the zero padding of a window).
+        self._hatch = hatch if hatch is not None else hatch_brush()
         self._label_px = label_px
         self._x0 = np.empty(0)
         self._x1 = np.empty(0)

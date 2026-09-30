@@ -94,6 +94,40 @@ class Descriptors:
 
 FIELDS = tuple(Descriptors.__dataclass_fields__)
 
+# The figures the statistics table of the instance window shows, in its column
+# order: the field of ``Descriptors``, the column header and what it means.
+SUMMARY = (
+    ("n", "n", "Readings described, the missing ones left out"),
+    ("mean", "Mean", "Arithmetic mean"),
+    ("median", "Median", "Middle reading: half read below it, half above"),
+    ("std", "Std", "Standard deviation, around the mean"),
+    ("low", "Min", "Smallest reading"),
+    ("q25", "Q1", "First quartile: a quarter of the readings lie below it"),
+    ("q75", "Q3", "Third quartile: three quarters of the readings lie below it"),
+    ("high", "Max", "Largest reading"),
+    ("skew", "Skewness", "Asymmetry: zero when symmetric, positive with a long tail upwards"),
+    ("kurtosis", "Kurtosis", "Excess kurtosis: zero for a Gaussian, positive with heavy tails"),
+)
+
+
+def summary(descriptors: Descriptors) -> tuple[float, ...]:
+    """The figures of ``SUMMARY``, in its order."""
+    return tuple(getattr(descriptors, name) for name, _header, _tip in SUMMARY)
+
+
+def format_figure(value: float) -> str:
+    """One figure of the statistics table: four significant digits, a dash when undefined.
+
+    A count is written whole.
+    """
+    if isinstance(value, (int, np.integer)):
+        return str(value)
+    if np.isnan(value):
+        return "—"
+    if np.isinf(value):
+        return "∞" if value > 0 else "−∞"
+    return f"{value:.4g}"
+
 
 def describe(values: np.ndarray, step_s: float = 1.0) -> Descriptors:
     """Every descriptor of one series of readings, taken ``step_s`` seconds apart.
@@ -107,10 +141,14 @@ def describe(values: np.ndarray, step_s: float = 1.0) -> Descriptors:
     n = len(y)
     if n == 0:
         return Descriptors.empty()
-    mean = float(y.mean())
-    std = float(y.std())
-    q05, q25, median, q75, q95 = (float(q) for q in np.quantile(y, [0.05, 0.25, 0.5, 0.75, 0.95]))
     low, high = float(y.min()), float(y.max())
+    if low == high:
+        # Never moves: the mean of equal readings can round off their value by
+        # an ulp, which would leave a spread of 1e-15 and moments of pure noise.
+        mean, std = low, 0.0
+    else:
+        mean, std = float(y.mean()), float(y.std())
+    q05, q25, median, q75, q95 = (float(q) for q in np.quantile(y, [0.05, 0.25, 0.5, 0.75, 0.95]))
     nan = float("nan")
     if n < MIN_SAMPLES or std <= 0:
         return Descriptors(

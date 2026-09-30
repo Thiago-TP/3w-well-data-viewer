@@ -1423,6 +1423,82 @@ DISPERSION_SOURCES = (
     "availability."
 )
 
+WINDOWS_INTRO = (
+    "The <b>Windows</b> page shows one sensor of a well the way a model of the 3W reads it: cut "
+    "into windows of a fixed number of samples (256, 512 or 1024 seconds), each window carrying "
+    "one label. The division is made here, in software, from the instance files: choose a well "
+    "and a sensor and every instance of the well is read, behind a progress dialog, and cut. "
+    "The windows are listed in a table, laid out as thumbnails page by page, each shaded in the "
+    "color of its label and captioned with its name, and placed along the well's time axis; "
+    "the window selected is drawn large beside the instance it was cut from. <i>View</i> swaps "
+    "the signal for one statistic of every window, among those the viewer already computes."
+)
+
+WINDOWS_NOTES = [
+    (
+        "The four rules of the division",
+        (
+            "<b>Exact size.</b> Every window holds exactly the number of values chosen. "
+            "<b>One label.</b> An instance is split into runs of constant label (normal "
+            "operation, every fault's steady state, every transient and the unlabeled stretches "
+            "are distinct labels), and every run is cut into consecutive windows of its own, so "
+            "no window passes from normal operation to a transient or a fault and the label of a "
+            "window is the label of every one of its samples. <b>Zero padding.</b> When the end "
+            "of a run does not fill a window, the last window of the run is completed with zeros "
+            "at its end, cross-hatched on every plot; its real samples are counted, and its "
+            "statistics are taken over them alone. <b>No overlap.</b> With <i>Each instant once</i> "
+            "ticked, the instances of the well are walked in chronological order and each loses "
+            "the samples an earlier one already covered, so no instant is in two windows: on 3W "
+            "the first, unlabeled hour of an instance is usually a copy, sample by sample, of the "
+            "last hour of the one before (18.9 % of the samples of WELL-00002's P-TPT). The "
+            "instance plot of the window selected hatches that head. Unticked, every instance is "
+            "cut whole. The rules are those of the <code>3w_estudo</code> division, which writes "
+            "the windows to disk and audits them; here nothing is written, and a well's 5.7 "
+            "million samples of one sensor read and cut in about two seconds."
+        ),
+    ),
+    (
+        "Labels and colors",
+        (
+            "Every window is written with its label, the code the <code>class</code> column "
+            "carries and its name (<i>0 · Normal Operation</i>, <i>102 · Spurious Closure of "
+            "DHSV - Transient</i>, <i>2 · Spurious Closure of DHSV</i>, <i>— · unlabeled</i>), in "
+            "the table, above every thumbnail and above the window selected, and shaded in the "
+            "colors of the instance window's class band: a fault's steady state in its hue at "
+            "full strength, its transient lighter, a normal stretch in the faint hue of its "
+            "instance's folder, an unlabeled one grey and hatched. The strip above the grid "
+            "draws every window passing the filters in its label's color, a tone apart from its "
+            "neighbour so that consecutive windows can be told apart when zoomed in."
+        ),
+    ),
+    (
+        "Filters and statistics",
+        (
+            "<i>Instance</i> keeps the windows of one instance, <i>Fault</i> those of one fault "
+            "folder, <i>Label</i> those of one label; <i>Hide unlabeled</i>, <i>Complete windows "
+            "only</i> (no padding) and <i>No missing readings</i> thin them further. <i>View</i> "
+            "offers one statistic of every window among those the viewer already computes: the "
+            "instance window's statistics table (mean, median, standard deviation, minimum, "
+            "quartiles, maximum, skewness, excess kurtosis) and the Timelines' descriptor "
+            "coloring (autocorrelation time, signal-to-noise ratio, Gaussianity slope), taken by "
+            "the same <code>describe</code> over a window's real samples, its padding left out "
+            "and its missing readings dropped. The first statistic asked of a cut describes every "
+            "window at once and the others are then instant. The statistic is drawn one point "
+            "per window along the well, colored by label period, beside its distribution per "
+            "period and the separation of normal from event windows, |AUC − 0.5| · 2, from 0 "
+            "(indistinguishable) to 1 (split)."
+        ),
+    ),
+]
+
+WINDOWS_SOURCES = (
+    "Sources: the division of <code>3w_estudo</code> (<code>w3e/divisao.py</code>, audited by "
+    "<code>scripts/verificar_janelas.py</code>) and its <i>Janelas</i> tab, whose separation of "
+    "normal from event windows is the one drawn here; the statistics are the viewer's own "
+    "descriptors, under <i>Instance window</i> and <i>Timelines page</i> in <i>Using the "
+    "viewer</i>."
+)
+
 # How to work the viewer, shown in both windows.
 USAGE = {
     "Timelines page": [
@@ -2005,6 +2081,33 @@ USAGE = {
             "which is where the historian's straight trajectories vanish. 'Join overlapping "
             "instances' reads the joined bars. The caption gives the counts and the Pearson "
             "coefficient over the samples on show."
+        ),
+    ],
+    "Windows page": [
+        (
+            "Pick a well and a sensor: the first look reads that sensor from every instance of "
+            "the well behind a progress dialog and keeps it for the session, then cuts it into "
+            "windows of the 'Size' chosen, one label each. 'Instance' keeps one instance's "
+            "windows; 'Fault', 'Label' and the ticks filter them."
+        ),
+        (
+            "Click a row, a thumbnail, a window of the strip or a point of a feature to draw the "
+            "window large at the bottom, with its label, beside the instance it was cut from "
+            "(the window a band with a labeled marker, its stretch of the trace drawn full over "
+            "the rest of the instance, faded; the instance shaded by label). Hover the strip for a window's "
+            "instance, start and label. Double-click a row, or 'Open instance', to open its "
+            "instance in an instance window on this sensor. Ctrl + wheel zooms the plots below "
+            "and the strip; Ctrl+R shows them whole."
+        ),
+        (
+            "'View' swaps the thumbnails for one statistic of every window, those of the "
+            "statistics table and of the Timelines' descriptor coloring: a point per window "
+            "along the well, colored by label period, its distribution per period and the "
+            "separation of normal from event windows. The table gains the statistic's column "
+            "and the window selected draws it over the signal, a line for a level, a band of one "
+            "standard deviation around the mean for the spread. The first statistic asked of a "
+            "cut describes every window behind a progress dialog (one to three seconds on the "
+            "largest well); the others are then instant."
         ),
     ],
     "3W Toolkit": [
