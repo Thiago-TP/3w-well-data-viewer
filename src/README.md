@@ -44,7 +44,8 @@ src/overlap_viewer/
 │   ├── dtw.py            the DTW distance between the decimated, z-scored series of one sensor (the `dtw` extra)
 │   ├── correlation.py    how the sensors move together over a scope: Pearson exact over the pooled samples, the mutual-information and nonlinear coefficients
 │   ├── dispersion.py     two sensors against each other over a scope: an even subsample of every instance with its label periods and measurements, the pair, its density
-│   └── spectral.py       the signal views: a series prepared, Welch's density and the dominant period, the Lomb-Scargle periodogram of the measurements, histograms stacked by label, with their peak
+│   ├── spectral.py       the signal views: a series prepared, Welch's density and the dominant period, the Lomb-Scargle periodogram of the measurements, histograms stacked by label, with their peak
+│   └── windows.py        one sensor of a well cut into windows of a fixed size: one label each, zero padding at the end of a run, each instant once; the descriptors of every window, the separation of normal from event windows
 └── frontend/             how it is shown: PySide6 and pyqtgraph
     ├── styling.py            installing a theme into Qt and pyqtgraph, the saved mode
     ├── loading.py            progress dialogs, cache of loaded instances
@@ -62,6 +63,7 @@ src/overlap_viewer/
     ├── features_page.py      the features page: one sensor, a section per fault class, the classes over one another when overlaid
     ├── map_page.py           the Instances map: the points, their colorings, the clustering scores, the label audit
     ├── dispersion_page.py    the Dispersions page: two sensors against each other over a scope, the dots, the density, the measurements alone
+    ├── windows_page.py       the Windows page: one sensor of a well in windows of one label each, the table, the thumbnails, the strip, one feature of every window
     ├── placements.py         the Topside, Seabed and Subsurface boxes of a feature panel
     ├── instance_window.py    the time series of a group of overlapping instances, with their distributions and spectra
     ├── statistics_window.py  the statistics table of an instance window: mean, median, spread, quartiles, skewness, kurtosis
@@ -124,6 +126,9 @@ cached data passes: merged sensor figures for joined bars, and sensor-pair co-va
 - `load_catalogue(info, use_cache=True, progress=None)`: the catalogue, from the disk cache when it
   validates against the current file listing, else rescanned.
 - `load_instance(path)`: reads one instance parquet in full.
+- `load_instance_columns(path, columns)`: reads some columns of one instance (a third of the cost of
+  reading it whole), a column the file lacks coming back all missing; what the Windows page reads
+  one sensor of a well with.
 - `merge_instances(frames)`: combines overlapping instance frames of one well into one continuous
   recording, missing values filled from whichever frame has them.
 - `stitch_instances(pieces)`: the recordings of a well laid end to end, each a group of frames
@@ -476,6 +481,29 @@ Backs the two-sensor scatter/density view: reads an even subsample of every inst
 - `DispersionPass`: streaming builder; `.add(frame, ref)` clips, classifies and subsamples
   one frame; `.result()` concatenates into a `Cloud`.
 
+### `windows.py`
+
+One sensor of a well cut into windows of a fixed size, in software, on the four rules of the
+`3w_estudo` division: exact size, one label per window (every run of constant label cut into
+windows of its own), zero padding at the end of a run, and each instant once (instances walked in
+chronological order, each losing the samples an earlier one covered).
+
+- `cut(labels, size, keep, bounds)`: the core: per window, its first sample, its real samples and
+  its label code, never crossing a label run, a sample left out or an instance boundary.
+- `InstanceRef` (frozen dataclass): the instance a stretch came from (`position` in the well's
+  table, fault folder, file, title).
+- `WellSeries` (dataclass): one sensor of every instance of a well end to end, with the samples an
+  earlier instance repeats; `windows(size, drop_repeated=True)` cuts it into a `Windows`.
+- `Windows` (dataclass): per window its instance, number, first sample, start, label, real
+  samples, share missing and the `(windows, size)` matrix of readings, zero past the real ones.
+- `SeriesPass`: streaming builder; `.add(frame, ref)` takes one instance's sensor and `class`,
+  `.result()` sorts them chronologically and marks the repeated samples.
+- `describe_windows(values, n_valid, scale, progress, chunk)`: `descriptors.describe` over the real
+  samples of every window, one array per figure of `DESCRIBED` (every field of `Descriptors` but
+  the Gaussianity verdict); reports progress and can be stopped.
+- `auc(scores, positive)`, `separation(scores, event)`: how well a figure tells event windows from
+  normal ones, `|AUC − 0.5| · 2`.
+
 ### `spectral.py`
 
 Provides the distribution and spectral views of a series: preparation (bounds-clamping,
@@ -532,8 +560,9 @@ the whole start-up, and caches loaded instance frames in memory.
   (`FRAME_CACHE_ROWS`); `get(path)` returns a cached frame or loads and inserts it; `read(path)`
   returns a cached frame or loads one without keeping it, which is how a stitched well reads its
   hundreds of instances without pushing every other window's out.
-- `progress_dialog(text, parent)`: a modal, non-auto-closing `QProgressDialog` plus a progress
-  callback that returns `False` once cancelled.
+- `progress_dialog(text, parent, verb="Reading", noun="instances")`: a modal, non-auto-closing
+  `QProgressDialog` plus a progress callback that returns `False` once cancelled; `verb` and `noun`
+  word its count (the Windows page describes *windows*).
 - `LaunchProgress(steps)`: the dialog of the start-up, with no Cancel: `step(text)` announces each
   step (the catalogue, every page built, every page laid out), `scanning(done, total, name)` is the
   callback a first launch's catalogue scan reports to, `close()` takes it down before the window
@@ -579,7 +608,8 @@ anchored note text.
   scrolling.
 - `WheelToParent`: forwards a plain wheel event up to the enclosing scroll area.
 - `SegmentsItem`: full-height colored spans along x with optional labels and hatching (recording
-  blocks, label shading).
+  blocks, label shading); another texture than the unlabeled one can be given (the zero padding of
+  a window).
 - `SeamsItem`: dashed vertical lines marking where a merged recording passes from one instance to
   the next; with `stitch=True`, solid lines where a stitched well's axis jumps from one recording
   to the next.
@@ -633,13 +663,13 @@ that title bar on hover.
 ### `help.py`
 
 The tabbed help/reference window (fault classes, variables, well status, data availability, Instances
-map, dispersion, model outputs, usage) rendered as rich text with embedded figures and swatches,
+map, dispersion, windows, model outputs, usage) rendered as rich text with embedded figures and swatches,
 shared by both the main window and instance windows.
 
 - `Figures`: loads and caches every documented figure image, attachable to a `QTextBrowser`; method
   `html(name)`.
 - `fault_page`, `variable_page`, `state_page`, `availability_help_page`, `map_help_page`,
-  `model_help_page`, `dispersion_help_page`, `usage_page`: each assembles one tab's HTML from
+  `model_help_page`, `dispersion_help_page`, `windows_help_page`, `usage_page`: each assembles one tab's HTML from
   `backend.help_text` content.
 - `HelpWindow(QDialog)`: the `QTabWidget` of `QTextBrowser`s built from the page functions above;
   method `show_tab(title)`.
@@ -751,6 +781,31 @@ measurements-only filtering, label-period filters, and hover/click on individual
   brings every drawn dot of one instance forward and fades the groups while a dot of it is
   hovered. `describe(index)`, `shown_files()`.
 
+### `windows_page.py`
+
+The Windows page: one sensor of a well cut into windows of a fixed size by `algorithms.windows`,
+every window written with its label and shaded in its color.
+
+- `WindowsPage(QWidget)`: signals `status`, `summary_changed`, `open_requested(WellData, index,
+  sensors)` (a window's instance, on the page's sensor). `_read()` reads the sensor from every
+  instance of the well through `SeriesPass`, progress-dialog-gated and cached for the session by
+  well and sensor (up to `SERIES_CACHE_SAMPLES`); `_rebuild_windows()` cuts it at the size chosen;
+  `_ensure_feature()` describes every window once (`windows.describe_windows`) behind a progress
+  dialog, cached by well, sensor, size and rule, and hands `View` the figure chosen: one of
+  `FIGURES`, the statistics table's (`descriptors.SUMMARY`) and the Timelines' descriptor
+  coloring's (`profiles.DESCRIPTOR_CHOICES`). `_forget_windows()` empties the table and the
+  selection before a new cut replaces the windows, and the window selected is found again in it
+  by its first sample (`_place_of`, `_window_at`). `_apply_filters()` chooses the windows the boxes let through and draws
+  the table, the strip (`_draw_map`, only the windows in view up to `MAX_MAP_WINDOWS`), the grid of
+  thumbnails (`_draw_grid`, `PER_PAGE` a page) or the statistic (`_draw_features`, a point per window
+  along the well and the distribution per label period). `_draw_detail()` draws the window
+  selected and the instance it was cut from. `look(i)` is how a window's label reads and is painted
+  (`LabelLook`); `cell(i, column)` and `describe(i)` what the table and the status bar say.
+- `WindowsModel(QAbstractTableModel)`: the table, read straight from the page's arrays, the label
+  cell in the label's color.
+- `Heading(pg.LabelItem)`: a heading above one plot of a grid that clips a long text rather than
+  widening its column.
+
 ### `placements.py`
 
 - `PlacementChecks(QWidget)`: one box per placement of `config.PLACEMENTS` over the feature
@@ -796,11 +851,11 @@ column per figure of `descriptors.SUMMARY`.
 
 ### `window.py`
 
-The main application window: hosts the six pages as tabs, owns what they all share (theme control,
+The main application window: hosts the seven pages as tabs, owns what they all share (theme control,
 rescan, help, status bar, the passes, model-output loading, file-list export) and opens
 `InstanceWindow`s on request.
 
-- `MainWindow(QMainWindow)`: builds all six pages sharing one `Passes` and `FrameCache`, and wires
+- `MainWindow(QMainWindow)`: builds all seven pages sharing one `Passes` and `FrameCache`, and wires
   each page's `status`/`summary_changed`/`open_requested` signals. `set_model_outputs(outputs)`
   loads model outputs into `Passes` and distributes `ModelResults` to every page and open instance
   window. `set_theme_mode(mode)` persists the mode and lays the page on show out again, leaving
