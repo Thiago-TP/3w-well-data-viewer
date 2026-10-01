@@ -53,9 +53,9 @@ HELP_TABS = {
     AvailabilityPage: "Data availability",
     FaultsPage: "Fault classes",
     FeaturesPage: "Variables",
-    MapPage: "Instances map",
     DispersionPage: "Dispersions",
     WindowsPage: "Windows",
+    MapPage: "Instances map",
 }
 
 
@@ -73,9 +73,9 @@ class MainWindow(QMainWindow):
         "Availability",
         "Faults",
         "Features",
-        "Instances",
         "Dispersions",
         "Windows",
+        "Instances",
     )
     PAGE_TIPS = (
         "Every real instance of every well, laid out in time",
@@ -83,16 +83,16 @@ class MainWindow(QMainWindow):
         "Every real instance of one fault, from every well, drawn over the others",
         "One sensor, a section per fault class: what it reads under each event",
         (
-            "Every real instance as one point, placed by what its sensors amount to: clusters, "
-            "typicality, and the labels a one-class model disagrees with"
-        ),
-        (
             "Two sensors against each other over every instance, one class or one well: every "
             "sample a dot, the density behind, the measurements alone on request"
         ),
         (
             "One sensor of a well cut into windows of a fixed size, one label each: the table, the "
             "thumbnails, their place along the well, and one feature of every window"
+        ),
+        (
+            "Every real instance as one point, placed by what its sensors amount to: clusters, "
+            "typicality, and the labels a one-class model disagrees with"
         ),
     )
 
@@ -132,12 +132,12 @@ class MainWindow(QMainWindow):
         self.faults = FaultsPage(info, self._frames, passes=self._passes)
         report("Building the Features page…")
         self.features = FeaturesPage(info, self._frames, passes=self._passes)
-        report("Building the Instances page…")
-        self.map = MapPage(info, passes=self._passes)
         report("Building the Dispersions page…")
         self.dispersion = DispersionPage(info, passes=self._passes)
         report("Building the Windows page…")
         self.windows_page = WindowsPage(info)
+        report("Building the Instances page…")
+        self.map = MapPage(info, passes=self._passes)
         # A tab's tooltip is not a widget's, so it is bounded here rather than
         # by the filter ``styling.install_tooltips`` puts on the application.
         for index, (title, page, tip) in enumerate(
@@ -191,9 +191,9 @@ class MainWindow(QMainWindow):
             self.availability,
             self.faults,
             self.features,
-            self.map,
             self.dispersion,
             self.windows_page,
+            self.map,
         )
 
     def _on_map_results(self, results) -> None:
