@@ -19,10 +19,10 @@ windows to disk and audits them:
 3. **Zero padding.** When the end of a run does not fill a window, the last window of the run is
    completed with zeros at its end, cross-hatched on every plot. Its real samples are counted, and
    its statistics are taken over them alone.
-4. **Each instant once.** The instances of the well are walked in chronological order and each
+4. **No overlap.** The instances of the well are walked in chronological order and each
    loses the samples an earlier one already covered, so no instant is in two windows. On 3W the
    first, unlabeled hour of an instance is usually a copy, sample by sample, of the last hour of
-   the one before: 18.9 % of the samples of WELL-00002's P-TPT. Untick **Each instant once** to cut
+   the one before: 18.9 % of the samples of WELL-00002's P-TPT. Untick **Remove overlaps** to cut
    every instance whole.
 
 Nothing is written to disk. The largest well of 3W 2.0.0, WELL-00002, holds 5.7 million samples of
