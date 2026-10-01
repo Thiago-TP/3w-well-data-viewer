@@ -489,9 +489,9 @@ class HelpWindow(QDialog):
         "Variables",
         "Well status",
         "Data availability",
-        "Instances map",
         "Dispersions",
         "Windows",
+        "Instances map",
         "Model outputs",
         "Using the viewer",
     )
