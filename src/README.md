@@ -45,7 +45,7 @@ src/overlap_viewer/
 │   ├── correlation.py    how the sensors move together over a scope: Pearson exact over the pooled samples, the mutual-information and nonlinear coefficients
 │   ├── dispersion.py     two sensors against each other over a scope: an even subsample of every instance with its label periods and measurements, the pair, its density
 │   ├── spectral.py       the signal views: a series prepared, Welch's density and the dominant period, the Lomb-Scargle periodogram of the measurements, histograms stacked by label, with their peak
-│   └── windows.py        one sensor of a well cut into windows of a fixed size: one label each, zero padding at the end of a run, each instant once; the descriptors of every window, the separation of normal from event windows
+│   └── windows.py        one sensor of a well cut into windows of a fixed size: one label each, zero padding at the end of a run, no overlap between instances; the descriptors of every window, the separation of normal from event windows
 └── frontend/             how it is shown: PySide6 and pyqtgraph
     ├── styling.py            installing a theme into Qt and pyqtgraph, the saved mode
     ├── loading.py            progress dialogs, cache of loaded instances
@@ -485,8 +485,8 @@ Backs the two-sensor scatter/density view: reads an even subsample of every inst
 
 One sensor of a well cut into windows of a fixed size, in software, on the four rules of the
 `3w_estudo` division: exact size, one label per window (every run of constant label cut into
-windows of its own), zero padding at the end of a run, and each instant once (instances walked in
-chronological order, each losing the samples an earlier one covered).
+windows of its own), zero padding at the end of a run, and no overlap (instances walked in chronological order, each
+losing the samples an earlier one covered, unless the page's *Remove overlaps* is unticked).
 
 - `cut(labels, size, keep, bounds)`: the core: per window, its first sample, its real samples and
   its label code, never crossing a label run, a sample left out or an instance boundary.
