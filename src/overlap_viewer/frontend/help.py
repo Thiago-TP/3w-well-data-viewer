@@ -499,7 +499,7 @@ class HelpWindow(QDialog):
     def __init__(self, info: DatasetInfo, counts: dict[int, int] | None = None, parent=None):
         super().__init__(parent)
         self.setWindowFlag(Qt.WindowType.Window, True)
-        self.setWindowTitle("3W Real Instances Viewer | Help")
+        self.setWindowTitle("3W Well Data Viewer | Help")
         self.resize(1000, 800)
 
         figures = Figures()

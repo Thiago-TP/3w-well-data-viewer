@@ -27,7 +27,12 @@ from PySide6.QtWidgets import (
 
 from overlap_viewer.backend import theme
 from overlap_viewer.backend.config import DEFAULT_COLUMNS, DEFAULT_GAP_HOURS
-from overlap_viewer.backend.dataset import DatasetInfo, ScanCancelled, WellData, split_wells
+from overlap_viewer.backend.dataset import (
+    DatasetInfo,
+    ScanCancelled,
+    WellData,
+    split_wells,
+)
 from overlap_viewer.backend.export import write_file_list
 from overlap_viewer.backend.model_outputs import ModelOutputs
 from overlap_viewer.frontend import styling
@@ -112,7 +117,7 @@ class MainWindow(QMainWindow):
         self._windows: list[QMainWindow] = []
         self._help: HelpWindow | None = None
         self._theme_mode = theme_mode
-        self.setWindowTitle(f"3W Real Instances Viewer | {info.raw_dir}")
+        self.setWindowTitle(f"3W Well Data Viewer | {info.raw_dir}")
 
         self._build_toolbar()
         self._tabs = QTabWidget()
@@ -216,7 +221,8 @@ class MainWindow(QMainWindow):
 
     def _load_model_outputs(self) -> None:
         folder = QFileDialog.getExistingDirectory(
-            self, "Open a folder of model outputs (model.json beside <class>/<instance>.parquet)"
+            self,
+            "Open a folder of model outputs (model.json beside <class>/<instance>.parquet)",
         )
         if not folder:
             return
@@ -413,7 +419,9 @@ class MainWindow(QMainWindow):
             self._help = HelpWindow(
                 self.info, counts=real_instance_counts(self._catalogue), parent=self
             )
-        self._help.show_tab(HELP_TABS.get(type(self._tabs.currentWidget()), "Fault classes"))
+        self._help.show_tab(
+            HELP_TABS.get(type(self._tabs.currentWidget()), "Fault classes")
+        )
 
     def open_instances(self, data: WellData, index: int, features: Sequence[str] = ()):
         """Open the time series of one bar of a timeline and of every bar it overlaps.
@@ -426,7 +434,12 @@ class MainWindow(QMainWindow):
 
         try:
             window = InstanceWindow(
-                data, index, self.info, self._frames, passes=self._passes, features=features
+                data,
+                index,
+                self.info,
+                self._frames,
+                passes=self._passes,
+                features=features,
             )
         except Exception as error:  # noqa: BLE001 - one unreadable file must not take the app down
             QMessageBox.warning(
@@ -457,7 +470,9 @@ class MainWindow(QMainWindow):
         files = page.shown_files() if hasattr(page, "shown_files") else []
         if not files:
             QMessageBox.information(
-                self, "Export file list", "The current page has no instances on show to export."
+                self,
+                "Export file list",
+                "The current page has no instances on show to export.",
             )
             return
         name = type(page).__name__.removesuffix("Page").lower()
@@ -472,7 +487,9 @@ class MainWindow(QMainWindow):
         try:
             note = write_file_list(Path(path), self.info, files, page.shown_source())
         except OSError as error:
-            QMessageBox.critical(self, "Export failed", f"{type(error).__name__}: {error}")
+            QMessageBox.critical(
+                self, "Export failed", f"{type(error).__name__}: {error}"
+            )
             return
         self._status.setText(
             f"{len(set(files))} files written to {path}, their provenance to {note.name} | load "
@@ -485,7 +502,9 @@ class MainWindow(QMainWindow):
         except ScanCancelled:
             return
         except Exception as error:  # noqa: BLE001 - report, keep the current catalogue
-            QMessageBox.critical(self, "Rescan failed", f"{type(error).__name__}: {error}")
+            QMessageBox.critical(
+                self, "Rescan failed", f"{type(error).__name__}: {error}"
+            )
             return
         self.set_catalogue(catalogue)
 

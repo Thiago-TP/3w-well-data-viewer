@@ -55,7 +55,7 @@ def resolve_raw_dir(requested: Path | None) -> Path | None:
             return candidate.resolve()
     if requested is not None:
         QMessageBox.critical(
-            None, "3W Real Instances Viewer", f"{requested} does not look like a 3W dataset root."
+            None, "3W Well Data Viewer", f"{requested} does not look like a 3W dataset root."
         )
     chosen = QFileDialog.getExistingDirectory(
         None, "Select the root of the 3W dataset (the folder holding 0/ … 9/ and dataset.ini)"
@@ -65,7 +65,7 @@ def resolve_raw_dir(requested: Path | None) -> Path | None:
     path = Path(chosen)
     if not looks_like_dataset(path):
         QMessageBox.critical(
-            None, "3W Real Instances Viewer", f"{path} does not look like a 3W dataset root."
+            None, "3W Well Data Viewer", f"{path} does not look like a 3W dataset root."
         )
         return None
     return path.resolve()
@@ -131,7 +131,7 @@ def build_window(args: argparse.Namespace, launch: bool = False) -> MainWindow |
         except ScanCancelled:
             return None
         except FileNotFoundError as error:
-            QMessageBox.critical(None, "3W Real Instances Viewer", str(error))
+            QMessageBox.critical(None, "3W Well Data Viewer", str(error))
             return None
         window = MainWindow(
             info,

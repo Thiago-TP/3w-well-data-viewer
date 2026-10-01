@@ -243,7 +243,7 @@ def main(argv=None) -> int:
             "decided. A sensor an instance lacks sits at the training mean."
         ),
         provenance={
-            "producer": "scripts/pca_control_chart.py of the 3W Real Instances Viewer",
+            "producer": "scripts/pca_control_chart.py of the 3W Well Data Viewer",
             # Forward slashes whatever platform wrote it: the command is there
             # to be read and run again, and Windows takes them too.
             "command": (

@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
 from overlap_viewer.backend import theme
 from overlap_viewer.backend.theme import Theme
 
-SETTINGS = ("real-instance-viewer", "3W Real Instances Viewer")  # organization, application
+SETTINGS = ("3w-well-data-viewer", "3W Well Data Viewer")  # organization, application
 THEME_KEY = "appearance/theme"
 
 # Qt's own name for each mode. ``Unknown`` is not a failure: it is what tells Qt

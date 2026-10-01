@@ -59,7 +59,7 @@ def file_list_config(info: DatasetInfo, files: Iterable[tuple[int, str]]) -> dic
 def provenance(info: DatasetInfo, source: str, n_files: int) -> dict:
     """Where a file list came from: the dataset, the page and the choice it was taken from, when."""
     return {
-        "written_by": "3W Real Instances Viewer",
+        "written_by": "3W Well Data Viewer",
         "written_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "dataset": str(info.raw_dir),
         "dataset_version": info.version or "unknown",
