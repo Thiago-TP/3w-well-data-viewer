@@ -17,7 +17,8 @@ of the process; everything is an analysis of the catalogue, recomputed on every 
   of a well does not place its instances. *DTW of a sensor, within a class* is the 3W Toolkit's
   own comparison of instances, the dynamic time warping distance between the series of one sensor,
   each z-scored and averaged into 400 blocks first (a matter of cost, not the resampling of every
-  instance to one length), under a window of a tenth of the length.
+  instance to one length), under a window of a tenth of the length. A point clicked under it opens
+  its instance window on that sensor alone.
 - **on** chooses what the descriptors were taken over: *Interpolated*, the whole 1 Hz grid, most of
   whose samples the historian drew between the readings it archived, which is what a pipeline
   reads; or *Measurements*, the readings alone, which is what the process did. Interpolated, the

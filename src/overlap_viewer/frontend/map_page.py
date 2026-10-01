@@ -195,15 +195,16 @@ class MapPage(QWidget):
         What the main window's status bar should say.
     summary_changed()
         The one-line description of the map has changed.
-    open_requested(WellData, int)
-        A point was clicked: the view and the bar to open.
+    open_requested(WellData, int, list)
+        A point was clicked: the view, the bar to open and the sensors to draw,
+        the sensor the DTW compared, or none for the window's own default.
     results_changed(MapResults)
         The clusters, the typicality and the novelty were computed again.
     """
 
     status = Signal(str)
     summary_changed = Signal()
-    open_requested = Signal(object, int)
+    open_requested = Signal(object, int, object)
     results_changed = Signal(object)
 
     def hint(self) -> str:
@@ -218,6 +219,7 @@ class MapPage(QWidget):
         self._profiles: Profiles | None = None
         self._points: list[Point] = []
         self._rep: em.Representation | None = None
+        self._open_sensors: list[str] = []  # what a clicked point opens on, from the last compute
         self._coords = np.zeros((0, 2))
         self._caption = ""
         self._clusters: np.ndarray | None = None
@@ -699,6 +701,9 @@ class MapPage(QWidget):
                 return
             built = self._build_representation()
         self._points, self._rep = built
+        # Under DTW the points were placed by the shape of one sensor, so that
+        # sensor is what a clicked point opens on; the descriptors use them all.
+        self._open_sensors = [self._sensor.currentText()] if self.representation == "dtw" else []
         rep = self._rep
         classes = [p.fault for p in self._points]
         wells = [p.well for p in self._points]
@@ -878,7 +883,7 @@ class MapPage(QWidget):
         index = item.data(0, Qt.ItemDataRole.UserRole)
         if index is not None and int(index) >= 0:
             point = self._points[int(index)]
-            self.open_requested.emit(point.data, point.index)
+            self.open_requested.emit(point.data, point.index, self._open_sensors)
 
     def _on_audit_entered(self, item, _column) -> None:
         index = item.data(0, Qt.ItemDataRole.UserRole)
@@ -914,7 +919,7 @@ class MapPage(QWidget):
         if index >= 0:
             event.accept()
             point = self._points[index]
-            self.open_requested.emit(point.data, point.index)
+            self.open_requested.emit(point.data, point.index, self._open_sensors)
 
     def describe(self, index: int) -> str:
         """One line about a point: which instance, its class and well, and what the map made of it."""
