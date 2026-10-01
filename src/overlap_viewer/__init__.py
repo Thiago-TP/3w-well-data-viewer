@@ -1,4 +1,4 @@
-"""3W Real Instances Viewer: a GUI to inspect the real instances of the 3W dataset.
+"""3W Well Data Viewer: a GUI to inspect the real instances of the 3W dataset.
 
 The 3W dataset stores one parquet file per instance, and the real instances of
 one well are windows cut from the same continuous recording, so they often

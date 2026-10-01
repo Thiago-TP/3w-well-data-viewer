@@ -758,7 +758,8 @@ clustering scores and a "label audit" list of instances a one-class model disagr
 - `MapResults` (dataclass): what the map hands to other pages (joined, representation, clusters,
   typicality, novelty); methods `cluster_color(key)`, `typicality_rank(key)`, `novelty_score(key)`.
 - `Point` (dataclass): one map point: key, title, fault, well, view, index.
-- `MapPage(QWidget)`: signals `status`, `summary_changed`, `open_requested(WellData, index)`,
+- `MapPage(QWidget)`: signals `status`, `summary_changed`, `open_requested(WellData, index,
+  sensors)` (a clicked point's bar, on the DTW sensor under the DTW representation),
   `results_changed(MapResults)`. `_compute()` is the master pipeline: build representation → embed →
   cluster (+ score) → typicality → novelty → redraw → fill the audit panel → emit `results_changed`.
   Toolbar controls that need a missing optional extra are greyed with the install command

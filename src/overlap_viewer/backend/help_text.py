@@ -2008,8 +2008,8 @@ USAGE = {
         (
             "Every point is one real instance, or one bar of the joined view. Hover it to name it "
             "and read its cluster, its typicality and the one-class verdict in the status bar; "
-            "click it to open its time series. Drag to pan, Ctrl + wheel to zoom, Ctrl+R to see "
-            "every point again."
+            "click it to open its time series (under DTW, on the sensor the distance compared). "
+            "Drag to pan, Ctrl + wheel to zoom, Ctrl+R to see every point again."
         ),
         (
             "'Representation' chooses what places the points (the descriptors of the sensors, the "
