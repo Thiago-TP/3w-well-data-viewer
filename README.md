@@ -1,4 +1,4 @@
-# 3W Real Instances Viewer
+# 3W Well Data Viewer
 
 A desktop GUI to inspect the **real instances** of the [Petrobras 3W dataset](https://github.com/petrobras/3W)
 that deploys many of the views and analysis previous works on the dataset have contributed.

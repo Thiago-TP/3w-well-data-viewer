@@ -1,4 +1,4 @@
-"""Run the 3W Real Instances Viewer without installing it: ``uv run main.py [--raw-dir PATH]``."""
+"""Run the 3W Well Data Viewer without installing it: ``uv run main.py [--raw-dir PATH]``."""
 
 import sys
 from pathlib import Path

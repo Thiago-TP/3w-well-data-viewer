@@ -7,7 +7,7 @@
   },
   "description": "Hotelling's T\u00b2 and the squared prediction error Q of a principal-component model (one model per well, fitted on every sample of the well's Normal Operation instances (class 0) and scoring every instance of the well ) over the analog sensors live in every training instance (readings outside the plausible range masked, gaps filled forward then backward, standardized on the training samples); the components kept explain 90% of the training variance. A sample is anomalous when T\u00b2 or Q exceeds the 99% quantile of its statistic over the training samples; the score is the larger of the two ratios to their limits, 1 at the limit, rounded to 3 decimals after the label is decided. A sensor an instance lacks sits at the training mean.",
   "provenance": {
-    "producer": "scripts/pca_control_chart.py of the 3W Real Instances Viewer",
+    "producer": "scripts/pca_control_chart.py of the 3W Well Data Viewer",
     "command": "python scripts/pca_control_chart.py --raw-dir ../3W/dataset --well 1 --well 4 --well 6 --well 7 --fit well -o examples/model_outputs/pca_control_chart_wells_1_4_6_7",
     "parameters": {
       "fit": "well",
