@@ -66,6 +66,18 @@ real instances ([`backend/config.py`](src/overlap_viewer/backend/config.py)); un
 samples; the Availability and Timelines pages mark the cells and bars once the profile pass, which
 reads every sample, has run.
 
+The instance window also warns when the well status contradicts the valve states: the 3W 2.0.0
+article defines each status by the positions of the valves (Open with M1, W1, SDV-P and the
+production choke open and the crossovers PXO and XO closed, Shut-In with one of the production
+valves closed, and so on), so a stretch labeled Open while the wing valve reads closed says that
+either the label or the valve's tag is wrong. The same survey of the real instances sets the
+rules ([`backend/config.py`](src/overlap_viewer/backend/config.py)): Bullheading is not checked,
+since no set of valve positions holds through it, and the 5 minutes either side of a change of
+the hand-set label are left out. Under them 41 of the 1,119 real instances contradict their
+valves. The instance window hatches the contradicted stretches in red, on the state band and
+behind the valve's trace; the Availability and Timelines pages mark the cells and bars with a red
+triangle in their top-left corner once the profile pass has run.
+
 ## Running
 
 Requires Python 3.11 or newer, [uv](https://docs.astral.sh/uv/) and a local copy of the 3W dataset.

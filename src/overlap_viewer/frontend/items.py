@@ -90,11 +90,13 @@ MIN_SEAM_PX = 8
 # The corner mark of a reading outside the plausible range: a small triangle in
 # the warning color, on a timeline bar and on a cell of the availability page.
 # Pressures out of order along their line take the same triangle in the
-# bottom-right corner. A bar's or a cell's marks are these flags or'ed together
-# (a plain ``True`` is the implausible mark alone).
+# bottom-right corner, and a valve that contradicts the well state one in the
+# conflict red in the top-left corner. A bar's or a cell's marks are these
+# flags or'ed together (a plain ``True`` is the implausible mark alone).
 MARK_PX = 6
 IMPLAUSIBLE_MARK = 1
 ORDER_MARK = 2
+STATE_MARK = 4
 
 
 def draw_mark(p: QPainter, right: float, top: float, color: QColor) -> None:
@@ -129,13 +131,33 @@ def draw_order_mark(p: QPainter, right: float, bottom: float, color: QColor) -> 
     p.restore()
 
 
-def draw_marks(p: QPainter, rect, marks: int, color: QColor) -> None:
-    """Paint the corner marks ``marks`` flags ask for on ``rect``."""
+def draw_state_mark(p: QPainter, left: float, top: float, color: QColor) -> None:
+    """Paint the mark of a valve against the well state into the top-left corner at ``left``, ``top``."""
+    p.save()
+    p.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    p.setPen(Qt.PenStyle.NoPen)
+    p.setBrush(color)
+    p.drawPolygon(
+        QPolygonF([QPointF(left, top), QPointF(left + MARK_PX, top), QPointF(left, top + MARK_PX)])
+    )
+    p.restore()
+
+
+def draw_marks(
+    p: QPainter, rect, marks: int, color: QColor, conflict: QColor | None = None
+) -> None:
+    """Paint the corner marks ``marks`` flags ask for on ``rect``.
+
+    ``color`` is that of the marks of a reading, ``conflict`` that of the mark
+    of the well state (the theme's ``conflict`` by default).
+    """
     marks = int(marks)
     if marks & IMPLAUSIBLE_MARK:
         draw_mark(p, rect.right() + 1, rect.top(), color)
     if marks & ORDER_MARK:
         draw_order_mark(p, rect.right() + 1, rect.bottom() + 1, color)
+    if marks & STATE_MARK:
+        draw_state_mark(p, rect.left(), rect.top(), conflict or QColor(theme.current().conflict))
 
 
 def restyle_axes(plot_item: pg.PlotItem) -> None:
@@ -238,6 +260,16 @@ def hatch_brush() -> QBrush:
     the very texture the bands carry.
     """
     return QBrush(QColor(theme.current().hatch), Qt.BrushStyle.FDiagPattern)
+
+
+def conflict_brush() -> QBrush:
+    """The texture over a stretch whose well state its valves contradict, on the conflict red.
+
+    Half see-through, so that the name of the state written over it stays legible.
+    """
+    lines = QColor(theme.current().conflict_hatch)
+    lines.setAlpha(140)
+    return QBrush(lines, Qt.BrushStyle.BDiagPattern)
 
 
 class SegmentsItem(pg.GraphicsObject):
@@ -479,8 +511,8 @@ class InstanceBarsItem(pg.GraphicsObject):
     ) -> None:
         """Place the bars; a bar's fill is one color or the list of colors it is striped with.
 
-        ``marks`` are the corner marks of each bar, ``IMPLAUSIBLE_MARK`` and
-        ``ORDER_MARK`` or'ed together.
+        ``marks`` are the corner marks of each bar, ``IMPLAUSIBLE_MARK``,
+        ``ORDER_MARK`` and ``STATE_MARK`` or'ed together.
         """
         self._x0 = np.asarray(x0, dtype=float)
         self._x1 = np.asarray(x1, dtype=float)
@@ -581,6 +613,11 @@ class InstanceBarsItem(pg.GraphicsObject):
                     draw_mark(p, rect.right(), rect.top(), mark)
                 if self._marks[i] & ORDER_MARK:
                     draw_order_mark(p, rect.right(), rect.bottom(), mark)
+                if self._marks[i] & STATE_MARK:
+                    conflict = QColor(colors.conflict)
+                    if faded:
+                        conflict.setAlphaF(0.35)
+                    draw_state_mark(p, rect.left(), rect.top(), conflict)
 
             if rect.width() >= 28 and not faded:
                 label_color = QColor(text_color(blend(self._fills[i])))

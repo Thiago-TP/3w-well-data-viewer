@@ -273,3 +273,61 @@ def test_the_profile_pass_marks_the_pressures_read_out_of_order(tmp_path: Path, 
     stacked = table.stacked(marked.total("all")).with_columns([1, 0])
     assert list(stacked.out_of_order[:, 1]) == [0, 1, 1]
     assert table.stacked(plain.total("all")).out_of_order is None
+
+
+def test_the_profile_pass_marks_the_valves_against_the_well_state(tmp_path: Path, monkeypatch):
+    """A well labeled Open with its wing valve closed reaches the availability, per bar and group."""
+    from overlap_viewer.backend.availability import Availability
+
+    root = tmp_path / "dataset"
+    root.mkdir()
+    (root / "dataset.ini").write_text(
+        "[PARQUET_FILE_PROPERTIES]\ntimestamp = Instant\n"
+        "ESTADO-M1 = State of the PMV [0, 0.5, or 1]\n"
+        "ESTADO-W1 = State of the PWV [0, 0.5, or 1]\nclass = Label\nstate = Status\n"
+        "[EVENTS]\nNAMES = NORMAL\nTRANSIENT_OFFSET = 100\n"
+        "[NORMAL]\nLABEL = 0\nDESCRIPTION = Normal Operation\n",
+        encoding="utf-8",
+    )
+    n = 3600
+    for well, wing in ((1, 1.0), (2, 0.0)):  # well 2 is labeled Open with its wing valve closed
+        frame = pd.DataFrame(
+            {
+                "ESTADO-M1": np.full(n, 1.0),
+                "ESTADO-W1": np.full(n, wing),
+                "class": pd.array([0] * n, dtype="Int16"),
+                "state": pd.array([0] * n, dtype="Int16"),
+            },
+            index=pd.date_range(hours(10 * well), periods=n, freq="1s", name="timestamp"),
+        )
+        (root / "0").mkdir(exist_ok=True)
+        frame.to_parquet(root / "0" / f"WELL-{well:05d}_{hours(10 * well):%Y%m%d%H%M%S}.parquet")
+    monkeypatch.setenv(CACHE_HOME, str(tmp_path / "cache"))
+    info = ds.DatasetInfo.load(root)
+    wells = ds.split_wells(ds.load_catalogue(info, use_cache=False))
+    sensors = info.sensor_names
+    profiles = pr.load_profiles(info, wells, sensors)
+    bad = (0, f"WELL-00002_{hours(20):%Y%m%d%H%M%S}.parquet")
+    good = (0, f"WELL-00001_{hours(10):%Y%m%d%H%M%S}.parquet")
+    assert profiles.row(bad, "ESTADO-W1")["n_against_state"] == n
+    assert profiles.state_conflicts(bad, "ESTADO-W1") == ["Open"]
+    assert profiles.state_conflicts(bad, "ESTADO-M1") == []  # open, as Open asks
+    assert profiles.state_conflicts(good, "ESTADO-W1") == []
+    assert profiles.state_conflicts((2, 0), "ESTADO-W1", joined=True) == ["Open"]
+
+    plain = Availability.from_wells(wells, info)
+    assert plain.against_state is None and not plain.state_any([0, 1])
+    marked = Availability.from_wells(wells, info, profiles=profiles)
+    first, second = marked.index_of(1, 0), marked.index_of(2, 0)
+    w1 = sensors.index("ESTADO-W1")
+    assert not marked.state_any([first]) and marked.state_any([second])
+    assert marked.state_any([second], w1) and not marked.state_any(
+        [second], sensors.index("ESTADO-M1")
+    )
+    assert marked.state_conflicts_of([first, second]) == [("Open", "ESTADO-W1")]
+    table = marked.grouped([int(w) for w in marked.bars["well"]], [1, 2])
+    assert list(table.against_state[:, w1]) == [0, 1]
+    assert table.state_conflicts[1, w1] == ("Open",)
+    stacked = table.stacked(marked.total("all")).with_columns([w1])
+    assert list(stacked.against_state[:, 0]) == [0, 1, 1]
+    assert table.stacked(plain.total("all")).against_state is None

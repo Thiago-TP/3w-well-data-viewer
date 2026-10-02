@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QAction, QCursor, QPalette
+from PySide6.QtGui import QAction, QColor, QCursor, QPalette
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -34,7 +34,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from overlap_viewer.algorithms.consistency import OrderBreak, pressure_order_breaks
+from overlap_viewer.algorithms.consistency import (
+    OrderBreak,
+    StateBreak,
+    pressure_order_breaks,
+    state_valve_breaks,
+    valves_by_sensor,
+)
 from overlap_viewer.algorithms.faults import zscore
 from overlap_viewer.algorithms.interpolation import (
     GENUINE,
@@ -83,6 +89,7 @@ from overlap_viewer.backend.labels import (
     merge_label_runs,
     padded_range,
     period_durations,
+    runs,
     segments_from_json,
     sensor_columns,
     sensor_stats_from_json,
@@ -108,6 +115,7 @@ from overlap_viewer.frontend.items import (
     SegmentsItem,
     TimeAxisItem,
     WheelToParent,
+    conflict_brush,
 )
 from overlap_viewer.frontend.loading import FrameCache
 from overlap_viewer.frontend.overview import ElidedLabel
@@ -135,6 +143,9 @@ from overlap_viewer.frontend.traces import add_trace
 AXIS_WIDTH = 84  # every left axis has this width, so all plots share the same x pixels
 PANEL_WIDTH = 200  # the feature panel: room for the longest variable name and its unit
 FIGURES_ALPHA = 110  # opacity of the box of a plot's figures, out of 255
+# Opacity of the red behind a valve's trace where it contradicts the well state:
+# enough to be seen from afar, little enough that the label period still shows.
+CONFLICT_ALPHA = 90
 SIDE_PX = (
     210  # the column beside the traces: a marginal histogram, or a spectrum turned on its side
 )
@@ -457,6 +468,7 @@ class InstanceWindow(QMainWindow):
             QApplication.restoreOverrideCursor()
         self._seams = [self._seam_positions(pieces) for pieces in self.pieces]
         self._breaks = [pressure_order_breaks(frame) for frame in self.frames]
+        self._state_breaks = [state_valve_breaks(frame) for frame in self.frames]
         self._groups_cache: dict[int, tuple[np.ndarray, list]] = {}
         self._kinds_cache: dict[tuple[int, str], np.ndarray | None] = {}
         self._runs_cache: dict[int, list] = {}
@@ -525,7 +537,9 @@ class InstanceWindow(QMainWindow):
         ``implausible`` counts the blocks in which the sensor reads outside its
         plausible range, from the figures the catalogue holds for their instances;
         ``out_of_order`` those in which it reads out of order with another
-        pressure of its line, and ``partners`` names those pressures.
+        pressure of its line, and ``partners`` names those pressures;
+        ``against_state`` those in which a valve contradicts the well state,
+        and ``states`` names those states.
         """
         names = set(self.info.sensor_names)
         for frame in self.frames:
@@ -550,6 +564,13 @@ class InstanceWindow(QMainWindow):
                     other = brk.partner_of(name)
                     if other not in partners.setdefault(name, []):
                         partners[name].append(other)
+        against_state: dict[str, int] = {}
+        states: dict[str, list[str]] = {}
+        for breaks in self._state_breaks:
+            for name, (contradicted, _mask) in valves_by_sensor(breaks).items():
+                against_state[name] = against_state.get(name, 0) + 1
+                known = states.setdefault(name, [])
+                known += [state for state in contradicted if state not in known]
         rows = []
         for name in sorted(names):
             recorded = sum(
@@ -562,6 +583,8 @@ class InstanceWindow(QMainWindow):
                     "implausible": flagged.get(name, 0),
                     "out_of_order": out_of_order.get(name, 0),
                     "partners": ", ".join(partners.get(name, [])),
+                    "against_state": against_state.get(name, 0),
+                    "states": ", ".join(states.get(name, [])),
                 }
             )
         return pd.DataFrame(rows)
@@ -961,7 +984,8 @@ class InstanceWindow(QMainWindow):
             text = f"{row.sensor} [{unit}]" if unit else row.sensor
             # The mark of a reading no instrument could have produced, on the
             # name itself: the tooltip says how many blocks and what range.
-            check = QCheckBox(f"{text} ⚠" if row.implausible or row.out_of_order else text)
+            warned = row.implausible or row.out_of_order or row.against_state
+            check = QCheckBox(f"{text} ⚠" if warned else text)
             description = self.info.sensor_descriptions.get(row.sensor, "")
             place = placement_of(row.sensor)
             if place:
@@ -977,6 +1001,10 @@ class InstanceWindow(QMainWindow):
                 recorded += (
                     f"\n⚠ out of order with {row.partners} along the line in "
                     f"{row.out_of_order} of them"
+                )
+            if row.against_state:
+                recorded += (
+                    f"\n⚠ contradicts the well state ({row.states}) in {row.against_state} of them"
                 )
             check.setToolTip(f"{description}\n{recorded}" if description else recorded)
             check.setEnabled(row.recorded > 0)
@@ -1145,6 +1173,12 @@ class InstanceWindow(QMainWindow):
                 f'<span style="font-size:9pt; color:{colors.warning};">&nbsp;⚠ pressures out of '
                 f"order: {', '.join(self._order_text(brk) for brk in breaks)} |</span>"
             )
+        state_breaks = self._state_breaks[position]
+        if state_breaks:
+            warning += (
+                f'<span style="font-size:9pt; color:{colors.conflict};">&nbsp;⚠ state against '
+                f"valves: {', '.join(self._state_text(brk) for brk in state_breaks)} |</span>"
+            )
         discarded = self._discarded_sensors(position)
         cleaning = (
             f'<span style="font-size:9pt; color:{colors.muted};">&nbsp;╲ the Toolkit\'s '
@@ -1176,6 +1210,20 @@ class InstanceWindow(QMainWindow):
     def _order_text(brk: OrderBreak) -> str:
         """One pair out of order, for the header: which reads above which, and how often."""
         return f"{brk.order.downstream} above {brk.order.upstream} ({brk.share:.0%})"
+
+    @staticmethod
+    def _state_text(brk: StateBreak) -> str:
+        """One state its valves contradict, for the header: what they read, and how often."""
+        return f"{brk.name} with {brk.readings()} ({brk.share:.0%})"
+
+    @staticmethod
+    def _state_note(brk: StateBreak, feature: str) -> str:
+        """One state a valve contradicts, for the panel of that valve."""
+        reading, where = brk.valves[feature]
+        return (
+            f"{reading} under the state {brk.name} in {where.sum() / brk.compared:.0%} "
+            f"of {brk.compared:,} samples"
+        )
 
     def _order_note(self, brk: OrderBreak, feature: str) -> str:
         """One pair out of order, for the panel of one of its two pressures."""
@@ -1327,7 +1375,8 @@ class InstanceWindow(QMainWindow):
             heights.append(header_px)
             row += 1
             seams = self._seams[position]
-            self._add_band(row, self._state_band_segments(position), "state", seams)
+            state_band = self._add_band(row, self._state_band_segments(position), "state", seams)
+            self._mark_state_band(state_band, position)
             self._add_band(row + 1, self._class_band_segments(position), "class", seams)
             heights += [BAND_PX, BAND_PX]
             row += 2
@@ -1540,6 +1589,16 @@ class InstanceWindow(QMainWindow):
                     warning += (
                         f' | <span style="color:{colors.warning};">⚠ '
                         f"{self._order_note(brk, feature)}</span>"
+                    )
+            # A valve that contradicts the well state: the stretches where it
+            # does are hatched in red behind the trace, as on the state band
+            # above, see-through so that the label periods still show.
+            for brk in self._state_breaks[position]:
+                if feature in brk.valves:
+                    self._add_conflict_shading(plot, position, brk.valves[feature][1])
+                    warning += (
+                        f' | <span style="color:{colors.conflict};">⚠ '
+                        f"{self._state_note(brk, feature)}</span>"
                     )
             # See-through: on a wide window the figures span much of the plot's
             # top, and the trace under them must stay readable.
@@ -1873,6 +1932,59 @@ class InstanceWindow(QMainWindow):
             dots.setZValue(15)
             plot.addItem(dots)
 
+    def _conflict_spans(self, position: int, mask: np.ndarray) -> tuple[list[float], list[float]]:
+        """The stretches of one block where ``mask`` holds, as spans of the time axis.
+
+        A stretch ends where the next sample begins, the last one a second past
+        its last sample, so that a stretch of one sample is still drawn.
+        """
+        index = self.frames[position].index
+        x0, x1 = [], []
+        for start, end, value in runs(mask.astype(float)):
+            if value:
+                stop = index[end] if end < len(index) else index[-1] + pd.Timedelta(seconds=1)
+                a, b = self.timemap.to_x([index[start], stop])
+                x0.append(float(a))
+                x1.append(float(b))
+        return x0, x1
+
+    def _mark_state_band(self, plot: pg.PlotItem, position: int) -> None:
+        """Hatch in red, over the state band, the stretches whose state the valves contradict.
+
+        Each stretch is named by its state and what the valves read there,
+        where it is wide enough to hold the text.
+        """
+        colors = theme.current()
+        x0, x1, labels = [], [], []
+        for brk in self._state_breaks[position]:
+            a, b = self._conflict_spans(position, brk.mask)
+            x0 += a
+            x1 += b
+            labels += [f"{brk.name} | {brk.readings()}"] * len(a)
+        if not x0:
+            return
+        item = SegmentsItem(z=-5, hatch=conflict_brush())
+        item.set_segments(x0, x1, [colors.conflict] * len(x0), labels, hatched=[True] * len(x0))
+        plot.addItem(item, ignoreBounds=True)
+
+    def _add_conflict_shading(self, plot: pg.PlotItem, position: int, mask: np.ndarray) -> None:
+        """Hatch in see-through red, behind the trace, the stretches where ``mask`` holds."""
+        x0, x1 = self._conflict_spans(position, mask)
+        if not x0:
+            return
+        wash = QColor(theme.current().conflict)
+        wash.setAlpha(CONFLICT_ALPHA)
+        fill = wash.name(QColor.NameFormat.HexArgb)
+        item = SegmentsItem(z=-8, hatch=conflict_brush())
+        item.set_segments(
+            x0,
+            x1,
+            [fill] * len(x0),
+            label_colors=[fill] * len(x0),
+            hatched=[True] * len(x0),
+        )
+        plot.addItem(item, ignoreBounds=True)
+
     # -- segments
 
     def _class_runs(self, position: int) -> list[tuple[Segment, int | None]]:
@@ -2079,6 +2191,9 @@ class InstanceWindow(QMainWindow):
                     shown = "-" if pd.isna(value) else f"{value:.4g}{unit}"
                     values.append(f"{feature} = {shown}")
             reading = f" | {', '.join(values)}" if values else ""
+            against = next((brk for brk in self._state_breaks[position] if brk.mask[i]), None)
+            if against is not None:
+                reading = f" (⚠ {against.readings()}){reading}"
             parts.append(
                 f"{title}: {label_name(klass, self.info.fault_names, offset)} / {state_name(state)}{reading}"
             )

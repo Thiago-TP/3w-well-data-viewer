@@ -621,6 +621,40 @@ STATES: dict[int, str] = {
         "which hydrates form."
     ),
 }
+# The valves of ``config.STATE_VALVE_RULES`` by the names the article gives them.
+VALVE_NAMES: dict[str, str] = {
+    "ESTADO-M1": "M1",
+    "ESTADO-W1": "W1",
+    "ESTADO-SDV-P": "SDV-P",
+    "ABER-CKP": "PCK",
+    "ESTADO-PXO": "PXO",
+    "ESTADO-XO": "XO",
+}
+STATE_UNCHECKED = "not checked: no set of valve positions holds through it (see below)"
+STATE_VALVE_NOTE = (
+    "The article defines each status by the positions of the valves (the <b>Valves</b> of each "
+    "row): the production path is the master and wing valves of the tree, the production SDV and "
+    "the production choke (M1, W1, SDV-P, PCK), and the crossovers between the service and "
+    "production lines are PXO and XO. The instance window checks every labeled stretch against "
+    "the valves recorded, both ways round, since valves that move under an unchanged label "
+    "contradict it: where they do, either the expert's label or a valve's tag is not to be "
+    "believed. A valve not recorded, or in between, decides nothing, and a choke is closed at "
+    "0 %. The experts set the label by hand, a little before or after the valves move, so the "
+    "5 minutes either side of a change of the label are not compared, and a status counts as "
+    "contradicted when its valves contradict it in more than 1 % of the samples compared. The "
+    "header of the block names the status and the valves in red, the stretch is hatched over "
+    "red on the state band, named by its status and its valves, the valve's own plot hatches "
+    "it in see-through red behind the trace, and its checkbox wears a ⚠. On the Availability "
+    "page the cell of the valve, and on the Timelines the bar, wear a red triangle in their "
+    "top-left corner, once the profile pass has run. A survey of every real instance of 3W 2.0.0 departs from the article "
+    "twice: Bullheading, whose rule (every production valve open) fails in all 4 instances that "
+    "carry it, in 41 to 100 % of their samples, is not checked, and Depressurization asks one "
+    "valve of the tree closed rather than both, which is what isolates the well from the line "
+    "being bled. Under these rules 41 of the 1,119 real instances contradict their valves, all "
+    "but two labeled Open while a valve of the path reads closed or a crossover open, mostly for "
+    "the whole recording: SDV-P on 18 instances of WELL-00004, W1 on all 8 of WELL-00022, PXO on "
+    "WELL-00029."
+)
 
 # The dataset's own facts, for the tab that explains what is being looked at.
 DATASET_NOTES = [
@@ -776,6 +810,19 @@ AVAILABILITY_STATES: list[tuple[str, str, str]] = [
             "be plausible on its own; the two contradict each other, so one of the instruments is "
             "not to be believed. Hover the cell for how many instances and for the other "
             "pressure. Known once the profile pass has run (the first tick of 'Measured vs filled' runs it, and its cache serves later sessions), since it reads every sample."
+        ),
+    ),
+    (
+        "state",
+        "Against the well state",
+        (
+            "The red mark, in the top-left corner, of a valve that contradicts the well status "
+            "its experts labeled in at least one instance of the row: Open while a valve of the "
+            "production path reads closed or a crossover open, Shut-In while every valve of the "
+            "path reads open, and so on, as the 3W 2.0.0 article defines each status (see the "
+            "Well status tab). Either the label or the valve's tag is not to be believed. Hover "
+            "the cell for how many instances and for the statuses. Known once the profile pass "
+            "has run, like the mark of the pressures out of order."
         ),
     ),
 ]
@@ -1566,7 +1613,9 @@ USAGE = {
             "A small amber triangle in the corner of a bar marks an instance in which a sensor "
             "reads outside its plausible range; the status bar names the sensors. The same "
             "triangle in the bottom-right corner marks pressures read out of order along their "
-            "line, the status bar naming the pairs. Known once the profile pass has run (the first tick of 'Measured vs filled' runs it, and its cache serves later sessions), since it reads every sample. Tinted by one sensor, the marks "
+            "line, the status bar naming the pairs, and a red one in the top-left corner a valve "
+            "that contradicts the well status, the status bar naming the statuses and the valves. "
+            "Known once the profile pass has run (the first tick of 'Measured vs filled' runs it, and its cache serves later sessions), since it reads every sample. Tinted by one sensor, the marks "
             "are for that sensor alone."
         ),
         (
@@ -1602,7 +1651,8 @@ USAGE = {
             "the colors of the key at the right of the toolbar; the fuller the cell, the more of "
             "the sensor there is. A small triangle in its top-right corner marks a reading "
             "outside the plausible range, one in its bottom-right corner a pressure read out of "
-            "order with another of its line."
+            "order with another of its line, and a red one in its top-left corner a valve that "
+            "contradicts the well status."
         ),
         (
             "Hover a cell for the shares, the instance counts, the extreme readings and the "
@@ -1861,6 +1911,16 @@ USAGE = {
             "amber on both plots, whose figures give the share and the largest gap, and both "
             "checkboxes wear a ⚠. The Data availability tab of the help says which pairs are "
             "compared and why."
+        ),
+        (
+            "A <b>well status its valves contradict</b> (labeled Open while the wing valve reads "
+            "closed, Shut-In while every valve of the production path reads open) is warned of "
+            "in red: the header of the block names the status, the valves and how often, the "
+            "stretch is hatched over red on the state band, named by its status and its valves, "
+            "the valve's plot hatches it in see-through red behind the trace with the share in "
+            "its figures, the hovered line adds the valves to the status, and the valve's "
+            "checkbox wears a ⚠. The Well status tab "
+            "of the help gives what the valves of each status must read and why."
         ),
         (
             "Every trace draws its <b>measurements as dots</b>, with the line through every sample "

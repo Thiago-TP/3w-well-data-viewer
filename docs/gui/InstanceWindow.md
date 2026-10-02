@@ -86,6 +86,21 @@ trace). A band at the top marks the stretches recorded by two or more of the bar
   survey behind them are in [`backend/config.py`](../../src/overlap_viewer/backend/config.py) and
   the help's Data availability tab. The Availability and Timelines pages mark the same instances
   in the bottom-right corner of their cells and bars.
+- A **well status its valves contradict** is warned of in red: the header of the block names
+  the status, what the valves read and how often (`⚠ state against valves: Open with ESTADO-W1
+  closed (100%)`), the stretch is hatched over red on the state band and named there by its status
+  and its valves, the valve's plot hatches it in see-through red behind the trace with the share in
+  its figures, the hovered line adds the valves to the status, and the valve's checkbox wears a ⚠.
+  The Availability and Timelines pages mark the same instances with a red triangle in the top-left
+  corner of their cells and bars. Each status asks of the
+  valves what the 3W 2.0.0 article defines it by (Open: M1, W1, SDV-P and the choke open, PXO and
+  XO closed; Shut-In: one of them closed; and so on), except Bullheading, which no set of valve
+  positions holds through on the real instances, and Depressurization, which asks one valve of
+  the tree closed rather than both. A valve not recorded decides nothing, the 5 minutes either side
+  of a change of the label are not compared (the experts set it by hand), and a status counts once
+  more than 1 % of its samples compared are contradicted. The rules and the survey behind them are
+  in [`backend/config.py`](../../src/overlap_viewer/backend/config.py) and the help's Well status
+  tab; under them 41 of the 1,119 real instances contradict their valves.
 - **Statistics**, in the toolbar (Ctrl+T), opens a table of what the readings of every sensor
   ticked amount to, one row per sensor of every block: the count, the mean, the median, the
   standard deviation, the extremes, the quartiles, the skewness and the excess kurtosis, in the

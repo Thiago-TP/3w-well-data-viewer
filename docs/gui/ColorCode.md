@@ -39,7 +39,9 @@ of samples live, or with the share of the live samples that were measured. Amber
 outside the plausible range, wherever it appears: the corner of a cell or a bar, the samples of a
 trace, the caption and the header of an instance plot, the checkbox of a feature. It also marks
 pressures read out of order along their line: the bottom-right corner of a cell or a bar, and
-dashed over the samples of the two traces. The rows of the
+dashed over the samples of the two traces. Red marks a well status its valves contradict: the
+top-left corner of a cell or a bar, a hatch over red on the state band of an instance plot, the
+same hatch see-through behind the valve's trace, and the warning in the header. The rows of the
 fault classes and of the instances carry the fault hue of the timelines as a small square before
 their label.
 
