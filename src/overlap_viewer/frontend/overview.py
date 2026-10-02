@@ -71,6 +71,7 @@ from overlap_viewer.frontend.heatmap import StateKey, ramp_color
 from overlap_viewer.frontend.items import (
     IMPLAUSIBLE_MARK,
     ORDER_MARK,
+    STATE_MARK,
     InstanceBarsItem,
     ScrollFriendlyViewBox,
     SeamsItem,
@@ -225,6 +226,15 @@ def describe_instance(
     )
     if pairs:
         warning += " | ⚠ pressures out of order: " + ", ".join(f"{a} and {b}" for a, b in pairs)
+    conflicts = (
+        availability.state_conflicts_of(bar_rows(availability, data, index))
+        if availability is not None
+        else []
+    )
+    if conflicts:
+        warning += " | ⚠ state against valves: " + ", ".join(
+            f"{state} by {valve}" for state, valve in conflicts
+        )
     return (
         f"{instance_title(row)} | {what} | {start:%Y-%m-%d %H:%M:%S} → {end.strftime(end_fmt)} "
         f"({row['hours']:.1f} h, {int(row['n_samples']):,} samples) | stack level {int(row['lane']) + 1} | {overlap}"
@@ -731,7 +741,7 @@ class TimelinesPage(QWidget):
         body_layout.setSpacing(6)
         # The key of the bars when they say how much of a sensor was recorded;
         # the color key of the faults takes its place otherwise.
-        self._state_key = StateKey(("ramp", "frozen", "absent", "implausible", "order"))
+        self._state_key = StateKey(("ramp", "frozen", "absent", "implausible", "order", "state"))
         self._state_key.hide()
         body_layout.addWidget(self._state_key, 0, Qt.AlignmentFlag.AlignLeft)
         self._legend = LegendBar()
@@ -1278,8 +1288,9 @@ class TimelinesPage(QWidget):
         In the fault coloring a bar is marked when any sensor of any instance
         behind it reads outside its plausible range (top-right) or any of its
         pressures reads out of order (bottom-right, once the profiles are on
-        hand); tinted by one sensor, it is marked for that sensor alone, the
-        bar being about that sensor.
+        hand) or any of its valves contradicts the well state (top-left, in
+        red, likewise); tinted by one sensor, it is marked for that sensor
+        alone, the bar being about that sensor.
         Tinted by the measurements of a sensor, the ramp is the share of the
         sensor's live samples that were measured rather than filled in.
         """
@@ -1294,6 +1305,7 @@ class TimelinesPage(QWidget):
                 marks.append(
                     (IMPLAUSIBLE_MARK if availability.implausible_any(rows) else 0)
                     | (ORDER_MARK if availability.order_any(rows) else 0)
+                    | (STATE_MARK if availability.state_any(rows) else 0)
                 )
             if self.coloring_kind in MAP_KINDS and self._map_results is not None:
                 return self._map_fills(data), marks
@@ -1326,6 +1338,7 @@ class TimelinesPage(QWidget):
             marks.append(
                 (IMPLAUSIBLE_MARK if flagged else 0)
                 | (ORDER_MARK if availability.order_any(rows, column) else 0)
+                | (STATE_MARK if availability.state_any(rows, column) else 0)
             )
         return fills, marks
 
@@ -1373,6 +1386,9 @@ class TimelinesPage(QWidget):
         self._state_key.setVisible(sensor is not None or kind in ("typicality", "cleaned", "model"))
         self._state_key.set_visible(
             "order", self._availability is not None and self._availability.out_of_order is not None
+        )
+        self._state_key.set_visible(
+            "state", self._availability is not None and self._availability.against_state is not None
         )
         if sensor is not None and kind == "descriptor":
             choice = self.descriptor_choice

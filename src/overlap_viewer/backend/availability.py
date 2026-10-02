@@ -50,7 +50,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 
-from overlap_viewer.backend.config import plausible_range
+from overlap_viewer.backend.config import WELL_STATES, plausible_range
 from overlap_viewer.backend.dataset import (
     BarStats,
     DatasetInfo,
@@ -61,6 +61,9 @@ from overlap_viewer.backend.dataset import (
 )
 from overlap_viewer.backend.labels import is_flat, sensor_stats_from_json
 from overlap_viewer.backend.profiles import Profiles
+
+# The well states by name, in code order: how the states a valve contradicts are listed.
+STATE_ORDER = {name: code for code, name in WELL_STATES.items()}
 
 # The states a sensor can be in inside one bar, and their codes.
 STATES = ("absent", "frozen", "live")
@@ -162,6 +165,12 @@ class AvailabilityTable:
     order_partners : np.ndarray or None
         ``(rows, sensors)``, objects: the pressures it contradicts in the group,
         as a sorted tuple.
+    against_state : np.ndarray or None
+        ``(rows, sensors)``: how many bars of the group have the valve
+        contradict the well state; ``None`` without the profiles.
+    state_conflicts : np.ndarray or None
+        ``(rows, sensors)``, objects: the states it contradicts in the group,
+        as a tuple in state order.
     """
 
     keys: list
@@ -177,6 +186,8 @@ class AvailabilityTable:
     filled: np.ndarray | None = None
     out_of_order: np.ndarray | None = None
     order_partners: np.ndarray | None = None
+    against_state: np.ndarray | None = None
+    state_conflicts: np.ndarray | None = None
 
     @staticmethod
     def _shares(counts: np.ndarray, totals: np.ndarray) -> np.ndarray:
@@ -247,6 +258,8 @@ class AvailabilityTable:
             None if self.filled is None else self.filled[:, order],
             None if self.out_of_order is None else self.out_of_order[:, order],
             None if self.order_partners is None else self.order_partners[:, order],
+            None if self.against_state is None else self.against_state[:, order],
+            None if self.state_conflicts is None else self.state_conflicts[:, order],
         )
 
     def stacked(self, other: "AvailabilityTable") -> "AvailabilityTable":
@@ -255,6 +268,7 @@ class AvailabilityTable:
             raise ValueError("the two tables do not share their sensors")
         both = self.measured and other.measured
         ordered = self.out_of_order is not None and other.out_of_order is not None
+        stated = self.against_state is not None and other.against_state is not None
         return AvailabilityTable(
             [*self.keys, *other.keys],
             self.sensors,
@@ -269,6 +283,8 @@ class AvailabilityTable:
             np.concatenate([self.filled, other.filled]) if both else None,
             np.concatenate([self.out_of_order, other.out_of_order]) if ordered else None,
             np.concatenate([self.order_partners, other.order_partners]) if ordered else None,
+            np.concatenate([self.against_state, other.against_state]) if stated else None,
+            np.concatenate([self.state_conflicts, other.state_conflicts]) if stated else None,
         )
 
     def __len__(self) -> int:
@@ -318,6 +334,12 @@ class Availability:
         profiles, which read every sample; ``None`` without them.
     order_partners : np.ndarray or None
         ``(bars, sensors)``, objects: the pressures it contradicts, a tuple.
+    against_state : np.ndarray or None
+        ``(bars, sensors)``: the samples in which the valve contradicts the
+        well state (``algorithms.consistency``), from the profiles; ``None``
+        without them.
+    state_conflicts : np.ndarray or None
+        ``(bars, sensors)``, objects: the states it contradicts, a tuple.
     """
 
     bars: pd.DataFrame
@@ -335,6 +357,8 @@ class Availability:
     filled: np.ndarray | None = None
     out_of_order: np.ndarray | None = None
     order_partners: np.ndarray | None = None
+    against_state: np.ndarray | None = None
+    state_conflicts: np.ndarray | None = None
     _index: dict = field(default_factory=dict, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -371,7 +395,8 @@ class Availability:
         profiles : Profiles, optional
             The profiles of the bars (``profiles.load_profiles``), which split
             the readings of a live sensor into measurements and filled samples
-            and say which pressures read out of order.
+            and say which pressures read out of order and which valves
+            contradict the well state.
         """
         records: list[dict] = []
         parsed: list[Mapping[str, SensorStats]] = []
@@ -441,6 +466,7 @@ class Availability:
                     low[i, j], high[i, j], ranges[j]
                 )
         genuine = filled = out_of_order = order_partners = None
+        against_state = state_conflicts = None
         if profiles is not None:
             out_of_order = np.nan_to_num(
                 profiles.matrix(keys, joined, "n_out_of_order", sensors), nan=0.0
@@ -449,6 +475,13 @@ class Availability:
             order_partners.fill(())
             for i, j in zip(*np.nonzero(out_of_order)):
                 order_partners[i, j] = tuple(profiles.order_partners(keys[i], sensors[j], joined))
+            against_state = np.nan_to_num(
+                profiles.matrix(keys, joined, "n_against_state", sensors), nan=0.0
+            ).astype(int)
+            state_conflicts = np.empty((n, s), dtype=object)
+            state_conflicts.fill(())
+            for i, j in zip(*np.nonzero(against_state)):
+                state_conflicts[i, j] = tuple(profiles.state_conflicts(keys[i], sensors[j], joined))
             genuine = np.nan_to_num(
                 profiles.matrix(keys, joined, "n_genuine", sensors), nan=0.0
             ).astype(int)
@@ -473,6 +506,8 @@ class Availability:
             filled,
             out_of_order,
             order_partners,
+            against_state,
+            state_conflicts,
         )
 
     @classmethod
@@ -559,6 +594,25 @@ class Availability:
                         pairs.append(pair)
         return pairs
 
+    def state_any(self, rows: Sequence[int], sensor: int | None = None) -> bool:
+        """Whether a valve of any of these bars (or ``sensor`` alone) contradicts the well state."""
+        if self.against_state is None:
+            return False
+        block = self.against_state[np.asarray(list(rows), dtype=int)]
+        return bool((block if sensor is None else block[:, sensor]).any())
+
+    def state_conflicts_of(self, rows: Sequence[int]) -> list[tuple[str, str]]:
+        """The (state, valve) pairs of any of these bars in which the valve contradicts the state."""
+        if self.against_state is None:
+            return []
+        pairs: list[tuple[str, str]] = []
+        for i in np.asarray(list(rows), dtype=int):
+            for j in np.flatnonzero(self.against_state[i]):
+                for state in self.state_conflicts[i, j]:
+                    if (state, self.sensors[j]) not in pairs:
+                        pairs.append((state, self.sensors[j]))
+        return pairs
+
     def grouped(
         self, keys: Sequence, order: Sequence | None = None, mask: np.ndarray | None = None
     ) -> AvailabilityTable:
@@ -594,6 +648,11 @@ class Availability:
         order_partners = np.empty((r, s), dtype=object) if ordered else None
         if ordered:
             order_partners.fill(())
+        stated = self.against_state is not None
+        against_state = np.zeros((r, s), dtype=int) if stated else None
+        state_conflicts = np.empty((r, s), dtype=object) if stated else None
+        if stated:
+            state_conflicts.fill(())
         for k, key in enumerate(rows):
             members = np.flatnonzero(taken & (keys == key))
             if not len(members):
@@ -624,6 +683,16 @@ class Availability:
                             {p for i in members[broken[:, j]] for p in self.order_partners[i, j]}
                         )
                     )
+            if stated:
+                contradicting = self.against_state[members] > 0
+                against_state[k] = contradicting.sum(axis=0)
+                for j in np.flatnonzero(against_state[k]):
+                    names = {
+                        name
+                        for i in members[contradicting[:, j]]
+                        for name in self.state_conflicts[i, j]
+                    }
+                    state_conflicts[k, j] = tuple(sorted(names, key=STATE_ORDER.get))
             # The bounds of a sensor nobody recorded stay NaN, without the
             # warning ``nanmin`` raises over an all-NaN column.
             lows = np.where(np.isnan(self.low[members]), np.inf, self.low[members]).min(axis=0)
@@ -644,6 +713,8 @@ class Availability:
             filled,
             out_of_order,
             order_partners,
+            against_state,
+            state_conflicts,
         )
 
     def total(self, key="all", mask: np.ndarray | None = None) -> AvailabilityTable:

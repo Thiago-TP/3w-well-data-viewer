@@ -8,7 +8,8 @@ proportions, and the frozen part carries a flat line so that it cannot be taken
 for the live part in a print or by an eye that does not tell the colors apart.
 A reading outside the plausible range puts a small mark in the top-right corner
 of its cell, the same mark the timeline bars wear; pressures read out of order
-along their line put one in the bottom-right corner.
+along their line put one in the bottom-right corner, and a valve that
+contradicts the well state a red one in the top-left corner.
 
 The cells take the width they are given: at least a floor, so that a matrix
 wider than the window scrolls, and up to a ceiling, so that a wide window is
@@ -40,7 +41,13 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QToolTip, QWidge
 from overlap_viewer.backend import theme
 from overlap_viewer.backend.availability import FROZEN, LIVE
 from overlap_viewer.backend.palette import tint
-from overlap_viewer.frontend.items import IMPLAUSIBLE_MARK, MARK_PX, ORDER_MARK, draw_marks
+from overlap_viewer.frontend.items import (
+    IMPLAUSIBLE_MARK,
+    MARK_PX,
+    ORDER_MARK,
+    STATE_MARK,
+    draw_marks,
+)
 from overlap_viewer.frontend.styling import TOOLTIP_FOREVER_MS, bounded_tooltip
 
 CELL_MIN_W, CELL_MAX_W = (
@@ -61,7 +68,17 @@ RAMP_FLOOR = 0.2
 # What a swatch of the key can show: the three states of a cell, the filled
 # part of a live cell, the mark, and the ramp of tints a timeline bar takes
 # from the share of samples live.
-SWATCH_KINDS = ("live", "filled", "frozen", "absent", "implausible", "order", "cleaned", "ramp")
+SWATCH_KINDS = (
+    "live",
+    "filled",
+    "frozen",
+    "absent",
+    "implausible",
+    "order",
+    "state",
+    "cleaned",
+    "ramp",
+)
 SWATCH_SIZE = (22, 14)
 RAMP_SIZE = (64, 14)
 # How much of the live color the filled part of a cell keeps: pale enough to
@@ -77,6 +94,7 @@ KEY_LABELS = {
     "absent": "absent",
     "implausible": "a reading outside the plausible range",
     "order": "pressures out of order",
+    "state": "a valve against the well state",
     "cleaned": "the Toolkit's CleanSignals would discard it",
     "ramp": "share of samples live, from a few to all",
 }
@@ -115,6 +133,13 @@ KEY_TOOLTIPS = {
         "two instruments is not to be believed. Hover for how many, and for the other "
         "pressure. Known once the profile pass has run (the first tick of 'Measured vs "
         "filled' runs it); it reads every sample."
+    ),
+    "state": (
+        "At least one instance has this valve contradict the well state its experts labeled: "
+        "Open while the valve of the production path reads closed or a crossover open, Shut-In "
+        "while every valve of the path reads open, and so on, as the 3W 2.0.0 article defines "
+        "the states. Either the label or the valve's tag is not to be believed. Hover for how "
+        "many, and for the states. Known once the profile pass has run; it reads every sample."
     ),
     "ramp": (
         "The bar is tinted by the share of its samples in which the sensor is live: faint for a "
@@ -165,8 +190,8 @@ def paint_cell(
 ) -> None:
     """Fill ``rect`` with the live, frozen and absent shares, and the marks if there are any.
 
-    ``mark`` is the corner marks, ``IMPLAUSIBLE_MARK`` and ``ORDER_MARK``
-    or'ed together (``True`` is the first alone).
+    ``mark`` is the corner marks, ``IMPLAUSIBLE_MARK``, ``ORDER_MARK`` and
+    ``STATE_MARK`` or'ed together (``True`` is the first alone).
 
     ``filled`` is the share of the cell's samples that are live but were not
     measured; that much of the live span, at its right end, is drawn in the
@@ -230,7 +255,9 @@ def swatch_image(kind: str, size: tuple[int, int] | None = None) -> QImage:
             painter,
             image.rect(),
             shares,
-            {"implausible": IMPLAUSIBLE_MARK, "order": ORDER_MARK}.get(kind, 0),
+            {"implausible": IMPLAUSIBLE_MARK, "order": ORDER_MARK, "state": STATE_MARK}.get(
+                kind, 0
+            ),
             1.0 if kind == "filled" else 0.0,
             kind == "cleaned",
         )
@@ -374,7 +401,7 @@ class HeatmapWidget(QWidget):
         """Show ``rows`` by ``columns``; ``shares`` is ``(rows, columns, 3)``, ``marks`` ``(rows, columns)``.
 
         ``marks`` are corner-mark flags (``items.IMPLAUSIBLE_MARK``,
-        ``items.ORDER_MARK``), or booleans for the first alone.
+        ``items.ORDER_MARK``, ``items.STATE_MARK``), or booleans for the first alone.
 
         ``filled``, ``(rows, columns)`` when given, is the share of each cell
         that is live but was not measured, drawn as the pale end of the live
