@@ -67,6 +67,11 @@ class Theme:
     live: str  # samples carrying a reading that moves
     frozen: str  # samples carrying one constant reading, drawn under a flat line
     warning: str  # the mark of a reading no instrument could have produced
+    # A well state its valves contradict: a red that is not the warning amber,
+    # since the label and not a reading is in doubt, drawn under a hatch of
+    # ``conflict_hatch`` so that it is not taken for the coral of Shut-In.
+    conflict: str
+    conflict_hatch: str
 
     # -- the wells of the faults page, where every line is an instance and its
     # color says which well recorded it; cycled when the dataset holds more
@@ -135,6 +140,8 @@ LIGHT = Theme(
     live="#4f6d8f",
     frozen="#c2c2c2",
     warning="#d4871a",
+    conflict="#c62828",
+    conflict_hatch="#ffffff",
     # Deeper than every fault hue, so a well line reads as ink over the pale
     # wash the label periods put behind it.
     wells=(
@@ -227,6 +234,8 @@ DARK = Theme(
     live="#7f9fc4",
     frozen="#4a4f57",
     warning="#e8a838",
+    conflict="#e53935",
+    conflict_hatch="#1a1c1f",
     # The mirror of the light palette: paler than every fault hue, since here
     # the shading is a step toward the dark ground rather than toward white.
     wells=(

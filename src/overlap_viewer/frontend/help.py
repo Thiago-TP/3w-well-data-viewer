@@ -24,6 +24,7 @@ from overlap_viewer.backend.config import (
     EXTREME_VALUE_LIMIT,
     FAULT_SIGNATURES,
     PLAUSIBLE_RANGES,
+    STATE_VALVE_RULES,
     WELL_STATES,
     asset_path,
     display_unit,
@@ -49,9 +50,12 @@ from overlap_viewer.backend.help_text import (
     MODEL_NOTES,
     MODEL_SOURCES,
     PLAUSIBLE_RANGE_NOTES,
+    STATE_UNCHECKED,
+    STATE_VALVE_NOTE,
     STATES,
     TRANSIENT_CAPABLE,
     USAGE,
+    VALVE_NAMES,
     VARIABLES,
     WINDOWS_INTRO,
     WINDOWS_NOTES,
@@ -343,6 +347,21 @@ def variable_page(info: DatasetInfo, figures: "Figures | None" = None) -> str:
     return _document("".join(parts))
 
 
+def valve_rule_text(code: int) -> str:
+    """What the valves of one status must read, ``M1, W1, SDV-P and PCK open; PXO and XO closed``."""
+    rules = STATE_VALVE_RULES.get(code)
+    if rules is None:
+        return STATE_UNCHECKED
+    parts = []
+    for quantifier, position, valves in rules:
+        names = [VALVE_NAMES.get(valve, valve) for valve in valves]
+        listed = names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
+        if quantifier == "any" and len(names) > 1:
+            listed = f"one of {listed}"
+        parts.append(f"{listed} {position}")
+    return "; ".join(parts)
+
+
 def state_page(figures: "Figures | None" = None) -> str:
     """The well operational status codes drawn in the ``state`` band."""
     parts = [
@@ -360,7 +379,8 @@ def state_page(figures: "Figures | None" = None) -> str:
         parts.append(
             f"<tr>{_swatch(state_color(code), 22)}"
             f'<td valign="top" width="150"><b>{name}</b> <span class="sub">({code})</span></td>'
-            f'<td valign="top">{STATES.get(code, "")}</td></tr>'
+            f'<td valign="top">{STATES.get(code, "")}<br>'
+            f'<span class="sub">Valves: {valve_rule_text(code)}.</span></td></tr>'
         )
     # Hatched like the band itself: the texture, not the grey, is what says
     # that nothing is known there.
@@ -371,7 +391,11 @@ def state_page(figures: "Figures | None" = None) -> str:
         '<td valign="top">The condition of the well at that moment could not be established.</td></tr>'
     )
     parts.append("</table>")
-    parts.append(f'<p class="sub">Source: {PAPER}, table 5.</p>')
+    parts.append(f"<h3>Status against the valves</h3><p>{STATE_VALVE_NOTE}</p>")
+    parts.append(
+        f'<p class="sub">Source: {PAPER}, table 5 and the definitions after it; the survey and '
+        "the rules are in <code>backend/config.py</code>.</p>"
+    )
     return _document("".join(parts))
 
 

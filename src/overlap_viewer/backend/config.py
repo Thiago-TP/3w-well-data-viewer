@@ -288,6 +288,87 @@ PRESSURE_ORDER_TOLERANCE = 1e6  # Pa
 PRESSURE_ORDER_MIN_SHARE = 0.01
 
 
+# -- Well state against valve states ------------------------------------------------
+
+# The 3W 2.0.0 article defines each operational status of the ``state`` column
+# by the positions of the valves (the list after Table 5): the production path
+# is the master and wing valves of the tree, the production SDV and the
+# production choke (M1, W1, SDV-P, PCK), and the crossovers between the service
+# and production lines are PXO and XO. So the state label and the valve states
+# must agree:
+#
+# - Open: every production valve open, both crossovers closed.
+# - Shut-In, Closed With Diesel, Closed With Gas: some production valve closed.
+# - Flushing Diesel, Flushing Gas: some valve of the tree closed (the article's
+#   "wellhead valve"; in every flushing sample of 3W 2.0.0 it is M1), and a
+#   crossover open.
+# - Restart: every production valve open.
+# - Depressurization: SDV-P and the choke open, so the line bleeds to the
+#   platform, and both crossovers closed.
+#
+# A survey of every real instance of 3W 2.0.0, sample by sample, departs from
+# the article in two places:
+#
+# - Bullheading (every production valve open, diesel or gas pushed down the
+#   production line from the platform) is not asked. Its rule fails in all 4
+#   instances that carry the label, in 41 to 100 % of their samples: the SDV
+#   reads closed throughout both of WELL-00019, the master valve in 83 % of
+#   WELL-00029's, both valves of the tree in 41 % of WELL-00031's. The label
+#   covers the whole operation, its preparation included, and no set of valve
+#   positions holds through it.
+# - Depressurization asks one valve of the tree closed, not both: that is what
+#   isolates the well from the line being bled. WELL-00032 depressurizes with
+#   W1 closed and M1 open throughout, WELL-00029 and WELL-00019 for part of
+#   theirs with M1 closed and W1 open.
+#
+# A valve whose state is not recorded, or reads in between (0.5, which no real
+# instance records), or a choke opening outside its plausible range, neither
+# holds nor breaks a rule: a rule is broken only by the valves recorded. A
+# choke is closed at 0 % and open above it; 3W 2.0.0 records nothing between
+# 0 and 0.1 % but a handful of samples. The experts set the label by hand, a
+# little before or after the valves move: on the survey every contradiction
+# shorter than a few minutes sits within that much of a change of the label.
+# So the samples within the grace period of a change of the label are not
+# compared, and a state of a recording contradicts its valves when more than
+# the given share of the samples compared do. A rule that a missing valve
+# leaves undecided is not compared either, so that the share is taken over the
+# samples whose valves could have contradicted the label. Without grace 44
+# instances are caught, with 1 minute 43, 2 minutes 42, 5 minutes 41 and
+# 10 minutes 40: what each step lets go is a depressurization or a restart
+# labeled a few minutes off its valves. The share leaves out a few blips of a valve (W1
+# closed for 15 s to 3 min of a 5 h recording labeled Open, five times on
+# WELL-00014).
+#
+# Under these rules 41 of the 1,119 real instances contradict their valves,
+# all but two labeled Open with a valve of the production path closed or a
+# crossover open, mostly for the whole recording: SDV-P closed on 18 of the 58
+# instances of WELL-00004 and on one of WELL-00026, W1 closed on all 8 of
+# WELL-00022 (weeks of production through a wing valve that reads closed),
+# PXO open on WELL-00029 and WELL-00012.
+PRODUCTION_VALVES = ("ESTADO-M1", "ESTADO-W1", "ESTADO-SDV-P", "ABER-CKP")
+TREE_PRODUCTION_VALVES = ("ESTADO-M1", "ESTADO-W1")
+CROSSOVER_VALVES = ("ESTADO-PXO", "ESTADO-XO")
+# By state code, the conditions its samples must meet, each as
+# (quantifier, position, valves): "all" of the valves in that position, or
+# "any" one of them.
+STATE_VALVE_RULES: dict[int, tuple[tuple[str, str, tuple[str, ...]], ...]] = {
+    0: (("all", "open", PRODUCTION_VALVES), ("all", "closed", CROSSOVER_VALVES)),
+    1: (("any", "closed", PRODUCTION_VALVES),),
+    2: (("any", "closed", TREE_PRODUCTION_VALVES), ("any", "open", CROSSOVER_VALVES)),
+    3: (("any", "closed", TREE_PRODUCTION_VALVES), ("any", "open", CROSSOVER_VALVES)),
+    5: (("any", "closed", PRODUCTION_VALVES),),
+    6: (("any", "closed", PRODUCTION_VALVES),),
+    7: (("all", "open", PRODUCTION_VALVES),),
+    8: (
+        ("all", "open", ("ESTADO-SDV-P", "ABER-CKP")),
+        ("any", "closed", TREE_PRODUCTION_VALVES),
+        ("all", "closed", CROSSOVER_VALVES),
+    ),
+}
+STATE_VALVE_GRACE_S = 300.0
+STATE_VALVE_MIN_SHARE = 0.01
+
+
 # -- Units on display -------------------------------------------------------------
 
 # The unit a reading is shown in, where it is not the one the dataset records it

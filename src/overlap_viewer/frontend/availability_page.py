@@ -85,7 +85,7 @@ from overlap_viewer.backend.extras import missing
 from overlap_viewer.backend.palette import bar_color, fault_color, tint
 from overlap_viewer.backend.profiles import Profiles
 from overlap_viewer.frontend.heatmap import ColorKey, HeatmapRow, HeatmapWidget, StateKey
-from overlap_viewer.frontend.items import IMPLAUSIBLE_MARK, ORDER_MARK
+from overlap_viewer.frontend.items import IMPLAUSIBLE_MARK, ORDER_MARK, STATE_MARK
 from overlap_viewer.frontend.loading import (
     joined_stats_with_progress,
     pair_counts_with_progress,
@@ -199,10 +199,11 @@ class AvailabilityPage(QWidget):
         # The keys of the three matrices are built before the toolbar, which shows
         # one of them and hides the others as soon as it knows which matrix it is on.
         self._key = StateKey(
-            ("live", "filled", "frozen", "absent", "implausible", "order", "cleaned")
+            ("live", "filled", "frozen", "absent", "implausible", "order", "state", "cleaned")
         )
         self._key.set_visible("filled", False)
         self._key.set_visible("order", False)
+        self._key.set_visible("state", False)
         self._key.set_visible("cleaned", False)
         self._pair_key = StateKey(("live", "absent"))
         self._pair_key.set_text("live", "both carry a reading at the same instant")
@@ -560,7 +561,8 @@ class AvailabilityPage(QWidget):
         """Read what every instance recorded, under the threshold in force.
 
         Profiles an earlier session left in the cache are taken up without
-        reading the data, for the marks of the pressures out of order.
+        reading the data, for the marks of the pressures out of order and of
+        the valves against the well state.
         """
         if self._profiles is None and self._passes is not None:
             self._profiles = self._passes.profiles_if_loaded(self.info.sensor_names)
@@ -1139,6 +1141,9 @@ class AvailabilityPage(QWidget):
         ordered = self._table.out_of_order is not None
         if ordered:
             marks |= np.where(self._table.out_of_order > 0, ORDER_MARK, 0)
+        stated = self._table.against_state is not None
+        if stated:
+            marks |= np.where(self._table.against_state > 0, STATE_MARK, 0)
         self._heatmap.set_matrix(
             self._rows,
             self._table.sensors,
@@ -1153,6 +1158,7 @@ class AvailabilityPage(QWidget):
         self._key.set_visible("filled", split)
         self._key.set_visible("cleaned", self.cleaning_on)
         self._key.set_visible("order", ordered)
+        self._key.set_visible("state", stated)
         self._key.set_text("live", "measured" if split else "live")
         self._title.setText(self._title_text())
 
@@ -1219,6 +1225,8 @@ class AvailabilityPage(QWidget):
             what = f"{noun} of {self._rows[-1].label.split(': ')[0]}"
         unit = f"its {noun}s" if self.by_instances else "its samples"
         order = " | ◢ pressures out of order" if self._table.out_of_order is not None else ""
+        if self._table.against_state is not None:
+            order += " | ◤ a valve against the well state"
         parts = [
             (
                 f"Per {what}: the share of {unit} in which each sensor is live, frozen or absent | "
@@ -1321,6 +1329,9 @@ class AvailabilityPage(QWidget):
             if availability.out_of_order is not None
             else ""
         )
+        if availability.against_state is not None:
+            against = int((availability.against_state > 0).any(axis=1).sum())
+            disordered += f" | {_plural(against, noun)} with a state against its valves"
         measured = ""
         if self.split and total.measured:
             # Over the analog sensors: a valve state is not tested, and would
@@ -1414,6 +1425,9 @@ class AvailabilityPage(QWidget):
         order = self._order_clause(row, column)
         if order:
             parts.append(order)
+        against = self._state_clause(row, column)
+        if against:
+            parts.append(against)
         cleaned = self._cleaning_clause(row, column)
         if cleaned:
             parts.append(cleaned)
@@ -1429,6 +1443,17 @@ class AvailabilityPage(QWidget):
         where = "" if n == 1 else f" in {_plural(count, noun)}"
         partners = ", ".join(table.order_partners[row, column])
         return f"⚠ out of order with {partners}{where}"
+
+    def _state_clause(self, row: int, column: int) -> str:
+        """How often this valve contradicts the well state in the cell, and which; empty if never."""
+        table = self._table
+        if table.against_state is None or not table.against_state[row, column]:
+            return ""
+        count, n = int(table.against_state[row, column]), int(table.n_instances[row])
+        noun = "bar" if self.joined else "instance"
+        where = "" if n == 1 else f" in {_plural(count, noun)}"
+        states = ", ".join(table.state_conflicts[row, column])
+        return f"⚠ contradicts the well state {states}{where}"
 
     def _cleaning_clause(self, row: int, column: int) -> str:
         """What the Toolkit's rule would do to this cell, when the rule is on."""

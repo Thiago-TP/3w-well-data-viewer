@@ -73,6 +73,9 @@ profiles have been read (the *Measurements* coloring reads them; a header never 
 - The same triangle in the **bottom-right corner** marks pressures read out of order along their
   line, the status bar naming the pairs, once the profile pass has run (see
   [Availability.md](Availability.md)).
+- A **red triangle in the top-left corner** marks an instance in which a valve contradicts the well
+  status, the status bar naming the statuses and the valves, likewise once the profile pass has
+  run.
 - **Retract the key** by clicking its title (or `Ctrl+L`) to give the grid the room. Retracted it
   still answers hovering: the entries of the instance under the pointer, and of the instances it
   overlaps, pop into the title row.

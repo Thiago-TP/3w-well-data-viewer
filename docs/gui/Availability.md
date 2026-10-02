@@ -64,6 +64,11 @@ the width of the window.
   sample, so it comes from the profile pass: it shows once that pass has run (the first tick of
   *Measured vs filled* runs it, and its cache serves later sessions). The check adds 3 s to the
   pass's 91 s on 3W 2.0.0.
+- A **red triangle in the top-left corner** marks a valve that contradicts the well status its
+  experts labeled in at least one instance of the row (Open while the wing valve reads closed,
+  Shut-In while every valve of the production path reads open; see
+  [InstanceWindow.md](InstanceWindow.md)); the hover names the statuses. It comes from the same
+  profile pass, and shows once it has run.
 - Without the join, the shares are of samples as the files carry them, so a sensor recorded for
   part of an instance shows as partly absent and a sample two overlapping instances share is
   counted in both. The figures come from the footer of each parquet file (a count of the missing

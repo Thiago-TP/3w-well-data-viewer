@@ -42,6 +42,7 @@ from overlap_viewer.backend.config import (
     FAULT_SIGNATURES,
     PLACEMENTS,
     REACH_TINTS,
+    STATE_VALVE_RULES,
     WELL_STATES,
     asset_path,
     cache_dir,
@@ -83,6 +84,7 @@ from overlap_viewer.backend.palette import (
     unknown_background,
 )
 from overlap_viewer.backend.timemap import TimeMap
+from overlap_viewer.frontend.help import valve_rule_text
 from overlap_viewer.frontend.legend import row_breaks
 from overlap_viewer.frontend.overview import bar_tooltip
 from overlap_viewer.frontend.series_page import SeriesPage, sample_counts
@@ -708,6 +710,18 @@ def test_help_text_covers_the_dataset():
         "Instance window",
         "Signal views",
     } <= set(help_text.USAGE)
+
+
+def test_every_state_names_its_valves_in_the_help():
+    """The rules are told in the help by the article's names, and only real states and valves."""
+    assert set(STATE_VALVE_RULES) <= set(WELL_STATES)
+    for rules in STATE_VALVE_RULES.values():
+        for quantifier, position, valves in rules:
+            assert quantifier in ("all", "any") and position in ("open", "closed")
+            assert set(valves) <= set(help_text.VALVE_NAMES) <= set(DEFAULT_SENSOR_UNITS)
+    assert valve_rule_text(0) == "M1, W1, SDV-P and PCK open; PXO and XO closed"
+    assert valve_rule_text(8) == "SDV-P and PCK open; one of M1 and W1 closed; PXO and XO closed"
+    assert valve_rule_text(4) == help_text.STATE_UNCHECKED  # Bullheading
 
 
 def test_cache_dir_sits_under_the_platform_cache_home(tmp_path: Path, monkeypatch):

@@ -13,7 +13,8 @@ where the straight lines the historian drew make the grid look smoother than
 the process, and the viewer shows the grid's figures with that caveat. The
 same pass checks the order of the pressures along each line
 (``algorithms.consistency``), which also needs every sample, and records for
-every pressure the others it contradicts.
+every pressure the others it contradicts; and the state label against the
+valve states, recording for every valve the states it contradicts.
 
 The result is one long table, a row per (scope, instance or bar, sensor),
 kept as parquet next to the catalogue and valid while the listing of the
@@ -33,7 +34,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from overlap_viewer.algorithms.consistency import partners_by_sensor, pressure_order_breaks
+from overlap_viewer.algorithms.consistency import (
+    partners_by_sensor,
+    pressure_order_breaks,
+    state_valve_breaks,
+    valves_by_sensor,
+)
 from overlap_viewer.algorithms.descriptors import ACF_MAX_LAG_S, FIELDS, Descriptors, describe
 from overlap_viewer.algorithms.interpolation import (
     GENUINE,
@@ -61,7 +67,7 @@ ProgressCallback = Callable[[int, int, str], bool]
 
 # Bumped whenever the rule or the columns change, so that an older cache is
 # read again rather than trusted.
-PROFILE_VERSION = 3
+PROFILE_VERSION = 4
 
 SCOPES = ("instance", "bar")
 KEY_COLUMNS = ["scope", "well", "bar", "fault_class", "file", "sensor"]
@@ -81,10 +87,14 @@ GENUINE_COLUMNS = [f"{name}_g" for name in FIELDS]
 # The samples in which a pressure reads out of order with another of its line,
 # and those others, comma-separated (empty for a sensor in order).
 ORDER_COLUMNS = ["n_out_of_order", "order_partners"]
+# The samples in which a valve contradicts the well state, and the states it
+# contradicts by name, comma-separated (empty for a valve that agrees).
+STATE_COLUMNS = ["n_against_state", "state_conflicts"]
 PROFILE_COLUMNS = (
     KEY_COLUMNS
     + SAMPLING_COLUMNS
     + ORDER_COLUMNS
+    + STATE_COLUMNS
     + GRID_COLUMNS
     + GENUINE_COLUMNS
     + ["listing_digest", "version"]
@@ -195,6 +205,7 @@ def profile_frame(frame: pd.DataFrame, sensors: Sequence[str], info: DatasetInfo
     step_s = _step_seconds(frame.index)
     present = {str(name) for name in frame.columns if is_sensor_column(str(name))}
     out_of_order = partners_by_sensor(pressure_order_breaks(frame))
+    against_state = valves_by_sensor(state_valve_breaks(frame))
     rows = []
     for sensor in sensors:
         n_total = len(frame)
@@ -206,6 +217,7 @@ def profile_frame(frame: pd.DataFrame, sensors: Sequence[str], info: DatasetInfo
             values, plausible_range(info.unit(sensor)), info.is_enumerated(sensor), step_s
         )
         partners, broken = out_of_order.get(sensor, ([], None))
+        states, contradicting = against_state.get(sensor, ([], None))
         row = {
             "sensor": sensor,
             "n_total": n_total,
@@ -217,6 +229,8 @@ def profile_frame(frame: pd.DataFrame, sensors: Sequence[str], info: DatasetInfo
             "spacing_s": sampling.spacing_s,
             "n_out_of_order": 0 if broken is None else int(broken.sum()),
             "order_partners": ",".join(partners),
+            "n_against_state": 0 if contradicting is None else int(contradicting.sum()),
+            "state_conflicts": ",".join(states),
         }
         for name in FIELDS:
             row[name] = getattr(on_grid, name)
@@ -374,6 +388,13 @@ class Profiles:
         if row is None or "order_partners" not in row.index or not row["order_partners"]:
             return []
         return str(row["order_partners"]).split(",")
+
+    def state_conflicts(self, key, sensor: str, joined: bool = False) -> list[str]:
+        """The well states one valve of one instance or bar contradicts; empty if none."""
+        row = self.row(key, sensor, joined)
+        if row is None or "state_conflicts" not in row.index or not row["state_conflicts"]:
+            return []
+        return str(row["state_conflicts"]).split(",")
 
     def matrix(
         self, keys: Sequence, joined: bool, column: str, sensors: Sequence[str] | None = None

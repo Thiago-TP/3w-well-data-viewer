@@ -39,7 +39,7 @@ src/overlap_viewer/
 │   ├── interpolation.py  which samples are measurements and which the historian drew: held, interpolated, genuine, the spacing of the measurements
 │   ├── descriptors.py    what a series amounts to: moments, quantiles, autocorrelation time, signal-to-noise ratio, Zhang's Gaussianity test
 │   ├── cleaning.py       the Toolkit's CleanSignals rule on the profiles: bounds at the quartiles, the sensors discarded and dropped
-│   ├── consistency.py    whether the pressures of one recording read in the order the flow imposes, line by line
+│   ├── consistency.py    whether the readings of one recording agree: the pressures in the order the flow imposes, line by line, and the well state with the valve states
 │   ├── embedding.py      the Instances map: representations, PCA and MDS in numpy, t-SNE and UMAP, the clusterings and their scores, typicality, the one-class audit
 │   ├── dtw.py            the DTW distance between the decimated, z-scored series of one sensor (the `dtw` extra)
 │   ├── correlation.py    how the sensors move together over a scope: Pearson exact over the pooled samples, the mutual-information and nonlinear coefficients
@@ -83,7 +83,8 @@ display.
 
 Constants the rest of the viewer reads: dataset fallbacks used when `dataset.ini` is missing, the
 plausible-value ranges and why they are what they are, the pairs of pressures that must read in
-order and the survey behind them, the fault-tint color ladder, layout numbers,
+order and the survey behind them, what the valves of each well state must read and the survey
+behind that, the fault-tint color ladder, layout numbers,
 and dataset/cache path resolution. Anything the dataset itself can state is read from `dataset.ini`
 at runtime (see `dataset.DatasetInfo`); this module holds only the fallbacks and the viewer's own
 choices.
@@ -158,7 +159,8 @@ view: how it was measured (genuine/interpolated/held sample counts, spacing, fro
 time, SNR, Gaussianity, from `algorithms.descriptors`), computed twice, on the full 1 Hz grid and on
 the measurements alone. It also checks the order of the pressures along each line
 (`algorithms.consistency`), recording per sensor the samples out of order and the pressures it
-contradicts. Cached as one long parquet table next to the catalogue.
+contradicts, and the well state against the valve states, recording per valve the samples that
+contradict the state and the states (`PROFILE_VERSION` 4). Cached as one long parquet table next to the catalogue.
 
 - `DescriptorChoice` (frozen dataclass): one of the five descriptors offered as a coloring or sort
   option (autocorrelation time, SNR, Gaussianity slope, skewness, kurtosis); method `format(value)`.
@@ -169,7 +171,8 @@ contradicts. Cached as one long parquet table next to the catalogue.
   joined bar.
 - `Profiles` (dataclass): the loaded table, with lookup indexes; methods `row(key, sensor, joined)`,
   `descriptor(key, sensor, column, joined)`, `sampling(key, sensor, joined)`, `matrix(keys, joined,
-  column, sensors=None)`, `order_partners(key, sensor, joined)`, `scope(joined)`.
+  column, sensors=None)`, `order_partners(key, sensor, joined)`, `state_conflicts(key, sensor,
+  joined)`, `scope(joined)`.
 - `load_profiles(info, wells, sensors, use_cache=True, progress=None, cache_only=False)`: the
   cache-aware entry point, validated by listing digest, sensor set and `PROFILE_VERSION`; with
   `cache_only` it never reads the data and returns `None` for a missing or stale cache, which is how
@@ -230,7 +233,8 @@ share further into measured-vs-filled when `profiles.Profiles` are supplied.
   `instance_shares`, `measured`; methods `measured_share`, `spacing_s`, `coverage_order`.
 - `Availability` (frozen dataclass): per-bar raw arrays; classmethods `from_wells(views, info,
   threshold, joined_stats=None, profiles=None)` (the main builder) and `from_catalogue(...)`; methods
-  `index_of(well, bar)`, `measured_of`, `shares_of`, `implausible_any`, `grouped(keys, order, mask)`
+  `index_of(well, bar)`, `measured_of`, `shares_of`, `implausible_any`, `order_any`,
+  `out_of_order_pairs`, `state_any`, `state_conflicts_of`, `grouped(keys, order, mask)`
   (folds bars into an `AvailabilityTable`), `total(key, mask)`.
 - `PairTable` (frozen dataclass): square sensor×sensor co-validity matrix for one scope; method
   `grouped_order()`: spectral seriation (Fiedler-vector ordering) so co-recorded sensors sit
@@ -417,6 +421,24 @@ instance and joined bar, recording per sensor `n_out_of_order` and `order_partne
 - `orders_of(present)`: the pairs asked of a recording with those pressures measured, the
   production line neighbour by neighbour.
 - `pressure_order_breaks(frame, tolerance, min_share)`: the pairs out of order.
+
+It also checks the `state` label against the valve states, as the 3W 2.0.0 article defines each
+operational status by the positions of the valves, under the rules set in `config`
+(`STATE_VALVE_RULES` over `PRODUCTION_VALVES`, `TREE_PRODUCTION_VALVES` and `CROSSOVER_VALVES`,
+the grace around a change of the label and the minimum share). Only the valves recorded decide a
+rule: a valve not recorded or in between (0.5), or a choke opening outside its plausible range,
+says nothing, and a choke is closed at 0 %. The instance window runs it on every block it loads.
+
+- `StateBreak` (frozen dataclass): `state`, `compared`, `broken`, `mask`, and `valves`, per valve
+  that contradicts the label, what it reads (`OPEN` or `CLOSED`) and where; `share`, `name` and
+  `readings()`, the text `ESTADO-W1 closed, ESTADO-PXO open`.
+- `valve_positions(frame, valve)`: 1 open, 0 closed, NaN where the valve says nothing.
+- `state_valve_breaks(frame, grace, min_share)`: the states the valves contradict.
+- `valves_by_sensor(breaks)`: per valve, the states it contradicts and the samples where.
+
+The profile pass runs it on every instance and joined bar too, recording per valve
+`n_against_state` and `state_conflicts`, which `Availability` reads into `against_state` and
+`state_conflicts` for the red top-left mark of the pages (`items.STATE_MARK`).
 
 ### `embedding.py`
 
@@ -609,12 +631,14 @@ anchored note text.
 - `WheelToParent`: forwards a plain wheel event up to the enclosing scroll area.
 - `SegmentsItem`: full-height colored spans along x with optional labels and hatching (recording
   blocks, label shading); another texture than the unlabeled one can be given (the zero padding of
-  a window).
+  a window). `conflict_brush()` is the texture of a stretch whose well state its valves contradict,
+  over the theme's conflict red.
 - `SeamsItem`: dashed vertical lines marking where a merged recording passes from one instance to
   the next; with `stitch=True`, solid lines where a stitched well's axis jumps from one recording
   to the next.
 - `InstanceBarsItem`: draws all instance bars of one well timeline: fault-colored fill,
-  hover/overlap highlighting, implausible-reading corner marks, the timestamp label.
+  hover/overlap highlighting, the corner marks (`IMPLAUSIBLE_MARK` top-right, `ORDER_MARK`
+  bottom-right, `STATE_MARK` top-left in red, painted by `draw_marks`), the timestamp label.
 - `TimeAxisItem`: labels a `TimeMap`-laid axis with real dates at two tick levels.
 - `AnchoredText`: a note pinned to a fixed fraction of the plot's view rect regardless of zoom/pan.
 
@@ -668,6 +692,8 @@ shared by both the main window and instance windows.
 
 - `Figures`: loads and caches every documented figure image, attachable to a `QTextBrowser`; method
   `html(name)`.
+- `valve_rule_text(code)`: what the valves of one well state must read, from
+  `config.STATE_VALVE_RULES`, for the Well status tab.
 - `fault_page`, `variable_page`, `state_page`, `availability_help_page`, `map_help_page`,
   `model_help_page`, `dispersion_help_page`, `windows_help_page`, `usage_page`: each assembles one tab's HTML from
   `backend.help_text` content.
