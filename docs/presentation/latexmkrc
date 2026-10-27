@@ -1,0 +1,18 @@
+# latexmk configuration for the 5th 3W Workshop presentation.
+#
+# Run `latexmk` in this folder and presentation.pdf is built with LuaLaTeX,
+# the auxiliary files kept in build/ and the PDF written here; `latexmk -C`
+# removes everything built. `latexmk -pdf` builds with pdfLaTeX instead
+# (the deck then uses Fira Sans, see beamerthemews3w.sty).
+
+$pdf_mode = 4;    # LuaLaTeX: the theme picks Trebuchet MS, the template's font, when installed
+$lualatex = 'lualatex -interaction=nonstopmode -file-line-error -synctex=1 %O %S';
+$pdflatex = 'pdflatex -interaction=nonstopmode -file-line-error -synctex=1 %O %S';
+$xelatex  = 'xelatex -interaction=nonstopmode -file-line-error -synctex=1 %O %S';
+
+@default_files = ('presentation.tex');
+
+$aux_dir = 'build';
+$out_dir = '.';
+
+$clean_ext = 'nav snm vrb synctex.gz';

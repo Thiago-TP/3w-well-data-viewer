@@ -172,7 +172,8 @@ functions are documented in detail in the [source `README`](src/README.md).
 ├── docs/
 │   ├── gui/                  one detailed README per page, linked from the table above
 │   ├── assets/               screenshots, taken again by scripts/screenshots.py, the platform schematics the help shows
-│   └── papers/               the 3W data articles, the thesis and the graduation project the help draws on
+│   ├── papers/               the 3W data articles, the thesis and the graduation project the help draws on
+│   └── presentation/         the beamer slides of the talk at the 5th 3W Workshop, built by latexmk from the official template
 ├── examples/                 one explained example of every file the viewer reads or writes, with its provenance
 ├── scripts/                  what produces the examples and the figures, outside the GUI: export_file_list.py, pca_control_chart.py, screenshots.py
 ├── tests/                    the test suite, one module per subpackage or analysis, sharing a synthetic 3W layout
