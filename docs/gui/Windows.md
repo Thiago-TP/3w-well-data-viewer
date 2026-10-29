@@ -30,7 +30,8 @@ one sensor over 326 instances; they are read (two columns of every file) and cut
 seconds, and kept for the session.
 
 - **Options**, at the left of the toolbar, shows and hides **Size**, **View** and the row of
-  filters; **Well**, **Sensor** and **Instance** stay in view.
+  filters; **Well**, **Sensor** and **Instance** stay in view. **Details**, at the right end of the
+  toolbar, shows the table of the windows at the top left, which starts hidden.
 - **Well**, **Sensor** and **Instance** choose what is cut: the page opens on the well with the
   most instances and on the first of the sensors the `3w_estudo` sensor study found clearest
   (P-TPT, T-TPT, P-MON-CKP, …) that is live in the well; the count beside a sensor is how many of the

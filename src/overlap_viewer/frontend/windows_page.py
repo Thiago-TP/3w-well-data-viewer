@@ -32,7 +32,7 @@ import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, QTimer, Signal
-from PySide6.QtGui import QBrush, QColor
+from PySide6.QtGui import QAction, QBrush, QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -365,6 +365,7 @@ class WindowsPage(QWidget):
             lambda current, previous: self._on_row(current.row())
         )
         self._table.doubleClicked.connect(lambda index: self.open_selected())
+        self._table.setVisible(self._show_details.isChecked())
 
         self._stack = QStackedWidget()
         self._stack.addWidget(self._build_grid_box())
@@ -395,7 +396,9 @@ class WindowsPage(QWidget):
     def _build_toolbar(self) -> QWidget:
         """The first row: the well, the sensor and the instance; the cut behind *Options*.
 
-        *Open instance* sits at its right end, in view either way.
+        At its right end, *Open instance* and *Details*, which shows the table of
+        the windows at the top left: hidden at first, since the strip, the
+        thumbnails and the window drawn large already say what most look for.
         """
         self.options = OptionsAction(self)
         bar = lead = toolbar("Windows")
@@ -450,6 +453,15 @@ class WindowsPage(QWidget):
             "Open the instance of the window selected in an instance window, on this sensor"
         )
         open_action.triggered.connect(self.open_selected)
+        trailing.addSeparator()
+        self._show_details = QAction("Details", self)
+        self._show_details.setCheckable(True)
+        self._show_details.setToolTip(
+            "Show or hide the table of the windows at the top left, one row per window with its "
+            "instance, fault, start, label and the statistic on show"
+        )
+        self._show_details.toggled.connect(lambda shown: self._table.setVisible(shown))
+        trailing.addAction(self._show_details)
         return bar_row(lead, bar, trailing=trailing)
 
     def _build_filter_bar(self) -> QToolBar:
