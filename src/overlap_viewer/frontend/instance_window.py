@@ -118,6 +118,7 @@ from overlap_viewer.frontend.items import (
     conflict_brush,
 )
 from overlap_viewer.frontend.loading import FrameCache
+from overlap_viewer.frontend.options import OptionsAction
 from overlap_viewer.frontend.overview import ElidedLabel
 from overlap_viewer.frontend.placements import PlacementChecks
 from overlap_viewer.frontend.spectral_items import (
@@ -196,6 +197,10 @@ def in_own_theme(method: Callable) -> Callable:
     return wrapper
 
 
+OPTIONS_TIP = (
+    "Show or hide the options of this window: its theme, the join of its instances and the row "
+    "of views of every signal. The actions and the feature panel's toggle stay in view."
+)
 NORMALIZE_TIP = (
     "Scale every trace to its own level: each reading as standard deviations from the mean of that "
     "sensor over the whole block, readings outside the plausible range left out first, as the "
@@ -634,9 +639,14 @@ class InstanceWindow(QMainWindow):
         toolbar = QToolBar("View")
         toolbar.setMovable(False)
         self.addToolBar(toolbar)
+        # How the window draws (its theme, its join, the views row) sits behind
+        # *Options*; the actions and the panel toggles stay in view.
+        self.options = OptionsAction(self, OPTIONS_TIP)
+        toolbar.addAction(self.options)
+        toolbar.addSeparator()
         # In the main window's order: the theme, then the actions, then what
         # belongs to this window alone.
-        toolbar.addWidget(QLabel(" Theme "))
+        self.options.add(toolbar.addWidget(QLabel(" Theme ")))
         self._theme_box = QComboBox()
         for text, name in WINDOW_THEMES:
             self._theme_box.addItem(text, name)
@@ -644,8 +654,8 @@ class InstanceWindow(QMainWindow):
         self._theme_box.currentIndexChanged.connect(
             lambda *_: self.set_window_theme(self._theme_box.currentData())
         )
-        toolbar.addWidget(self._theme_box)
-        toolbar.addSeparator()
+        self.options.add(toolbar.addWidget(self._theme_box))
+        self.options.add(toolbar.addSeparator())
         reset = QAction("Reset views", self)
         reset.setShortcut("Ctrl+R")
         reset.setToolTip(
@@ -662,8 +672,8 @@ class InstanceWindow(QMainWindow):
         close.setShortcuts(["Esc", "Ctrl+W"])
         close.triggered.connect(self.close)
         toolbar.addAction(close)
-        toolbar.addSeparator()
-        toolbar.addWidget(self._build_join_check())
+        self.options.add(toolbar.addSeparator())
+        self.options.add(toolbar.addWidget(self._build_join_check()))
         toolbar.addSeparator()
         self._show_features = QAction("Features", self)
         self._show_features.setCheckable(True)
@@ -688,6 +698,7 @@ class InstanceWindow(QMainWindow):
         views_bar = QToolBar("Views")
         views_bar.setMovable(False)
         self.addToolBar(views_bar)
+        self.options.add(views_bar)  # once in place: adding a toolbar shows it
         views_bar.addWidget(QLabel(" Views "))
         for view in VIEWS:
             check = QCheckBox(VIEW_NAMES[view])

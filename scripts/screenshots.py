@@ -243,6 +243,7 @@ def main(argv=None) -> int:
         if instances is None:
             print("could not open the instance window", file=sys.stderr)
         else:
+            instances.options.setChecked(True)  # as the pages: the figure shows the options
             settle(3.0)
             if shooter.wants("instance_window"):
                 # As it opens: on the analog sensors of the seabed.

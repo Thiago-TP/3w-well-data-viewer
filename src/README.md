@@ -665,7 +665,7 @@ that title bar on hover.
 
 ### `options.py`
 
-Every page opens with the controls of how it draws hidden behind one
+Every page and every instance window opens with the controls of how it draws hidden behind one
 checkable *Options* button; what picks the data on show (a fault, a sensor, a well, a scope) and the
 toggles of the side panels stay in view.
 
