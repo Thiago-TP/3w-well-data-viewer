@@ -762,7 +762,7 @@ clustering scores and a "label audit" list of instances a one-class model disagr
 ### `dispersion_page.py`
 
 The Dispersions page: draws two chosen sensors against each other as a point cloud over a scope
-(all/one class/one well, optionally joined), with density shading, coloring modes,
+(all/one class/one well), with density shading, coloring modes,
 measurements-only filtering, label-period filters, and hover/click on individual samples.
 
 - `DispersionPage(QWidget)`: signals `status`, `summary_changed`,

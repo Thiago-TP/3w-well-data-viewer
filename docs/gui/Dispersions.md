@@ -13,16 +13,15 @@ the measurements alone
 ![Dispersions page](../assets/dispersion.png)
 
 - **X**, **Y** are the two sensors (analog ones; readings outside the plausible range left out) and
-  **Over** the scope: every real instance, one fault class or one well, the joined bars with **Join
-  overlapping instances**. The first look at a scope reads its instances in full behind a progress
+  **Over** the scope: every real instance, one fault class or one well. The first look at a scope reads its instances in full behind a progress
   dialog, every analog sensor at once, and keeps an even subsample of the rows for the session,
   400,000 in all (one row in a few for one well, one in fifty for the whole dataset, which takes
   about two minutes), so that everything else is instant; at most 150,000 of them are drawn as
   dots, evenly, and the **density** behind the dots, a two-dimensional histogram on a logarithmic
   scale, counts them all.
 - **Color by** colors the dots by fault class, by well or by label period, or shows the density
-  alone; **Label periods** switches the samples of normal operation, the transient, the steady
-  state and the unlabeled on and off, so that a fault's steady state alone shows the relation under
+  alone; the **Normal operation**, **Transient**, **Steady state** and **Unlabeled** boxes switch
+  those samples on and off, so that a fault's steady state alone shows the relation under
   the fault and normal operation alone the relation it departs from.
 - **Measurements only** keeps the samples at which both sensors were actually read, a few per cent
   of the dots, from which the historian's straight trajectories vanish. It carries a caveat of its

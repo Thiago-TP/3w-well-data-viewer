@@ -5,7 +5,7 @@ figures of one instance, and what they show is the historian's lines: the
 cloud of two interpolated series is the trajectories of the interpolations,
 straight segments between the few instants that were measured. This page
 draws that cloud for any pair of sensors over every real instance, one fault
-class or one well (or the joined bars) and lets it be read rather than
+class or one well and lets it be read rather than
 looked at: every dot is a sample that names its instance and its instant on
 hover, lights up every other dot of that instance while the rest of the
 cloud fades, and opens it on click, on the two sensors of the plot; the
@@ -131,7 +131,7 @@ class DispersionPage(QWidget):
         self._catalogue: pd.DataFrame | None = None
         self._wells: list[WellData] = []
         self._availability: Availability | None = None
-        # The clouds read so far, by (scope kind, scope key, joined).
+        # The clouds read so far, by (scope kind, scope key).
         self._clouds: dict[tuple, di.Cloud] = {}
         self._cloud: di.Cloud | None = None
         self._pair: di.Pair | None = None
@@ -208,14 +208,6 @@ class DispersionPage(QWidget):
         self._scope.setToolTip(SCOPE_TIP)
         self._scope.currentIndexChanged.connect(self._refresh)
         bar.addWidget(self._scope)
-        self._join = QCheckBox("Join overlapping instances")
-        self._join.setToolTip(
-            "Read the joined bars (the merged recordings of the instances of a well that overlap "
-            "in time and agree in their labels) instead of the instances, so that a sample two "
-            "windows share is drawn once."
-        )
-        self._join.toggled.connect(self._refresh)
-        bar.addWidget(self._join)
 
         bar.addSeparator()
         bar.addWidget(QLabel(" Color by "))
@@ -235,12 +227,10 @@ class DispersionPage(QWidget):
     def _build_second_bar(self) -> QToolBar:
         bar = QToolBar("Filters")
         bar.setMovable(False)
-        label = QLabel(" Label periods ")
-        label.setToolTip(PERIODS_TIP)
-        bar.addWidget(label)
         self._periods: dict[int, QCheckBox] = {}
         for code, name in enumerate(di.PERIODS):
-            check = QCheckBox(di.PERIOD_NAMES[name])
+            text = di.PERIOD_NAMES[name]
+            check = QCheckBox(text[:1].upper() + text[1:])
             check.setChecked(True)
             check.setToolTip(PERIODS_TIP)
             check.toggled.connect(self._redraw)
@@ -289,10 +279,6 @@ class DispersionPage(QWidget):
         return None if data is None else str(data)
 
     @property
-    def joined(self) -> bool:
-        return self._join.isChecked()
-
-    @property
     def coloring(self) -> str:
         return self._coloring.currentText()
 
@@ -306,7 +292,7 @@ class DispersionPage(QWidget):
 
     def _scope_key(self) -> tuple:
         kind, key = self._scope.currentData() or ("all", -1)
-        return (str(kind), int(key), self.joined)
+        return (str(kind), int(key))
 
     def _scope_name(self) -> str:
         text = self._scope.currentText().split(" (")[0]
@@ -411,9 +397,6 @@ class DispersionPage(QWidget):
         self._pending = False
         self._refresh()
 
-    def _view_wells(self, joined: bool) -> list[WellData]:
-        return [well.joined() for well in self._wells] if joined else self._wells
-
     def _in_scope(self, data: WellData, index: int, kind: str, key: int) -> bool:
         if kind == "well":
             return data.well == key
@@ -434,10 +417,10 @@ class DispersionPage(QWidget):
             return True
         if self._availability is None:
             return False
-        kind, scope_key, joined = key
+        kind, scope_key = key
         bars = [
             (data, index)
-            for data in self._view_wells(joined)
+            for data in self._wells
             for index in range(data.n_instances)
             if self._in_scope(data, index, kind, scope_key)
         ]
@@ -447,9 +430,8 @@ class DispersionPage(QWidget):
         reader = di.DispersionPass(
             analog, bounds, len(bars), transient_offset=self.info.transient_offset
         )
-        noun = "bars" if joined else "instances"
         dialog, progress = progress_dialog(
-            f"Reading the {len(bars)} {noun} of {self._scope_name()} for the dispersion view "
+            f"Reading the {len(bars)} instances of {self._scope_name()} for the dispersion view "
             f"(every analog sensor, one row in a few)…",
             self.window(),
         )
@@ -464,7 +446,7 @@ class DispersionPage(QWidget):
                     int(data.well),
                     int(index),
                     int(row["fault_class"]),
-                    str(row["file"]) if "file" in data.rows.columns and not joined else "",
+                    str(row["file"]) if "file" in data.rows.columns else "",
                     str(row["title"]),
                     pd.Timestamp(frame.index[0]) if len(frame) else pd.Timestamp(row["start"]),
                 )
@@ -635,12 +617,11 @@ class DispersionPage(QWidget):
 
     def _caption(self, pair: di.Pair) -> str:
         cloud = self._cloud
-        noun = "bars" if self.joined else "instances"
         parts = [
             (
                 f"{len(self._dots):,} dots of {pair.n:,} samples of {self.x} × {self.y}, kept one "
                 f"in {cloud.stride:.0f} from the {cloud.n_samples:,} of the {cloud.n_instances} "
-                f"{noun} of {self._scope_name()}"
+                f"instances of {self._scope_name()}"
             )
         ]
         if len(self.periods) < len(di.PERIODS):
@@ -676,9 +657,8 @@ class DispersionPage(QWidget):
 
     def _summary_text(self, pair: di.Pair) -> str:
         cloud = self._cloud
-        noun = "bars" if self.joined else "instances"
         return (
-            f"{pair.n:,} samples of {self.x} × {self.y} over {cloud.n_instances} {noun} of "
+            f"{pair.n:,} samples of {self.x} × {self.y} over {cloud.n_instances} instances of "
             f"{self._scope_name()} "
         )
 
@@ -793,7 +773,7 @@ class DispersionPage(QWidget):
             return
         event.accept()
         ref = self._cloud.ref(int(self._pair.rows[index]))
-        data = next((w for w in self._view_wells(self.joined) if w.well == ref.well), None)
+        data = next((w for w in self._wells if w.well == ref.well), None)
         if data is not None:
             # On the two sensors of the plot, so the relation read in the plane
             # can be followed in time.

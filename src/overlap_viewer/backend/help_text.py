@@ -1311,8 +1311,8 @@ MODEL_SOURCES = (
 
 DISPERSION_INTRO = (
     "The <b>Dispersions</b> page draws two sensors against each other, every sample of the "
-    "instances of a scope one dot (over every real instance, one fault class or one well, as "
-    "instances or as the joined bars), with the density of the samples shaded behind the dots. "
+    "instances of a scope one dot (over every real instance, one fault class or one well), "
+    "with the density of the samples shaded behind the dots. "
     "It is the scatter plot of Melo's exploratory methodology made readable: a static scatter of "
     "a million points is a smear, and this one names the instance and the instant of every dot "
     "on hover and lights up every other dot of that instance, opens the instance on a click, "
@@ -1361,14 +1361,13 @@ DISPERSION_NOTES = [
             "<i>Over</i> is the scope, and it carries the caveat of every pooled view: two clouds "
             "side by side may be two wells rather than one relation, since wells run at different "
             "levels, so a well's own scope is the one that shows the process alone, and "
-            "<i>Color by: Well</i> is how to tell the two apart in a class's cloud. <i>Label "
-            "periods</i> choose the samples by what the experts labeled the well as doing at that "
+            "<i>Color by: Well</i> is how to tell the two apart in a class's cloud. The "
+            "<i>label period</i> boxes (normal operation, transient, steady state, unlabeled) "
+            "choose the samples by what the experts labeled the well as doing at that "
             "instant: a fault's steady state alone shows the relation under the fault, normal "
             "operation alone the relation the fault departs from, the transient the path between; "
-            "<i>Color by: Label period</i> draws the three in one cloud. <i>Color by: Fault "
-            "class</i> colors every dot by the folder of its instance. <i>Join overlapping "
-            "instances</i> reads the merged recordings of the bars instead of the windows, so that "
-            "a sample two windows share is drawn once."
+            "<i>Color by: Label period</i> draws them in one cloud. <i>Color by: Fault "
+            "class</i> colors every dot by the folder of its instance."
         ),
     ),
     (
