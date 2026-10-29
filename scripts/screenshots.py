@@ -128,6 +128,10 @@ def main(argv=None) -> int:
     settle(1.5)
 
     tabs = window._tabs  # the main window offers no public accessor for its tabs
+    # Every page opens with its options hidden; the figures show them, since
+    # the docs beside each figure describe them.
+    for each in window.pages:
+        each.options.setChecked(True)
 
     def page(widget, name, size=PAGE, wait=1.5):
         if not shooter.wants(name):
@@ -213,6 +217,8 @@ def main(argv=None) -> int:
     # a padded window side by side. The feature view is WELL-00014's P-TPT under
     # severe slugging, whose spread tells the event windows from the normal ones.
     windows = window.windows_page
+    # The table of the windows starts hidden too; the figures show it, which Windows.md describes.
+    windows._show_details.setChecked(True)
     if page(windows, "windows", wait=1.0):
         settle(8.0)  # reads one sensor of every instance of the well the first time
         shooter.save(window, "windows")
@@ -239,6 +245,7 @@ def main(argv=None) -> int:
         if instances is None:
             print("could not open the instance window", file=sys.stderr)
         else:
+            instances.options.setChecked(True)  # as the pages: the figure shows the options
             settle(3.0)
             if shooter.wants("instance_window"):
                 # As it opens: on the analog sensors of the seabed.

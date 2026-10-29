@@ -14,6 +14,8 @@ been read (a header never starts the pass).
 
 ![Timelines page](../assets/overview.png)
 
+- **Options**, at the left of the page's toolbar, shows and hides every control of the page: all of
+  them are about how the wells are drawn, so the page opens on the grid alone.
 - **Hover** a bar: it gets a heavy outline, every instance of the well that overlaps it gets a
   lighter one, the stretch they share is hatched, every other bar fades, and the status bar names
   the instance, its fault, how far the fault got, its time span, size, stack level and partners,
@@ -26,7 +28,7 @@ been read (a header never starts the pass).
   instance it overlaps.
 - **Click a color in the key**: the grid shows only the wells that recorded that fault. Clicking it
   again, or the button that appears at the right of the page's toolbar, brings every well back.
-- **Join overlapping instances** (toolbar checkbox) merges the instances of a well that overlap in
+- **Join overlapping instances** (behind *Options*) merges the instances of a well that overlap in
   time into one bar wherever their labels agree on the shared stretch; an unlabeled sample agrees
   with anything. Instances whose labels disagree there stay apart, so what still overlaps after the
   join is exactly the labeling conflicts, and *Wells with overlaps* then lists the wells that have

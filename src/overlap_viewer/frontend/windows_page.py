@@ -32,7 +32,7 @@ import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, QTimer, Signal
-from PySide6.QtGui import QBrush, QColor
+from PySide6.QtGui import QAction, QBrush, QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -80,6 +80,7 @@ from overlap_viewer.frontend.items import (
     restyle_axes,
 )
 from overlap_viewer.frontend.loading import progress_dialog
+from overlap_viewer.frontend.options import OptionsAction, bar_row, toolbar
 from overlap_viewer.frontend.overview import ElidedLabel
 
 HINT = (
@@ -364,6 +365,7 @@ class WindowsPage(QWidget):
             lambda current, previous: self._on_row(current.row())
         )
         self._table.doubleClicked.connect(lambda index: self.open_selected())
+        self._table.setVisible(self._show_details.isChecked())
 
         self._stack = QStackedWidget()
         self._stack.addWidget(self._build_grid_box())
@@ -391,9 +393,17 @@ class WindowsPage(QWidget):
 
     # -- construction
 
-    def _build_toolbar(self) -> QToolBar:
-        bar = QToolBar("Windows")
-        bar.setMovable(False)
+    def _build_toolbar(self) -> QWidget:
+        """The first row: the well, the sensor and the instance; the cut behind *Options*.
+
+        At its right end, *Open instance* and *Details*, which shows the table of
+        the windows at the top left: hidden at first, since the strip, the
+        thumbnails and the window drawn large already say what most look for.
+        """
+        self.options = OptionsAction(self)
+        bar = lead = toolbar("Windows")
+        lead.addAction(self.options)
+        lead.addSeparator()
         bar.addWidget(QLabel(" Well "))
         self._well = QComboBox()
         self._well.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
@@ -414,6 +424,7 @@ class WindowsPage(QWidget):
         self._instance.currentIndexChanged.connect(self._on_instance_changed)
         bar.addWidget(self._instance)
 
+        bar = self.options.add(toolbar("Windows options"))
         bar.addSeparator()
         bar.addWidget(QLabel(" Size "))
         self._size = QComboBox()
@@ -436,17 +447,26 @@ class WindowsPage(QWidget):
         self._view.setToolTip(VIEW_TIP)
         self._view.currentIndexChanged.connect(self._on_view_changed)
         bar.addWidget(self._view)
-        bar.addSeparator()
-        open_action = bar.addAction("Open instance")
+        trailing = toolbar("Windows actions")
+        open_action = trailing.addAction("Open instance")
         open_action.setToolTip(
             "Open the instance of the window selected in an instance window, on this sensor"
         )
         open_action.triggered.connect(self.open_selected)
-        return bar
+        trailing.addSeparator()
+        self._show_details = QAction("Details", self)
+        self._show_details.setCheckable(True)
+        self._show_details.setToolTip(
+            "Show or hide the table of the windows at the top left, one row per window with its "
+            "instance, fault, start, label and the statistic on show"
+        )
+        self._show_details.toggled.connect(lambda shown: self._table.setVisible(shown))
+        trailing.addAction(self._show_details)
+        return bar_row(lead, bar, trailing=trailing)
 
     def _build_filter_bar(self) -> QToolBar:
-        bar = QToolBar("Filters")
-        bar.setMovable(False)
+        """The second row, the filters of the windows, all of it behind *Options*."""
+        bar = self.options.add(toolbar("Filters"))
         bar.addWidget(QLabel(" Fault "))
         self._fault = QComboBox()
         self._fault.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)

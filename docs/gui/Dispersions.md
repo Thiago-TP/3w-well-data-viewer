@@ -12,6 +12,9 @@ the measurements alone
 
 ![Dispersions page](../assets/dispersion.png)
 
+- **Options**, at the left of the toolbar, shows and hides **Color by**, **Measurements only** and
+  the row of the label periods and the density; **X**, **Y**, **Over** and the color key, on a row
+  of its own that wraps when the window is narrow, stay in view.
 - **X**, **Y** are the two sensors (analog ones; readings outside the plausible range left out) and
   **Over** the scope: every real instance, one fault class or one well. The first look at a scope reads its instances in full behind a progress
   dialog, every analog sensor at once, and keeps an even subsample of the rows for the session,

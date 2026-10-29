@@ -27,7 +27,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
-    QSizePolicy,
     QToolBar,
     QVBoxLayout,
     QWidget,
@@ -48,6 +47,7 @@ from overlap_viewer.frontend import styling
 from overlap_viewer.frontend.heatmap import ColorKey
 from overlap_viewer.frontend.items import AnchoredText, ScrollFriendlyViewBox, restyle_axes
 from overlap_viewer.frontend.loading import progress_dialog
+from overlap_viewer.frontend.options import OptionsAction, bar_row, toolbar
 from overlap_viewer.frontend.overview import ElidedLabel
 from overlap_viewer.frontend.passes import Passes
 
@@ -155,6 +155,11 @@ class DispersionPage(QWidget):
         layout.setSpacing(4)
         layout.addWidget(self._build_toolbar())
         layout.addWidget(self._build_second_bar())
+        # The key of the dots' colors, on a row of its own under the bars, in
+        # view whether or not the options are: it wraps where it is too wide.
+        self._key = ColorKey()
+        self._key.setContentsMargins(8, 0, 8, 0)
+        layout.addWidget(self._key)
         self._plot_widget = pg.PlotWidget(viewBox=ScrollFriendlyViewBox())
         plot = self._plot_widget.getPlotItem()
         plot.hideButtons()
@@ -188,9 +193,12 @@ class DispersionPage(QWidget):
 
     # -- construction
 
-    def _build_toolbar(self) -> QToolBar:
-        bar = QToolBar("Dispersion")
-        bar.setMovable(False)
+    def _build_toolbar(self) -> QWidget:
+        """The first row: the two sensors and the scope, then the coloring behind *Options*."""
+        self.options = OptionsAction(self)
+        bar = lead = toolbar("Dispersion")
+        lead.addAction(self.options)
+        lead.addSeparator()
         bar.addWidget(QLabel(" X "))
         self._x = QComboBox()
         self._x.setToolTip(SENSOR_TIP)
@@ -211,6 +219,7 @@ class DispersionPage(QWidget):
         self._scope.currentIndexChanged.connect(self._refresh)
         bar.addWidget(self._scope)
 
+        bar = self.options.add(toolbar("Dispersion options"))
         bar.addSeparator()
         bar.addWidget(QLabel(" Color by "))
         self._coloring = QComboBox()
@@ -224,11 +233,11 @@ class DispersionPage(QWidget):
         self._genuine.setToolTip(GENUINE_TIP)
         self._genuine.toggled.connect(self._redraw)
         bar.addWidget(self._genuine)
-        return bar
+        return bar_row(lead, bar)
 
     def _build_second_bar(self) -> QToolBar:
-        bar = QToolBar("Filters")
-        bar.setMovable(False)
+        """The second row, all of it behind *Options*: the label periods and the density."""
+        bar = self.options.add(toolbar("Filters"))
         self._periods: dict[int, QCheckBox] = {}
         for code, name in enumerate(di.PERIODS):
             text = di.PERIOD_NAMES[name]
@@ -244,12 +253,6 @@ class DispersionPage(QWidget):
         self._density_check.setToolTip(DENSITY_TIP)
         self._density_check.toggled.connect(self._redraw)
         bar.addWidget(self._density_check)
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        bar.addWidget(spacer)
-        self._key = ColorKey()
-        bar.addWidget(self._key)
-        bar.addWidget(QLabel("  "))
         return bar
 
     # -- appearance
@@ -503,11 +506,18 @@ class DispersionPage(QWidget):
         }
 
     def _period_colors(self) -> dict[int, str]:
+        """Normal operation's green, an amber while the fault installs itself, a fault's red once
+        it has, the faint grey for what nobody labeled.
+
+        Hues apart from one another and from the slate blue of the density behind
+        the dots: the first set (that blue for normal, two greys for steady and
+        unlabeled) put three of the four within reach of one another as dots.
+        """
         colors = theme.current()
         return {
-            di.NORMAL: colors.live,
+            di.NORMAL: colors.faults[0],
             di.TRANSIENT: colors.warning,
-            di.STEADY: colors.fallback_fault,
+            di.STEADY: colors.faults[3],
             di.UNLABELED: colors.faint,
         }
 
@@ -589,13 +599,17 @@ class DispersionPage(QWidget):
             self._dot_fills = fills
             for color in sorted(set(fills.tolist())):
                 picked = np.flatnonzero(fills == color)
+                # The alpha set on the color: Qt reads eight hex digits as #AARRGGBB,
+                # so appending it to #rrggbb shifted every channel along by one.
+                fill = QColor(color)
+                fill.setAlpha(DOT_ALPHA)
                 item = pg.ScatterPlotItem(
                     x=pair.x[self._dots[picked]],
                     y=pair.y[self._dots[picked]],
                     size=DOT_PX,
                     pxMode=True,
                     pen=None,
-                    brush=pg.mkBrush(QColor(color[:7] + f"{DOT_ALPHA:02x}")),
+                    brush=pg.mkBrush(fill),
                 )
                 item.setZValue(10)
                 plot.addItem(item)

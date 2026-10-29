@@ -102,6 +102,7 @@ from overlap_viewer.frontend.items import (
     ScrollFriendlyViewBox,
     SegmentsItem,
 )
+from overlap_viewer.frontend.options import OptionsAction, toolbar
 from overlap_viewer.frontend.spectral_items import (
     TransformControls,
     add_center_lines,
@@ -400,6 +401,8 @@ class SeriesPage(QWidget):
         self._shading: QComboBox | None = None
         self._shading_label: QLabel | None = None
         self._shading_actions: list = []
+        # How the plots are drawn, behind the button a page puts first in its row.
+        self.options = OptionsAction(self)
 
     # -- construction, the parts every page shares
 
@@ -595,8 +598,7 @@ class SeriesPage(QWidget):
         chevron as soon as the page was narrower than a screen; the first row
         now holds what chooses the question, this one what tunes the answer.
         """
-        bar = QToolBar("Parameters")
-        bar.setMovable(False)
+        bar = self.options.add(toolbar("Parameters"))
         self._normalize = QCheckBox("Normalize per instance")
         self._normalize.setToolTip(normalize_tip)
         self._normalize.toggled.connect(self._replot)

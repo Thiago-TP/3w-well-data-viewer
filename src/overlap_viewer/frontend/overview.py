@@ -27,7 +27,6 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSpinBox,
-    QToolBar,
     QToolTip,
     QVBoxLayout,
     QWidget,
@@ -72,6 +71,7 @@ from overlap_viewer.frontend.items import (
     WheelToParent,
 )
 from overlap_viewer.frontend.legend import LegendBar
+from overlap_viewer.frontend.options import OptionsAction, bar_row, toolbar
 from overlap_viewer.frontend.passes import Passes
 from overlap_viewer.frontend.styling import TOOLTIP_FOREVER_MS
 
@@ -709,10 +709,18 @@ class TimelinesPage(QWidget):
 
     # -- construction
 
-    def _build_toolbar(self, columns: int) -> QToolBar:
+    def _build_toolbar(self, columns: int) -> QWidget:
+        """The page's row: *Options* at the left, the filter of the color key at the right.
+
+        Every control of the page is about how the wells are drawn, so all of
+        them sit behind *Options*.
+        """
         passes = self._passes
-        bar = QToolBar("Timelines")
-        bar.setMovable(False)
+        self.options = OptionsAction(self)
+        lead = toolbar("Timelines")
+        lead.addAction(self.options)
+        bar = self.options.add(toolbar("Timelines options"))
+        bar.addSeparator()
 
         bar.addWidget(QLabel(" Columns "))
         self._columns = QSpinBox()
@@ -797,16 +805,14 @@ class TimelinesPage(QWidget):
         key_action.triggered.connect(lambda: self._legend.set_collapsed(not self._legend.collapsed))
         self.addAction(key_action)
 
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        bar.addWidget(spacer)
+        trailing = toolbar("Timelines filter")
         self._fault_button = QPushButton()
         self._fault_button.setToolTip("Show every well again")
         self._fault_button.clicked.connect(lambda: self.toggle_fault_filter(self._fault_filter))
         # A widget in a toolbar is shown through its action, which overrides hide().
-        self._fault_action = bar.addWidget(self._fault_button)
+        self._fault_action = trailing.addWidget(self._fault_button)
         self._fault_action.setVisible(False)
-        return bar
+        return bar_row(lead, bar, trailing=trailing)
 
     def set_catalogue(self, catalogue: pd.DataFrame, wells: list[WellData]) -> None:
         """Take a new catalogue and its wells: join each, read what they recorded, rebuild the grid.

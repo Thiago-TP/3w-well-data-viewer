@@ -22,6 +22,9 @@ trace). A band at the top marks the stretches recorded by two or more of the bar
   the color of the file that labeled it, so a normal period labeled by a *Normal Operation* file
   stays green inside a recording that goes on to develop a fault. Stacked slices also become
   unreadably thin long before seventy of them; one block does not.
+- **Options**, first in the toolbar, shows and hides **Theme**, **Join overlapping instances** and
+  the Views row; the actions, **Features** and **Statistics** stay in view. A window opens with them
+  hidden.
 - **Join overlapping instances** is also a checkbox in this window's own toolbar, and **the group a
   window opens on is all it is ever about**: the box merges exactly the instances on screen, so it
   answers what this group alone amounts to rather than what the whole well does. Two of them that
@@ -51,7 +54,7 @@ trace). A band at the top marks the stretches recorded by two or more of the bar
   tab. The placements are `config.PLACEMENTS`, from table 2 and figure 1 of the 2.0.0 article.
 - All plots **share the time axis**, and the plots of one feature **share their value axis** across
   instances, so the same reading is at the same height everywhere.
-- **Theme**, in the toolbar, paints this window alone light or dark, whatever the main window is
+- **Theme**, behind *Options*, paints this window alone light or dark, whatever the main window is
   in, and *As the main window* follows it again. A window with a theme of its own ignores the main
   window's switches; the others follow them, keeping their zoom.
 - **Normalize per instance**, in the Views row, draws every trace as z-scores over its own block
