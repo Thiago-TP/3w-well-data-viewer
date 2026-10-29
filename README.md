@@ -21,7 +21,7 @@ summarized in the following table and detailed in their own READMEs.
 
 | Page                                    | Question/Exploration                                                                                 | Content                                                                                                                                                                                                                               |
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Timelines](docs/gui/Timelines.md)       | Show at a glance how instances and fault classes spread out across time per well                     | One interactive timeline per well; bars colored by fault, or optionally by sensor availability, measurements, a descriptor, the Toolkit's rule, the map or a loaded model; hover highlights overlaps, click opens the instance window |
+| [Timelines](docs/gui/Timelines.md)       | Show at a glance how instances and fault classes spread out across time per well                     | One interactive timeline per well; bars colored by fault, or optionally by sensor availability or the Toolkit's rule; hover highlights overlaps, click opens the instance window                                                       |
 | [Availability](docs/gui/Availability.md) | Show what each sensor actually recorded, not just what the file declares                             | Three matrices: sensor availability (live/frozen/absent shares), sensor pairs (how often two sensors are recorded at the same instant) and sensor correlations, grouped by fault class, well, or the instances of one                 |
 | [Faults](docs/gui/Faults.md)             | Compare how one fault looks across every well it occurred on                                         | Every real instance of one fault, aligned at its onset, one section per sensor, as small multiples or overlaid, in the time, distribution or spectrum domain                                                                          |
 | [Features](docs/gui/Features.md)         | Compare what one sensor reads across every fault class                                               | One sensor fixed, one section per fault class, the same layouts, domains and transforms as the Faults page                                                                                                                            |
@@ -239,7 +239,7 @@ reading them.
 **Where it shows.** *Load model outputs…*, in the main toolbar, opens a folder in the format. Then:
 a third band, *model*, under the class band of every instance window, plain where the verdict
 agrees with the label under it and **amber where it disagrees**, the header of the block giving the
-agreement; *Bar color: Agreement with the model outputs* on the Timelines; *Color by: Model
+agreement; *Color by: Model
 agreement* on the Instances map; *Sort: Agreement with the model outputs* and *Shade by: Model
 outputs* on the Faults and Features pages, the latter shading the label periods behind the small
 plots with the model's verdicts in the dataset's own vocabulary (a detector's *anomalous* as the
@@ -302,17 +302,16 @@ moments, quantiles, autocorrelation time, signal-to-noise ratio, Gaussianity, Me
 on the grid and on the measurements alone, so that wherever a figure taken on the grid is shown
 the viewer can say so.
 
-The measurements show in four places: as dots on every trace, in the *Measured vs filled* split of
-the availability page, in the Timelines' *Bar color: Measurements of a sensor*, and under the
+The measurements show in three places: as dots on every trace, in the *Measured vs filled* split of
+the availability page, and under the
 *Measurements only* tick of the signal views, where the spectrum becomes a Lomb-Scargle
 periodogram of the readings at their own instants.
 
-The descriptors travel as columns of the catalogue. *Bar color: Descriptor of a sensor*, on the
-Timelines, tints every bar by the autocorrelation time, the signal-to-noise ratio, the Gaussianity
-slope, the skewness or the kurtosis of one sensor, ranked among the bars on show; *Sort*, above the
-instance lists of the Faults and Features pages, orders the instances by the same figures of the
-feature on show, largest first, the tooltip of every instance carrying both the grid's and the
-measurements' value. Each has an *on* box choosing the grid or the measurements, and on the grid
+The descriptors travel as columns of the catalogue. *Sort*, above the instance lists of the
+Faults and Features pages, orders the instances by the autocorrelation time, the signal-to-noise
+ratio, the Gaussianity slope, the skewness or the kurtosis of the feature on show, largest first,
+the tooltip of every instance carrying both the grid's and the measurements' value. It has an *on*
+box choosing the grid or the measurements, and on the grid
 the key, the hover and the tooltip carry the caveat that the historian's lines inflate the first
 two: on 3W 2.0.0 the autocorrelation time of T-JUS-CKP is 444 s on the grid and 73 s on the
 measurements.

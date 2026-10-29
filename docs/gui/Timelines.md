@@ -8,9 +8,9 @@ the instances overlap in time. Untick *Compress silences* for a true calendar ax
 
 The line above each plot sums the well up: its instances (or, joined, its bars), its samples, its
 deepest pile-up, the hours recorded and the span. A sample two overlapping instances share is
-counted in each, and once when *Join overlapping instances* is ticked. Under a *Bar color* that
-names a sensor it adds that sensor's measurements on the well, out of its readings, once the
-profiles have been read (the *Measurements* coloring reads them; a header never starts the pass).
+counted in each, and once when *Join overlapping instances* is ticked. Under *Availability of a
+sensor* it adds that sensor's measurements on the well, out of its readings, once the profiles have
+been read (a header never starts the pass).
 
 ![Timelines page](../assets/overview.png)
 
@@ -45,8 +45,8 @@ profiles have been read (the *Measurements* coloring reads them; a header never 
   - Joined bars that still overlap (a labeling conflict) sit on a lane of their own, and each lane
     stitches into a bar of its own rather than having two disagreeing labels merged. On 3W 2.0.0
     no well has one, so every well stitches into a single bar.
-  - The *Descriptor* and *CleanSignals* colorings judge one recording at a time and leave a
-    stitched bar empty, saying so on hover; the Instances map colorings do the same.
+  - The *CleanSignals* coloring judges one recording at a time and leaves a stitched bar empty,
+    saying so on hover.
   - The largest well, WELL-00002 (326 instances in 20 recordings, 4.6 million samples), takes about
     ten seconds to open and some 1.8 GB while it is open; its instances are read past the cache of
     loaded instances, so the other windows keep theirs.
@@ -55,19 +55,6 @@ profiles have been read (the *Measurements* coloring reads them; a header never 
   empty for one never recorded, so the grid becomes the history of that sensor on every well: an
   era of absence, or a scattering of it. A key of its own takes the place of the fault key while it
   is on; the outline of a bar keeps its fault hue.
-- **Bar color: Measurements of a sensor** tints every bar by the share of the sensor's *live*
-  samples that were actually measured rather than filled in by the plant's historian (see
-  the note on sampling in the root README.md), so an era in which a sensor was archived
-  every two minutes reads apart from one in which it was read every second. Hover a bar for the
-  share and the interval. The first time, it reads every instance in full behind a progress dialog
-  and keeps the result in the cache.
-- **Bar color: Descriptor of a sensor** tints every bar by one figure of the sensor's series (the
-  time its autocorrelation takes to halve, its signal-to-noise ratio, the slope of Zhang's
-  Gaussianity regression, its skewness or its kurtosis), ranked among the bars on show, faint for
-  the smallest and full for the largest, so the grid shows which recordings of a sensor were slow,
-  noisy, heavy-tailed or skewed. The *on* box takes the figure on the 1 Hz grid or on the
-  measurements alone; on the grid the key and the hover carry the caveat that the historian's lines
-  inflate the first two. Hover a bar for both values and the rank.
 - A small **amber triangle** in the corner of a bar marks an instance in which a sensor reads
   outside its plausible range; tinted by one sensor, the mark is for that sensor alone.
 - The same triangle in the **bottom-right corner** marks pressures read out of order along their

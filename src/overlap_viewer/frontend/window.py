@@ -198,14 +198,13 @@ class MainWindow(QMainWindow):
     def _on_map_results(self, results) -> None:
         """What the Instances map computed, handed to the pages that color and sort by it."""
         self._map_results = results
-        self.timelines.set_map_results(results)
         self.faults.set_map_results(results)
         self.features.set_map_results(results)
 
     def set_model_outputs(self, outputs: ModelOutputs | None) -> None:
         """Take a set of model outputs (or none) and hand its agreements to every page."""
         results = self._passes.set_model_outputs(outputs)
-        for page in (self.timelines, self.faults, self.features, self.map):
+        for page in (self.faults, self.features, self.map):
             page.set_model_results(results)
         for window in list(self._windows):
             window.set_model_results(results)

@@ -12,9 +12,8 @@ how typical an instance of its class each is, or by the verdict of a one-class
 model of the normal instances; hovering one names it, clicking one opens its
 time series.
 
-Two things the map computes are handed to the other pages: the clusters and
-the typicality become bar colorings of the Timelines, and the typicality and
-the novelty score become sort keys of the instance lists of the Faults and
+Two things the map computes are handed to the other pages: the typicality
+and the novelty score become sort keys of the instance lists of the Faults and
 Features pages. What is on the right is the **label audit**: the instances
 whose label disagrees with the one-class verdict (a fault instance that looks
 normal, a normal instance that looks anomalous), class by class, each a click

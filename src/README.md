@@ -692,21 +692,19 @@ shared by both the main window and instance windows.
 ### `overview.py`
 
 The Timelines page: a grid of one interactive plot per well, each showing that well's real instances
-as stacked bars colored by fault (or, optionally, by sensor availability, measurement, descriptor,
-cleaning, map or model figures), with hover-to-highlight-overlaps and click-to-open.
+as stacked bars colored by fault (or, optionally, by sensor availability or the Toolkit's cleaning
+rule), with hover-to-highlight-overlaps and click-to-open.
 
 - `describe_instance(data, index, info, availability=None)`: the full status-bar/tooltip
   description of one bar; reused by `availability_page.py`.
 - `WellTimelinePlot(WheelToParent, pg.PlotWidget)`: one well's timeline; signals `hovered(index)`,
   `clicked(index)`; method `set_coloring(fills, marks)`.
 - `TimelinesPage(QWidget)`: the page; signals `status`, `summary_changed`, `open_requested(WellData,
-  index)`. Coloring is dispatched from `_coloring_of(data)` across every mode (fault, availability,
-  measurements, descriptor, cleaning, map, model). Methods `set_catalogue`,
-  `reset_views()`. The wells are drawn plain, joined or stitched
+  index)`. Coloring is dispatched from `_coloring_of(data)` across the three modes (fault,
+  availability, cleaning). Methods `set_catalogue`, `reset_views()`. The wells are drawn plain, joined or stitched
   (`_shown_wells`); the stitch box ticks and locks the join, and gives it back as it found it.
   A stitched well's plot lays its recordings back to back (`TimeMap` with no gap), whatever
-  *Compress silences* says, and the colorings keyed by bar (descriptor, cleaning, map) leave its
-  bar empty.
+  *Compress silences* says, and the cleaning coloring, keyed by bar, leaves its bar empty.
 
 ### `availability_page.py`
 
@@ -807,8 +805,8 @@ every window written with its label and shaded in its color.
   well and sensor (up to `SERIES_CACHE_SAMPLES`); `_rebuild_windows()` cuts it at the size chosen;
   `_ensure_feature()` describes every window once (`windows.describe_windows`) behind a progress
   dialog, cached by well, sensor, size and rule, and hands `View` the figure chosen: one of
-  `FIGURES`, the statistics table's (`descriptors.SUMMARY`) and the Timelines' descriptor
-  coloring's (`profiles.DESCRIPTOR_CHOICES`). `_forget_windows()` empties the table and the
+  `FIGURES`, the statistics table's (`descriptors.SUMMARY`) and the Instances map's
+  (`profiles.DESCRIPTOR_CHOICES`). `_forget_windows()` empties the table and the
   selection before a new cut replaces the windows, and the window selected is found again in it
   by its first sample (`_place_of`, `_window_at`). `_apply_filters()` chooses the windows the boxes let through and draws
   the table, the strip (`_draw_map`, only the windows in view up to `MAX_MAP_WINDOWS`), the grid of
