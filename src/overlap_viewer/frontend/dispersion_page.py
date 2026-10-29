@@ -47,6 +47,7 @@ from overlap_viewer.frontend import styling
 from overlap_viewer.frontend.heatmap import ColorKey
 from overlap_viewer.frontend.items import AnchoredText, ScrollFriendlyViewBox, restyle_axes
 from overlap_viewer.frontend.loading import progress_dialog
+from overlap_viewer.frontend.options import OptionsAction, bar_row, toolbar
 from overlap_viewer.frontend.overview import ElidedLabel
 from overlap_viewer.frontend.passes import Passes
 
@@ -154,8 +155,8 @@ class DispersionPage(QWidget):
         layout.setSpacing(4)
         layout.addWidget(self._build_toolbar())
         layout.addWidget(self._build_second_bar())
-        # The key of the dots' colors, on a row of its own under the bars, where
-        # it wraps rather than fall behind the toolbar's overflow arrow.
+        # The key of the dots' colors, on a row of its own under the bars, in
+        # view whether or not the options are: it wraps where it is too wide.
         self._key = ColorKey()
         self._key.setContentsMargins(8, 0, 8, 0)
         layout.addWidget(self._key)
@@ -192,9 +193,12 @@ class DispersionPage(QWidget):
 
     # -- construction
 
-    def _build_toolbar(self) -> QToolBar:
-        bar = QToolBar("Dispersion")
-        bar.setMovable(False)
+    def _build_toolbar(self) -> QWidget:
+        """The first row: the two sensors and the scope, then the coloring behind *Options*."""
+        self.options = OptionsAction(self)
+        bar = lead = toolbar("Dispersion")
+        lead.addAction(self.options)
+        lead.addSeparator()
         bar.addWidget(QLabel(" X "))
         self._x = QComboBox()
         self._x.setToolTip(SENSOR_TIP)
@@ -215,6 +219,7 @@ class DispersionPage(QWidget):
         self._scope.currentIndexChanged.connect(self._refresh)
         bar.addWidget(self._scope)
 
+        bar = self.options.add(toolbar("Dispersion options"))
         bar.addSeparator()
         bar.addWidget(QLabel(" Color by "))
         self._coloring = QComboBox()
@@ -228,11 +233,11 @@ class DispersionPage(QWidget):
         self._genuine.setToolTip(GENUINE_TIP)
         self._genuine.toggled.connect(self._redraw)
         bar.addWidget(self._genuine)
-        return bar
+        return bar_row(lead, bar)
 
     def _build_second_bar(self) -> QToolBar:
-        bar = QToolBar("Filters")
-        bar.setMovable(False)
+        """The second row, all of it behind *Options*: the label periods and the density."""
+        bar = self.options.add(toolbar("Filters"))
         self._periods: dict[int, QCheckBox] = {}
         for code, name in enumerate(di.PERIODS):
             text = di.PERIOD_NAMES[name]

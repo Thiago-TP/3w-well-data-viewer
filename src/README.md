@@ -53,6 +53,7 @@ src/overlap_viewer/
     ├── spectral_items.py     the parameter widgets, the period axis and the builders of the signal views
     ├── heatmap.py            the matrix widget of the availability page, its tooltips and the keys of the states
     ├── legend.py             the clickable color key and its flow layout
+    ├── options.py            the Options button of a page or window: how it draws, behind one click
     ├── help.py               the help window
     ├── overview.py           the timelines page: the grid of well timelines
     ├── availability_page.py  the availability page: its two matrices (availability, sensor pairs) and what each says
@@ -661,6 +662,21 @@ that title bar on hover.
 - `LegendSwatch(QFrame)`: one clickable color+label entry; signal `clicked(fault_class)`.
 - `LegendBar(QWidget)`: the whole key; signal `fault_clicked(fault_class)`; methods
   `set_entries(entries, fault_names)`, `highlight(keys)`, `set_selected_fault(fault_class)`.
+
+### `options.py`
+
+Every page opens with the controls of how it draws hidden behind one
+checkable *Options* button; what picks the data on show (a fault, a sensor, a well, a scope) and the
+toggles of the side panels stay in view.
+
+- `OptionsAction(QAction)`: the button; `add(part)` puts a part behind it (a whole toolbar, or one
+  action of a toolbar that also holds what stays in view), hidden until the button is checked.
+  Whole toolbars are hidden rather than their controls one by one, so a page's own rules for which
+  of its controls are on show keep working underneath.
+- `toolbar(name)`: a fixed toolbar, the kind every row of a page is made of.
+- `bar_row(*bars, trailing=None)`: toolbars side by side as one row, `trailing` at its right end;
+  a page splits its first row into what stays in view, what *Options* hides, and its panel
+  toggles, so that hiding the options leaves the rest where it was.
 
 ### `help.py`
 

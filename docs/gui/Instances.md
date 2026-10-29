@@ -8,6 +8,8 @@ of the process; everything is an analysis of the catalogue, recomputed on every 
 
 ![Instances page](../assets/instances.png)
 
+- **Options**, at the left of the toolbar, shows and hides **Embedding**, **Color by** and the row
+  of the clustering and its scores; **Representation** and **Label audit** stay in view.
 - **Representation** is what an instance becomes a point by. *Descriptors*: per sensor the moments,
   the quantiles, the autocorrelation time, the signal-to-noise ratio, the Gaussianity slope and how
   it was measured (the profile pass commented in the note on sampling in the root README.md),

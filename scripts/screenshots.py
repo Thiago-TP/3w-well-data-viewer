@@ -128,6 +128,10 @@ def main(argv=None) -> int:
     settle(1.5)
 
     tabs = window._tabs  # the main window offers no public accessor for its tabs
+    # Every page opens with its options hidden; the figures show them, since
+    # the docs beside each figure describe them.
+    for each in window.pages:
+        each.options.setChecked(True)
 
     def page(widget, name, size=PAGE, wait=1.5):
         if not shooter.wants(name):

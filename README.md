@@ -29,6 +29,10 @@ summarized in the following table and detailed in their own READMEs.
 | [Windows](docs/gui/Windows.md)           | See one sensor of a well the way a model reads it: in windows of a fixed size, one label each        | The windows of a well cut in software (256, 512 or 1024 samples, zero padding, each instant once), filterable by instance, fault and label, as a table, thumbnails named and shaded by label, and one of the viewer's statistics per window |
 | [Instances](docs/gui/Instances.md)       | Place every real instance on one plane by what its sensors amount to                                 | A 2D embedding (PCA, t-SNE or UMAP) of each instance's descriptors or DTW shape, colored by class, well, cluster, typicality, novelty or model agreement, with clustering scores and a label-audit of disagreements                   |
 
+Every page opens on what it shows: the controls of how it is drawn sit behind an **Options** button
+at the left of its toolbar, and only what picks the data on show (a fault, a sensor, a well, a
+scope) stays in view until it is clicked.
+
 Furthermore, an *instance window* is available for visualizing the signals and labeling of an instance (see [the color code](docs/gui/ColorCode.md)).
 This window can be accessed whenever user clicks on a representation of an instance (horizontal bar in the Timelines page, points in cluster maps, etc.), and is [documented in detail](docs/gui/InstanceWindow.md).
 Last but not least, `F1` anywhere (or clicking on `Help`) opens the Help modal, which explains what is on screen.

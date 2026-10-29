@@ -54,6 +54,7 @@ from overlap_viewer.backend.profiles import DESCRIPTOR_MODES, Profiles
 from overlap_viewer.frontend.heatmap import ramp_color
 from overlap_viewer.frontend.items import ScrollFriendlyViewBox, restyle_axes
 from overlap_viewer.frontend.loading import progress_dialog
+from overlap_viewer.frontend.options import OptionsAction, bar_row, toolbar
 from overlap_viewer.frontend.overview import ElidedLabel
 from overlap_viewer.frontend.passes import Passes
 from overlap_viewer.frontend.series_page import LIST_WIDTH
@@ -225,9 +226,16 @@ class MapPage(QWidget):
 
     # -- construction
 
-    def _build_toolbar(self) -> QToolBar:
-        bar = QToolBar("Instances map")
-        bar.setMovable(False)
+    def _build_toolbar(self) -> QWidget:
+        """The first row: the representation, which decides what the map is of; the rest behind *Options*.
+
+        The audit's toggle sits at its right end, as the panel toggles of the
+        Faults and Features pages do.
+        """
+        self.options = OptionsAction(self)
+        bar = lead = toolbar("Instances map")
+        lead.addAction(self.options)
+        lead.addSeparator()
         bar.addWidget(QLabel(" Representation "))
         self._representation = QComboBox()
         for key in em.REPRESENTATIONS:
@@ -257,6 +265,7 @@ class MapPage(QWidget):
         self._class.currentIndexChanged.connect(self._recompute)
         self._dtw_actions.append(bar.addWidget(self._class))
 
+        bar = self.options.add(toolbar("Instances map options"))
         bar.addSeparator()
         bar.addWidget(QLabel(" Embedding "))
         self._embedding = QComboBox()
@@ -276,12 +285,23 @@ class MapPage(QWidget):
         self._coloring.model().item(COLORINGS.index("Model agreement")).setEnabled(False)
         bar.addWidget(self._coloring)
 
+        trailing = toolbar("Label audit")
+        self._show_audit = QAction("Label audit", self)
+        self._show_audit.setCheckable(True)
+        self._show_audit.setChecked(True)
+        self._show_audit.setToolTip(AUDIT_TOGGLE_TIP)
+        self._show_audit.toggled.connect(self._on_audit_toggled)
+        trailing.addAction(self._show_audit)
+        # What the user asked of the audit outside the DTW representation,
+        # which hides it: leaving DTW gives it back as it was.
+        self._audit_wanted = True
+
         self._sync_representation_controls()
-        return bar
+        return bar_row(lead, bar, trailing=trailing)
 
     def _build_second_bar(self) -> QToolBar:
-        bar = QToolBar("Clustering")
-        bar.setMovable(False)
+        """The second row, all of it behind *Options*: the clustering, and its scores."""
+        bar = self.options.add(toolbar("Clustering"))
         bar.addWidget(QLabel(" Clustering "))
         self._clustering = QComboBox()
         self._clustering.addItems(list(em.CLUSTERINGS))
@@ -305,16 +325,6 @@ class MapPage(QWidget):
         self._scores_label = QLabel("")
         self._scores_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         bar.addWidget(self._scores_label)
-        bar.addSeparator()
-        self._show_audit = QAction("Label audit", self)
-        self._show_audit.setCheckable(True)
-        self._show_audit.setChecked(True)
-        self._show_audit.setToolTip(AUDIT_TOGGLE_TIP)
-        self._show_audit.toggled.connect(self._on_audit_toggled)
-        bar.addAction(self._show_audit)
-        # What the user asked of the audit outside the DTW representation,
-        # which hides it: leaving DTW gives it back as it was.
-        self._audit_wanted = True
         self._sync_clustering_controls()
         return bar
 

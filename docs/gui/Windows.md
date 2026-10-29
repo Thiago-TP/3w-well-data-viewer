@@ -29,6 +29,8 @@ Nothing is written to disk. The largest well of 3W 2.0.0, WELL-00002, holds 5.7 
 one sensor over 326 instances; they are read (two columns of every file) and cut in about two
 seconds, and kept for the session.
 
+- **Options**, at the left of the toolbar, shows and hides **Size**, **View** and the row of
+  filters; **Well**, **Sensor** and **Instance** stay in view.
 - **Well**, **Sensor** and **Instance** choose what is cut: the page opens on the well with the
   most instances and on the first of the sensors the `3w_estudo` sensor study found clearest
   (P-TPT, T-TPT, P-MON-CKP, …) that is live in the well; the count beside a sensor is how many of the

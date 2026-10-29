@@ -37,8 +37,6 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
-    QToolBar,
     QVBoxLayout,
     QWidget,
 )
@@ -57,6 +55,7 @@ from overlap_viewer.backend.labels import segments_from_json
 from overlap_viewer.backend.palette import fault_color
 from overlap_viewer.frontend.instance_window import PANEL_WIDTH
 from overlap_viewer.frontend.loading import FrameCache
+from overlap_viewer.frontend.options import bar_row, toolbar
 from overlap_viewer.frontend.series_page import (
     LIST_WIDTH,
     InstanceList,
@@ -149,34 +148,35 @@ class FeaturesPage(SeriesPage):
 
     # -- construction
 
-    def _build_toolbar(self) -> QToolBar:
-        bar = QToolBar("Features")
-        bar.setMovable(False)
-        bar.addWidget(QLabel(" Feature "))
+    def _build_toolbar(self) -> QWidget:
+        """The first row: what is drawn, then how behind *Options*, the side panels' toggles at the right."""
+        lead = toolbar("Features")
+        lead.addAction(self.options)
+        lead.addSeparator()
+        lead.addWidget(QLabel(" Feature "))
         self._feature = QComboBox()
         self._feature.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self._feature.setToolTip(FEATURE_TIP)
         self._feature.currentIndexChanged.connect(self._on_feature_changed)
-        bar.addWidget(self._feature)
+        lead.addWidget(self._feature)
 
-        bar.addWidget(QLabel(" Well "))
+        lead.addWidget(QLabel(" Well "))
         self._well = QComboBox()
         self._well.setToolTip(WELL_TIP)
         self._well.currentIndexChanged.connect(self._on_well_changed)
-        bar.addWidget(self._well)
+        lead.addWidget(self._well)
 
-        bar.addSeparator()
-        self.add_alignment_control(bar)
+        options = self.options.add(toolbar("Features options"))
+        options.addSeparator()
+        self.add_alignment_control(options)
 
-        bar.addSeparator()
-        self.add_shared_controls(bar, DOMAIN_TIP, LAYOUT_TIP)
+        options.addSeparator()
+        self.add_shared_controls(options, DOMAIN_TIP, LAYOUT_TIP)
 
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        bar.addWidget(spacer)
+        panels = toolbar("Features panels")
         self._note = QLabel()
-        bar.addWidget(self._note)
-        bar.addSeparator()
+        panels.addWidget(self._note)
+        panels.addSeparator()
         self._show_classes = QAction("Classes", self)
         self._show_classes.setCheckable(True)
         self._show_classes.setChecked(True)
@@ -184,7 +184,7 @@ class FeaturesPage(SeriesPage):
             "Show or hide the list of fault classes on the left, to give the plots its width"
         )
         self._show_classes.toggled.connect(lambda on: self._class_panel.setVisible(on))
-        bar.addAction(self._show_classes)
+        panels.addAction(self._show_classes)
         self._show_instances = QAction("Instances", self)
         self._show_instances.setCheckable(True)
         self._show_instances.setChecked(True)
@@ -192,8 +192,8 @@ class FeaturesPage(SeriesPage):
             "Show or hide the list of instances on the right, to give the plots its width"
         )
         self._show_instances.toggled.connect(lambda on: self._instance_panel.setVisible(on))
-        bar.addAction(self._show_instances)
-        return bar
+        panels.addAction(self._show_instances)
+        return bar_row(lead, options, trailing=panels)
 
     def _build_class_panel(self) -> QWidget:
         panel = QWidget()

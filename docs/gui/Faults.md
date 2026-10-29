@@ -7,6 +7,8 @@ starts where the event begins in each instance, so that the shapes line up whate
 
 ![Faults page](../assets/faults.png)
 
+- **Options**, at the left of the toolbar, shows and hides how the instances are drawn, both rows
+  from **Align at** on; **Fault** and the toggles of the side panels stay in view.
 - **Layout** chooses between the two ways of showing them. *Small multiples*, the default, give
   every instance a plot of its own in a grid under a heading per feature (which gives the samples
   the section draws, and how many were measured), each with its own value

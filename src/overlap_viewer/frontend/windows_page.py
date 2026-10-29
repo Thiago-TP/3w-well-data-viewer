@@ -80,6 +80,7 @@ from overlap_viewer.frontend.items import (
     restyle_axes,
 )
 from overlap_viewer.frontend.loading import progress_dialog
+from overlap_viewer.frontend.options import OptionsAction, bar_row, toolbar
 from overlap_viewer.frontend.overview import ElidedLabel
 
 HINT = (
@@ -391,9 +392,15 @@ class WindowsPage(QWidget):
 
     # -- construction
 
-    def _build_toolbar(self) -> QToolBar:
-        bar = QToolBar("Windows")
-        bar.setMovable(False)
+    def _build_toolbar(self) -> QWidget:
+        """The first row: the well, the sensor and the instance; the cut behind *Options*.
+
+        *Open instance* sits at its right end, in view either way.
+        """
+        self.options = OptionsAction(self)
+        bar = lead = toolbar("Windows")
+        lead.addAction(self.options)
+        lead.addSeparator()
         bar.addWidget(QLabel(" Well "))
         self._well = QComboBox()
         self._well.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
@@ -414,6 +421,7 @@ class WindowsPage(QWidget):
         self._instance.currentIndexChanged.connect(self._on_instance_changed)
         bar.addWidget(self._instance)
 
+        bar = self.options.add(toolbar("Windows options"))
         bar.addSeparator()
         bar.addWidget(QLabel(" Size "))
         self._size = QComboBox()
@@ -436,17 +444,17 @@ class WindowsPage(QWidget):
         self._view.setToolTip(VIEW_TIP)
         self._view.currentIndexChanged.connect(self._on_view_changed)
         bar.addWidget(self._view)
-        bar.addSeparator()
-        open_action = bar.addAction("Open instance")
+        trailing = toolbar("Windows actions")
+        open_action = trailing.addAction("Open instance")
         open_action.setToolTip(
             "Open the instance of the window selected in an instance window, on this sensor"
         )
         open_action.triggered.connect(self.open_selected)
-        return bar
+        return bar_row(lead, bar, trailing=trailing)
 
     def _build_filter_bar(self) -> QToolBar:
-        bar = QToolBar("Filters")
-        bar.setMovable(False)
+        """The second row, the filters of the windows, all of it behind *Options*."""
+        bar = self.options.add(toolbar("Filters"))
         bar.addWidget(QLabel(" Fault "))
         self._fault = QComboBox()
         self._fault.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)

@@ -46,7 +46,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QScrollArea,
     QSpinBox,
-    QToolBar,
     QVBoxLayout,
     QWidget,
 )
@@ -81,6 +80,7 @@ from overlap_viewer.frontend.loading import (
     pair_counts_with_progress,
     profiles_with_progress,
 )
+from overlap_viewer.frontend.options import OptionsAction, bar_row, toolbar
 from overlap_viewer.frontend.overview import describe_instance
 from overlap_viewer.frontend.passes import Passes
 
@@ -208,9 +208,16 @@ class AvailabilityPage(QWidget):
 
     # -- construction
 
-    def _build_toolbar(self) -> QToolBar:
-        bar = QToolBar("Availability")
-        bar.setMovable(False)
+    def _build_toolbar(self) -> QWidget:
+        """The page's row: the matrix and what its rows and pairs are of, then the options.
+
+        The Matrix, Rows and Over boxes choose what is counted and stay in view;
+        how it is counted and ordered sits behind *Options*.
+        """
+        self.options = OptionsAction(self)
+        bar = lead = toolbar("Availability")
+        lead.addAction(self.options)
+        lead.addSeparator()
         # Which controls belong to which matrix; the rest are shared.
         self._availability_only: list = []
         self._pairs_only: list = []
@@ -254,6 +261,7 @@ class AvailabilityPage(QWidget):
         self._scope.currentIndexChanged.connect(self._refresh)
         self._scope_actions.append(bar.addWidget(self._scope))
 
+        bar = self.options.add(toolbar("Availability options"))
         bar.addSeparator()
         bar.addWidget(QLabel(" Sensors "))
         self._order = QComboBox()
@@ -353,7 +361,7 @@ class AvailabilityPage(QWidget):
         bar.addWidget(self._join)
         self._show_subject(False)
         self._sync_matrix_controls()
-        return bar
+        return bar_row(lead, bar)
 
     def _show_subject(self, shown: bool) -> None:
         first = not self.pairs

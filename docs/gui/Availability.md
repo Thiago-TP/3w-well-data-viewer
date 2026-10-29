@@ -11,6 +11,8 @@ the width of the window.
 
 ![Availability page](../assets/availability.png)
 
+- **Options**, at the left of the toolbar, shows and hides everything after the **Matrix**,
+  **Rows** and **Over** boxes, which choose what is counted and stay in view.
 - **Rows** chooses the grouping: the fault classes (the fault-wise view: the availability maps of
   Rozo and of Rabelo's figure 2.8, over every real instance rather than a sample of them), the
   wells (a well-wise view neither has, and four wells hold over half of the real instances), or
