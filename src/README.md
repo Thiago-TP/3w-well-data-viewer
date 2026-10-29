@@ -648,8 +648,7 @@ plus reusable key/swatch widgets shared across pages and the help window.
 - `StateKey(QWidget)` / `ColorKey(QWidget)`: labeled rows of swatches; a `ColorKey` lays its entries
   on `legend.FlowLayout`, so a long one wraps rather than widening the window.
 - `HeatmapWidget(QWidget)`: the matrix itself; signals `hovered(row, column)`, `clicked(row,
-  column)`; `set_matrix(...)` (shares mode) and `set_fills(...)` (single-color mode, for
-  correlations); `set_tooltip_provider(provider)`.
+  column)`; `set_matrix(...)`; `set_tooltip_provider(provider)`.
 
 ### `legend.py`
 

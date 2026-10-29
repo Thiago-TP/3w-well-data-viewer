@@ -386,7 +386,6 @@ class HeatmapWidget(QWidget):
         self._filled: np.ndarray | None = None
         self._struck: np.ndarray | None = None
         self._muted_columns: set[int] = set()
-        self._fills: list[list[str | None]] | None = None  # single-color cells, when set
         self._tooltip: Callable[[int, int], str] | None = None
         self._hover = (-1, -1)
         self._left = 0  # x at which the cells start; the row labels sit before it
@@ -419,26 +418,6 @@ class HeatmapWidget(QWidget):
         self._filled = None if filled is None else np.asarray(filled, dtype=float).reshape(shape)
         self._struck = None if struck is None else np.asarray(struck, dtype=bool).reshape(shape)
         self._muted_columns = set(muted_columns)
-        self._fills = None
-        self._hover = (-1, -1)
-        self._measure()
-        self.update()
-
-    def set_fills(self, rows, columns, fills, muted_columns=()) -> None:
-        """Show ``rows`` by ``columns`` as cells of one color each: ``fills[i][j]`` is ``#rrggbb`` or ``None`` for the ground.
-
-        What a matrix of coefficients is drawn as, where a cell is a value
-        and not a split of shares.
-        """
-        self._rows = list(rows)
-        self._columns = list(columns)
-        shape = (len(self._rows), len(self._columns))
-        self._shares = np.zeros((*shape, 3))
-        self._marks = np.zeros(shape, dtype=int)
-        self._filled = None
-        self._struck = None
-        self._muted_columns = set(muted_columns)
-        self._fills = [list(row) for row in fills]
         self._hover = (-1, -1)
         self._measure()
         self.update()
@@ -571,11 +550,6 @@ class HeatmapWidget(QWidget):
                 rect = self.cell_rect(i, j).adjusted(
                     CELL_INSET, CELL_INSET, -CELL_INSET, -CELL_INSET
                 )
-                if self._fills is not None:
-                    fill = self._fills[i][j]
-                    p.setPen(Qt.PenStyle.NoPen)
-                    p.fillRect(rect, QColor(fill if fill else colors.block_fill))
-                    continue
                 paint_cell(
                     p,
                     rect,
