@@ -1381,8 +1381,7 @@ DISPERSION_NOTES = [
             "instant. At most 150,000 of the rows are drawn as dots, evenly; the density counts "
             "them all. The caption "
             "says how many dots of how many samples of how many instances are on show, one in how "
-            "many, and the top-left corner of the plot the Pearson coefficient over those very "
-            "samples."
+            "many, and the top-left corner of the plot the Pearson coefficient over those very samples."
         ),
     ),
 ]

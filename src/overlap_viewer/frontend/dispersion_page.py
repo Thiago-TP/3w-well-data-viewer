@@ -602,10 +602,12 @@ class DispersionPage(QWidget):
         unit_x, unit_y = self.info.shown_unit(x), self.info.shown_unit(y)
         plot.setLabel("bottom", f"{x}{f' [{unit_x}]' if unit_x else ''}")
         plot.setLabel("left", f"{y}{f' [{unit_y}]' if unit_y else ''}")
-        # Framed afresh only when what is drawn changes: a new cloud, pair or
-        # filter moves the points, while the coloring and the density behind
-        # them do not, and throwing away a zoom for those would be a nuisance.
-        framing = (self._scope_key(), x, y, tuple(self.periods), self.genuine_only)
+        # Framed afresh only when the cloud or the pair of sensors changes, which
+        # changes what the axes mean: the coloring and every tick box (the label
+        # periods, the measurements alone, the density behind the dots) only
+        # thin or recolor the dots on the same axes, and throwing away a zoom for
+        # them would be a nuisance (Reset views frames the dots again).
+        framing = (self._scope_key(), x, y)
         if pair.n and framing != self._framed:
             plot.getViewBox().autoRange(padding=0.04)
             self._framed = framing
