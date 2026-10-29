@@ -48,6 +48,7 @@ from overlap_viewer.frontend.items import (
     STATE_MARK,
     draw_marks,
 )
+from overlap_viewer.frontend.legend import FlowLayout
 from overlap_viewer.frontend.styling import TOOLTIP_FOREVER_MS, bounded_tooltip
 
 CELL_MIN_W, CELL_MAX_W = (
@@ -312,37 +313,38 @@ class StateKey(QWidget):
 
 
 class ColorKey(QWidget):
-    """A key of plain colors: one swatch and one text per entry, for a matrix of single fills."""
+    """A key of plain colors: one swatch and one text per entry, wrapping onto more rows when narrow.
+
+    It wraps rather than holding one row, so that a key of a dozen wells or ten
+    fault classes stays in view on a window narrower than all of it at once.
+    """
 
     def __init__(self, entries: Sequence[tuple[str, str]] = (), parent=None):
         super().__init__(parent)
-        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self._layout = QHBoxLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(14)
+        self._layout = FlowLayout(self, horizontal=14, uniform=False)
         self._chips: list[tuple[QLabel, str]] = []
         self.set_entries(entries)
 
     def set_entries(self, entries: Sequence[tuple[str, str]]) -> None:
         """Replace the entries: ``(color, text)`` pairs, a color being ``#rrggbb``."""
         while self._layout.count():
-            item = self._layout.takeAt(0)
-            if item.layout() is not None:
-                while item.layout().count():
-                    inner = item.layout().takeAt(0)
-                    if inner.widget() is not None:
-                        inner.widget().deleteLater()
+            entry = self._layout.takeAt(0).widget()
+            # Off the key at once: ``deleteLater`` alone leaves it drawn until the
+            # event loop next runs, which an offscreen script never lets it do.
+            entry.setParent(None)
+            entry.deleteLater()
         self._chips = []
         for color, text in entries:
+            entry = QWidget()
+            row = QHBoxLayout(entry)
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setSpacing(5)
             chip = QLabel()
-            label = QLabel(text)
-            entry = QHBoxLayout()
-            entry.setContentsMargins(0, 0, 0, 0)
-            entry.setSpacing(5)
-            entry.addWidget(chip)
-            entry.addWidget(label)
-            self._layout.addLayout(entry)
+            row.addWidget(chip)
+            row.addWidget(QLabel(text))
+            self._layout.add_widget(entry)
             self._chips.append((chip, color))
+        self.updateGeometry()
         self.apply_theme()
 
     def apply_theme(self) -> None:

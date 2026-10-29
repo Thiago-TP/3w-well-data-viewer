@@ -27,7 +27,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
-    QSizePolicy,
     QToolBar,
     QVBoxLayout,
     QWidget,
@@ -155,6 +154,11 @@ class DispersionPage(QWidget):
         layout.setSpacing(4)
         layout.addWidget(self._build_toolbar())
         layout.addWidget(self._build_second_bar())
+        # The key of the dots' colors, on a row of its own under the bars, where
+        # it wraps rather than fall behind the toolbar's overflow arrow.
+        self._key = ColorKey()
+        self._key.setContentsMargins(8, 0, 8, 0)
+        layout.addWidget(self._key)
         self._plot_widget = pg.PlotWidget(viewBox=ScrollFriendlyViewBox())
         plot = self._plot_widget.getPlotItem()
         plot.hideButtons()
@@ -244,12 +248,6 @@ class DispersionPage(QWidget):
         self._density_check.setToolTip(DENSITY_TIP)
         self._density_check.toggled.connect(self._redraw)
         bar.addWidget(self._density_check)
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        bar.addWidget(spacer)
-        self._key = ColorKey()
-        bar.addWidget(self._key)
-        bar.addWidget(QLabel("  "))
         return bar
 
     # -- appearance
