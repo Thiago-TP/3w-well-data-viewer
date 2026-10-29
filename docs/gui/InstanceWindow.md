@@ -183,11 +183,9 @@ feature of every block, which is the scarce thing in a window that stacks them.
   either layout: the value that instance spends most of its time at,
   which the mean and the median both miss once a fault has skewed the readings or split them in
   two, and which hovering the curve reads out. *Normalize per instance*
-  puts different wells on one z-score axis. The hours before and after the onset pick the stretch
-  transformed, so "2 h after" gives the spectrum of the fault alone, which is the only way *Align
-  at* reaches these two domains, nothing being drawn against the hours from the onset, so with both
-  hour boxes at *all* the box is greyed and comes back as soon as hours are asked for. **Features**
-  and
+  puts different wells on one z-score axis. A distribution or a spectrum is taken over the whole
+  recording of every instance, nothing being drawn against the hours from the onset, so *Align at*
+  is greyed in these two domains and comes back on the time axis. **Features** and
   **Instances**, at the right end of the toolbar, hide the feature panel and the instance list to
   give the plots their width; the instance window has the same **Features** toggle beside *Join
   overlapping instances*.

@@ -14,7 +14,6 @@ from overlap_viewer.algorithms.faults import (
     onset_from_runs,
     plausible_extent,
     relative_hours,
-    window_mask,
     zscore,
 )
 from overlap_viewer.algorithms.interpolation import GENUINE, sample_kinds
@@ -1235,13 +1234,6 @@ def test_faults_are_aligned_where_the_event_begins_and_scaled_to_their_level():
 
     hours_from = relative_hours(index, index[3])
     assert hours_from.tolist() == pytest.approx([-3 / 3600, -2 / 3600, -1 / 3600, 0.0, 1 / 3600])
-    assert window_mask(np.array([-2.0, -0.5, 0.0, 3.0]), 1.0, 2.0).tolist() == [
-        False,
-        True,
-        True,
-        False,
-    ]
-    assert window_mask(np.array([-2.0, 3.0]), 0.0, 0.0).tolist() == [True, True]
 
     scaled = zscore(np.array([1.0, 2.0, 3.0, np.nan]))
     assert scaled[:3] == pytest.approx([-1.2247, 0.0, 1.2247], abs=1e-4) and np.isnan(scaled[3])

@@ -8,8 +8,8 @@ starts where the event begins in each instance, so that the shapes line up
 whatever the clock said.
 
 One fault is chosen and each **feature** gets a section; the drawing itself (
-the three arrangements, the three domains, the window of hours around the
-onset, the normalization, the transforms, the hover) is
+the three arrangements, the three domains, the normalization, the transforms,
+the hover) is
 ``series_page.SeriesPage``, which the features page is the other half of.
 
 The instances of a fault are listed on the right with the moment each can be
@@ -72,8 +72,8 @@ HINT = (
 )
 
 DOMAIN_TIP = (
-    "What every plot shows of the stretch the hours before and after the onset select. Time "
-    "series: the readings against the hours from the onset. Distribution: a histogram of the "
+    "What every plot shows of everything every instance recorded. Time series: the readings "
+    "against the hours from the onset. Distribution: a histogram of the "
     "readings, as a share of the instance's samples so that instances of different length "
     "compare, stacked by label period in the class colors in the grid, an area in the color of "
     "the well when overlaid, so that where two distributions sit on top of one another reads as "

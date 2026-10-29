@@ -339,8 +339,6 @@ compared across wells, which differ in magnitude, onset time and baseline (Rabel
   `"start"`); `None` if never reached.
 - `relative_hours(index, origin)`: a timestamp index as hours relative to `origin`.
 - `zscore(values)`: per-series z-score, NaNs preserved, zero-variance series mapped to zeros.
-- `window_mask(hours, before, after)`: boolean mask of samples within the chosen window of the
-  origin.
 - `plausible_extent(values, bounds)`: min/max reading restricted to inside `bounds`, so one
   frozen/garbage sensor cannot dominate a shared axis.
 

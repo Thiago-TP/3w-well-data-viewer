@@ -6,8 +6,8 @@ section, every instance of that fault drawn inside it in the color of its well;
 the features page fixes a sensor and gives each **fault class** a section, the
 instances of that class drawn inside it in the color of the class. Everything
 between the choice and the picture is the same: the same three arrangements,
-the same three domains, the same window of hours around an onset, the same
-normalization, the same transforms, the same hover.
+the same three domains, the same normalization, the same transforms, the same
+hover.
 
 So that machinery lives here, and a page supplies only what differs: which
 instances it reads, what a section is, what color a series takes and what the
@@ -44,7 +44,6 @@ from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
-    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -62,7 +61,6 @@ from overlap_viewer.algorithms.faults import (
     ALIGNMENTS,
     plausible_extent,
     relative_hours,
-    window_mask,
     zscore,
 )
 from overlap_viewer.algorithms.interpolation import GENUINE, MISSING, sample_kinds
@@ -152,13 +150,11 @@ JOIN_TIP = (
     "apart, as they do everywhere else in the viewer."
 )
 # Why the box is greyed: off the time axis nothing is drawn against the hours
-# from the onset, and with both hour boxes at *all* the whole recording is
-# transformed whatever the anchor, so the choice has nothing left to change.
+# from the onset, and the whole recording is transformed whatever the anchor, so
+# the choice has nothing to change.
 ALIGN_MOOT_TIP = (
-    "The anchor only reaches a distribution or a spectrum through the stretch the hours before "
-    "and after it select, and both hour boxes are at 'all', so the whole recording is transformed "
-    "whichever moment it is aligned on. Ask for hours around the onset, or go back to the time "
-    "series, to choose it again."
+    "A distribution or a spectrum is taken over the whole recording of every instance, so the "
+    "moment it is aligned on changes nothing. Go back to the time series to choose it again."
 )
 # How the instance lists can be ordered. The model order waits for a set of
 # model outputs to be loaded.
@@ -591,7 +587,7 @@ class SeriesPage(QWidget):
         self._grid_only.append(bar.addWidget(self._value_axis))
 
     def build_parameter_bar(self, normalize_tip: str) -> QToolBar:
-        """The second row: the stretch around the onset, the normalization, the transforms.
+        """The second row: the normalization, the shading, the transforms.
 
         On one row with the rest these fell behind the toolbar's overflow
         chevron as soon as the page was narrower than a screen; the first row
@@ -599,31 +595,6 @@ class SeriesPage(QWidget):
         """
         bar = QToolBar("Parameters")
         bar.setMovable(False)
-        bar.addWidget(QLabel(" Show "))
-        self._before = QDoubleSpinBox()
-        self._before.setRange(0.0, 999.0)
-        self._before.setDecimals(1)
-        self._before.setSingleStep(0.5)
-        self._before.setSuffix(" h before")
-        self._before.setSpecialValueText("all before")
-        self._before.setToolTip(
-            "Hours before the onset to draw; at zero, everything recorded before it"
-        )
-        self._before.valueChanged.connect(self._on_window_changed)
-        bar.addWidget(self._before)
-        self._after = QDoubleSpinBox()
-        self._after.setRange(0.0, 999.0)
-        self._after.setDecimals(1)
-        self._after.setSingleStep(0.5)
-        self._after.setSuffix(" h after")
-        self._after.setSpecialValueText("all after")
-        self._after.setToolTip(
-            "Hours after the onset to draw; at zero, everything recorded after it"
-        )
-        self._after.valueChanged.connect(self._on_window_changed)
-        bar.addWidget(self._after)
-
-        bar.addSeparator()
         self._normalize = QCheckBox("Normalize per instance")
         self._normalize.setToolTip(normalize_tip)
         self._normalize.toggled.connect(self._replot)
@@ -680,16 +651,12 @@ class SeriesPage(QWidget):
             self._layout_box.blockSignals(False)
 
     def _sync_alignment_control(self) -> None:
-        """Grey *Align at* wherever the anchor has nothing left to change.
+        """Grey *Align at* off the time axis, where the anchor has nothing left to change.
 
-        Off the time axis no plot is drawn against the hours from the onset,
-        so the anchor reaches a distribution or a spectrum only through the
-        stretch the hour boxes cut around it; with both of them at *all* the
-        whole recording is transformed whichever moment it is aligned on. The
-        box comes back as soon as a window is asked for, or the time series
-        is.
+        No plot there is drawn against the hours from the onset, and the whole
+        recording is transformed whichever moment it is aligned on.
         """
-        moot = self.domain != "time" and self._before.value() == 0 and self._after.value() == 0
+        moot = self.domain != "time"
         self._align.setEnabled(not moot)
         self._align.setToolTip(ALIGN_MOOT_TIP if moot else ALIGN_TIP)
 
@@ -700,11 +667,6 @@ class SeriesPage(QWidget):
     def _on_domain_changed(self, *args) -> None:
         self._sync_layout_controls()
         self._replot(keep_range=False)
-
-    def _on_window_changed(self, *args) -> None:
-        """The hours around the onset changed: the anchor may have become worth choosing again."""
-        self._sync_alignment_control()
-        self._replot()
 
     def _on_alignment_changed(self, *args) -> None:
         self._replot(keep_range=False)
@@ -872,9 +834,9 @@ class SeriesPage(QWidget):
     # -- one series, one feature
 
     def _xy(
-        self, series: Series, feature: str, normalize: bool, before: float, after: float, bounds
+        self, series: Series, feature: str, normalize: bool, bounds
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None] | None:
-        """The hours, the readings and the kinds of sample of one series for one feature, inside the window.
+        """The hours, the readings and the kinds of sample of one series for one feature.
 
         The kinds (``interpolation.sample_kinds``: measured, interpolated,
         held, missing) are found on the raw readings, before any scaling, and
@@ -900,27 +862,22 @@ class SeriesPage(QWidget):
             y = zscore(np.where((y >= bounds[0]) & (y <= bounds[1]), y, np.nan))
             if not (~np.isnan(y)).any():
                 return None
-        mask = window_mask(series.hours, before, after)
-        x, y = series.hours[mask], y[mask]
-        if kinds is not None:
-            kinds = kinds[mask]
+        x = series.hours
         return (x, y, kinds) if len(x) else None
 
     def _window_values(
-        self, series: Series, feature: str, normalize: bool, before: float, after: float, bounds
+        self, series: Series, feature: str, normalize: bool, bounds
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray | None] | None:
-        """The readings of one series inside the window, with the hours, label kind and sample kind of each.
+        """The readings of one series, with the hours, label kind and sample kind of each.
 
         What the distribution and the spectrum are computed from: the same
-        stretch the time series draws, in the same order, so that "2 h after
-        the onset" means the same in every domain.
+        samples the time series draws, in the same order.
         """
-        got = self._xy(series, feature, normalize, before, after, bounds)
+        got = self._xy(series, feature, normalize, bounds)
         if got is None:
             return None
         x, y, kinds = got
-        mask = window_mask(series.hours, before, after)
-        labels = column_as_float(series.frame, "class")[mask]
+        labels = column_as_float(series.frame, "class")
         return x, y, self._kind_codes(labels), kinds
 
     def _kind_codes(self, labels: np.ndarray) -> np.ndarray:
@@ -1170,7 +1127,6 @@ class SeriesPage(QWidget):
         if self.domain != "time":
             return self._lay_out_overlay_off_time(sections)
         normalize = self._normalize.isChecked()
-        before, after = self._before.value(), self._after.value()
         master = None
         for row, section in enumerate(sections):
             feature = section.feature
@@ -1192,7 +1148,7 @@ class SeriesPage(QWidget):
             bounds = self.bounds_of(feature)
             for i in self._drawn_members(section):
                 series = self._series[i]
-                got = self._xy(series, feature, normalize, before, after, bounds)
+                got = self._xy(series, feature, normalize, bounds)
                 if got is None:
                     continue
                 x, y, kinds = got
@@ -1214,7 +1170,6 @@ class SeriesPage(QWidget):
         if self.domain != "time":
             return self._lay_out_grid_off_time(sections)
         normalize = self._normalize.isChecked()
-        before, after = self._before.value(), self._after.value()
         columns = self._columns.value()
         per_instance = self.per_instance_axis
         master = None
@@ -1226,7 +1181,7 @@ class SeriesPage(QWidget):
             prepared: list[tuple[int, np.ndarray, np.ndarray, np.ndarray | None]] = []
             lows, highs = [], []
             for i in members:
-                got = self._xy(self._series[i], feature, normalize, before, after, bounds)
+                got = self._xy(self._series[i], feature, normalize, bounds)
                 if got is None:
                     continue
                 x, y, kinds = got
@@ -1304,7 +1259,6 @@ class SeriesPage(QWidget):
     def _prepared_off_time(self, sections: list[Section]):
         """Per section, what every drawn member gives in the domain chosen: values or a spectrum."""
         normalize = self._normalize.isChecked()
-        before, after = self._before.value(), self._after.value()
         genuine = self._controls.params().genuine
         prepared: dict[object, list] = {}
         self._section_counts = {}
@@ -1315,9 +1269,7 @@ class SeriesPage(QWidget):
             rows = []
             counts = self._section_counts.setdefault(section.key, [])
             for i in self._drawn_members(section):
-                got = self._window_values(
-                    self._series[i], feature, normalize, before, after, bounds
-                )
+                got = self._window_values(self._series[i], feature, normalize, bounds)
                 if got is None:
                     continue
                 x, values, codes, kinds = got
@@ -1629,9 +1581,9 @@ class SeriesPage(QWidget):
     ) -> str:
         """The heading above one section's grid: what it groups, what it holds, and what its axes mean.
 
-        ``counts`` are ``sample_counts`` of every instance drawn, over the
-        window of hours chosen: the heading gives their sum, and how many of
-        those samples the historian actually archived.
+        ``counts`` are ``sample_counts`` of every instance drawn: the heading
+        gives their sum, and how many of those samples the historian actually
+        archived.
         """
         colors = theme.current()
         unit = "z-score" if normalize else self.info.shown_unit(section.feature)
@@ -1680,15 +1632,10 @@ class SeriesPage(QWidget):
             # One instance recorded for days would leave every other plot of the
             # grid a sliver against its left edge, so the grid opens on the
             # stretch most of the instances cover and leaves the rest to the
-            # zoom; the hours boxes set it outright.
+            # zoom.
             lo, hi = float(np.quantile(starts, 0.1)), float(np.quantile(ends, 0.9))
         else:
             lo, hi = min(starts), max(ends)
-        before, after = self._before.value(), self._after.value()
-        if before > 0:
-            lo = max(lo, -before)
-        if after > 0:
-            hi = min(hi, after)
         if hi <= lo:
             hi = lo + 1.0
         vb.setXRange(lo, hi, padding=0.02)

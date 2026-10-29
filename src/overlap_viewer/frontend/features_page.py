@@ -11,7 +11,7 @@ pairplot diagonal a pipeline would start from.
 
 Everything between the choice and the picture is
 ``series_page.SeriesPage``: the same two layouts, the same three domains, the
-same window of hours around an onset, the same transforms and the same hover.
+same transforms and the same hover.
 
 **Color.** A class is drawn in its own hue when the layout draws the classes
 over one another and the line is the only key there is. In the grid it is not:
@@ -87,8 +87,8 @@ WELL_TIP = (
     "instruments, rather than across wells that run at different levels."
 )
 DOMAIN_TIP = (
-    "What every plot shows of the stretch the hours before and after the onset select. Time "
-    "series: the readings against the hours from the onset. Distribution: a histogram of the "
+    "What every plot shows of everything every instance recorded. Time series: the readings "
+    "against the hours from the onset. Distribution: a histogram of the "
     "readings, as a share of the instance's samples so that instances of different length "
     "compare, stacked by label period in the class colors in the grid, an area in the color of "
     "its class when overlaid, so that where two classes sit on top of one another reads as a "

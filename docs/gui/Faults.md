@@ -9,7 +9,7 @@ starts where the event begins in each instance, so that the shapes line up whate
 
 - **Layout** chooses between the two ways of showing them. *Small multiples*, the default, give
   every instance a plot of its own in a grid under a heading per feature (which gives the samples
-  the section draws in the window of hours chosen, and how many were measured), each with its own value
+  the section draws, and how many were measured), each with its own value
   axis and its **label periods shaded behind the trace**, hatched where nobody labeled it, so that
   two dozen shapes can be read one against the next and the grid says how long each instance
   stayed in normal operation, in the transient and in the steady state, and how much of it the
@@ -29,8 +29,7 @@ starts where the event begins in each instance, so that the shapes line up whate
   deviations from the mean of that sensor over the whole instance, which is how Rabelo's pipeline
   normalizes: wells run at different levels, and the shape of the change is what the instances
   share. Readings outside the plausible range are left out before scaling, as the pipelines mask
-  them before they normalize. **Show … h before / after** narrows the plots to the hours around the
-  onset; at zero, everything recorded is drawn.
+  them before they normalize.
 - **Hover** a line to bring it forward and name it; the status bar gives the instance, its onset,
   the time under the pointer relative to it, the label and the well status at that moment, and the
   readings of the selected features. Pointing at an instance in the list does the same.
