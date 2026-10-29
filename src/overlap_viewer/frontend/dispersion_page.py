@@ -503,11 +503,18 @@ class DispersionPage(QWidget):
         }
 
     def _period_colors(self) -> dict[int, str]:
+        """Normal operation's green, an amber while the fault installs itself, a fault's red once
+        it has, the faint grey for what nobody labeled.
+
+        Hues apart from one another and from the slate blue of the density behind
+        the dots: the first set (that blue for normal, two greys for steady and
+        unlabeled) put three of the four within reach of one another as dots.
+        """
         colors = theme.current()
         return {
-            di.NORMAL: colors.live,
+            di.NORMAL: colors.faults[0],
             di.TRANSIENT: colors.warning,
-            di.STEADY: colors.fallback_fault,
+            di.STEADY: colors.faults[3],
             di.UNLABELED: colors.faint,
         }
 
