@@ -107,8 +107,8 @@ class FaultsPage(SeriesPage):
 
     HINT = HINT
 
-    def __init__(self, info: DatasetInfo, frames: FrameCache, passes=None, parent=None):
-        super().__init__(info, passes, parent)
+    def __init__(self, info: DatasetInfo, frames: FrameCache, parent=None):
+        super().__init__(info, parent)
         self._frames = frames
         self._catalogue: pd.DataFrame | None = None
         self._wells: dict[int, WellData] = {}
@@ -235,7 +235,7 @@ class FaultsPage(SeriesPage):
         layout.addWidget(self._instance_note)
         return panel
 
-    def on_map_results(self) -> None:
+    def on_model_results(self) -> None:
         if self.ready():
             self._rebuild_instances()
 
@@ -386,7 +386,6 @@ class FaultsPage(SeriesPage):
     def _rebuild_instances(self) -> None:
         """List the instances of the fault, the earliest ticked, those without an onset greyed out."""
         fault = self.fault
-        self._sync_sort_control()  # the descriptor orders name the first feature ticked
         previously = {
             (entry["well"], entry["position"])
             for entry, item in zip(self._instances, self._items)
@@ -441,7 +440,7 @@ class FaultsPage(SeriesPage):
             )
         if entry["implausible"]:
             text += "\n⚠ A sensor reads outside its plausible range in this instance."
-        return text + self.map_tooltip_lines(entry)
+        return text + self.model_tooltip_lines(entry)
 
     def _rebuild_features(self) -> None:
         """Offer every sensor, greying those no instance of the fault recorded, the seabed's ticked."""
@@ -487,16 +486,8 @@ class FaultsPage(SeriesPage):
     def selected_features(self) -> list[str]:
         return [name for name, check in self._checks.items() if check.isChecked()]
 
-    def sort_feature(self) -> str | None:
-        """The descriptor orders read the first feature ticked, the one the first section draws."""
-        return next(iter(self.selected_features()), None)
-
     def _on_feature_toggled(self, *args) -> None:
         self._placements.sync()
-        # The descriptor orders name, and read, the first feature ticked.
-        self._sync_sort_control()
-        if self.descriptor_sort() is not None and self.ready():
-            self._rebuild_instances()
         self._replot()
 
     def _set_all_features(self, checked: bool) -> None:

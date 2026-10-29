@@ -12,12 +12,9 @@ how typical an instance of its class each is, or by the verdict of a one-class
 model of the normal instances; hovering one names it, clicking one opens its
 time series.
 
-Two things the map computes are handed to the other pages: the typicality
-and the novelty score become sort keys of the instance lists of the Faults and
-Features pages. What is on the right is the **label audit**: the instances
-whose label disagrees with the one-class verdict (a fault instance that looks
-normal, a normal instance that looks anomalous), class by class, each a click
-away.
+What is on the right is the **label audit**: the instances whose label
+disagrees with the one-class verdict (a fault instance that looks normal, a
+normal instance that looks anomalous), class by class, each a click away.
 
 The representation needs the profiles of the instances (``backend.profiles``),
 read once behind a progress dialog and shared with the other pages. The
@@ -130,40 +127,6 @@ JOIN_TIP = (
 )
 
 
-@dataclass
-class MapResults:
-    """What the map computed, for the other pages to color and sort by.
-
-    Keyed as the profile table keys its rows: ``(fault_class, file)`` for the
-    instances, ``(well, bar)`` for the bars of the joined view; ``joined``
-    says which. ``clusters`` maps a key to its cluster (``-1`` for a point
-    DBSCAN left out) and is ``None`` when no clustering is on; ``typicality``
-    maps a key to its distance to the medoid of its class and its rank there;
-    ``novelty`` maps a key to the one-class score and whether it looks
-    anomalous, ``None`` when the model could not run.
-    """
-
-    joined: bool
-    representation: str
-    clusters: dict | None
-    typicality: dict
-    novelty: dict | None
-
-    def cluster_color(self, key) -> str | None:
-        """The color of the cluster a key sits in, ``None`` when it is not on the map."""
-        if self.clusters is None or key not in self.clusters:
-            return None
-        return cluster_color(self.clusters[key])
-
-    def typicality_rank(self, key) -> float:
-        entry = self.typicality.get(key)
-        return float("nan") if entry is None else entry[1]
-
-    def novelty_score(self, key) -> float:
-        entry = None if self.novelty is None else self.novelty.get(key)
-        return float("nan") if entry is None else entry[0]
-
-
 def cluster_color(label: int) -> str:
     """The color of one cluster: the well palette, cycled, and the faint grey for a point left out."""
     colors = theme.current()
@@ -186,7 +149,7 @@ class Point:
 
 
 class MapPage(QWidget):
-    """The page: the boxes, the map, the label audit, and what it hands to the other pages.
+    """The page: the boxes, the map and the label audit.
 
     Signals
     -------
@@ -197,14 +160,11 @@ class MapPage(QWidget):
     open_requested(WellData, int, list)
         A point was clicked: the view, the bar to open and the sensors to draw,
         the sensor the DTW compared, or none for the window's own default.
-    results_changed(MapResults)
-        The clusters, the typicality and the novelty were computed again.
     """
 
     status = Signal(str)
     summary_changed = Signal()
     open_requested = Signal(object, int, object)
-    results_changed = Signal(object)
 
     def hint(self) -> str:
         return HINT
@@ -734,30 +694,7 @@ class MapPage(QWidget):
         noun = "bars" if self.joined else "instances"
         self._summary = f"{n} {noun} on the map | {self._caption} "
         self.summary_changed.emit()
-        self.results_changed.emit(self.results())
         self.status.emit(HINT)
-
-    def results(self) -> MapResults:
-        """What the other pages take from the map: clusters, typicality and novelty by key."""
-        keys = [p.key for p in self._points]
-        clusters = (
-            None
-            if self._clusters is None
-            else {key: int(label) for key, label in zip(keys, self._clusters)}
-        )
-        typ = self._typicality
-        typicality = (
-            {}
-            if typ is None
-            else {key: (float(typ.distance[i]), float(typ.rank[i])) for i, key in enumerate(keys)}
-        )
-        nov = self._novelty
-        novelty = (
-            None
-            if nov is None
-            else {key: (float(nov.score[i]), bool(nov.anomalous[i])) for i, key in enumerate(keys)}
-        )
-        return MapResults(self.joined, self.representation, clusters, typicality, novelty)
 
     # -- drawing
 
@@ -958,4 +895,4 @@ class MapPage(QWidget):
         self._plot_widget.getPlotItem().getViewBox().autoRange(padding=0.08)
 
 
-__all__ = ["COLORINGS", "MapPage", "MapResults", "cluster_color", "tint"]
+__all__ = ["COLORINGS", "MapPage", "cluster_color", "tint"]

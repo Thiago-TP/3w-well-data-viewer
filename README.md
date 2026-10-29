@@ -307,11 +307,7 @@ the availability page, and under the
 *Measurements only* tick of the signal views, where the spectrum becomes a Lomb-Scargle
 periodogram of the readings at their own instants.
 
-The descriptors travel as columns of the catalogue. *Sort*, above the instance lists of the
-Faults and Features pages, orders the instances by the autocorrelation time, the signal-to-noise
-ratio, the Gaussianity slope, the skewness or the kurtosis of the feature on show, largest first,
-the tooltip of every instance carrying both the grid's and the measurements' value. It has an *on*
-box choosing the grid or the measurements, and on the grid
-the key, the hover and the tooltip carry the caveat that the historian's lines inflate the first
-two: on 3W 2.0.0 the autocorrelation time of T-JUS-CKP is 444 s on the grid and 73 s on the
-measurements.
+The descriptors travel as columns of the catalogue, and the Instances map places the instances by
+them. Each is taken on the grid or on the measurements alone, and on the grid the key, the hover
+and the tooltip carry the caveat that the historian's lines inflate the first two: on 3W 2.0.0 the
+autocorrelation time of T-JUS-CKP is 444 s on the grid and 73 s on the measurements.

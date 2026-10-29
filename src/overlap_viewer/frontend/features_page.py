@@ -123,8 +123,8 @@ class FeaturesPage(SeriesPage):
 
     HINT = HINT
 
-    def __init__(self, info: DatasetInfo, frames: FrameCache, passes=None, parent=None):
-        super().__init__(info, passes, parent)
+    def __init__(self, info: DatasetInfo, frames: FrameCache, parent=None):
+        super().__init__(info, parent)
         self._frames = frames
         self._catalogue: pd.DataFrame | None = None
         self._wells: dict[int, WellData] = {}
@@ -247,7 +247,7 @@ class FeaturesPage(SeriesPage):
         layout.addWidget(self._instance_note)
         return panel
 
-    def on_map_results(self) -> None:
+    def on_model_results(self) -> None:
         if self.ready():
             self._rebuild_instances(fresh=False)
 
@@ -317,7 +317,6 @@ class FeaturesPage(SeriesPage):
         self._feature.setCurrentIndex(max(index, 0))
         self._feature.blockSignals(False)
 
-        self._sync_sort_control()  # the descriptor orders name the feature chosen
         self._rebuild_classes()
         self._rebuild_instances(fresh=True)
         self._replot(keep_range=False)
@@ -364,14 +363,9 @@ class FeaturesPage(SeriesPage):
     def ready(self) -> bool:
         return self._availability is not None and self.feature is not None
 
-    def sort_feature(self) -> str | None:
-        """The descriptor orders read the feature on show."""
-        return self.feature
-
     def _on_feature_changed(self, *args) -> None:
         if not self.ready():
             return
-        self._sync_sort_control()  # the descriptor orders name the feature
         self._rebuild_classes()
         self._rebuild_instances(fresh=True)
         self._replot(keep_range=False)
@@ -563,7 +557,7 @@ class FeaturesPage(SeriesPage):
             )
         if entry["implausible"]:
             text += f"\n⚠ {self.feature} reads outside its plausible range in this instance."
-        return text + self.map_tooltip_lines(entry)
+        return text + self.model_tooltip_lines(entry)
 
     def _on_item_changed(self, item) -> None:
         if not self._building:

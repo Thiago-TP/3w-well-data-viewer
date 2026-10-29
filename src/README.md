@@ -161,8 +161,9 @@ the measurements alone. It also checks the order of the pressures along each lin
 contradicts, and the well state against the valve states, recording per valve the samples that
 contradict the state and the states (`PROFILE_VERSION` 4). Cached as one long parquet table next to the catalogue.
 
-- `DescriptorChoice` (frozen dataclass): one of the five descriptors offered as a coloring or sort
-  option (autocorrelation time, SNR, Gaussianity slope, skewness, kurtosis); method `format(value)`.
+- `DescriptorChoice` (frozen dataclass): one of the five descriptors the Windows page offers as a
+  statistic (autocorrelation time, SNR, Gaussianity slope, skewness, kurtosis), its grid column
+  `column` and the measurements' `column_g`; method `format(value)`.
 - `profile_series(values, bounds, enumerated, step_s)`: profiles one sensor's array: strips
   implausible readings, classifies sample kinds, computes sampling and descriptors twice.
 - `profile_frame(frame, sensors, info)`: one profile row per sensor of one frame.
@@ -767,13 +768,11 @@ The Instances map: every real instance (or joined bar) as a point placed by an e
 representation, colored by class, well, cluster, typicality, novelty or model agreement, with
 clustering scores and a "label audit" list of instances a one-class model disagrees with.
 
-- `MapResults` (dataclass): what the map hands to other pages (joined, representation, clusters,
-  typicality, novelty); methods `cluster_color(key)`, `typicality_rank(key)`, `novelty_score(key)`.
-- `Point` (dataclass): one map point: key, title, fault, well, view, index.
+- `Point` (dataclass): one map point: key, title, fault, well, the well's data, index.
 - `MapPage(QWidget)`: signals `status`, `summary_changed`, `open_requested(WellData, index,
-  sensors)` (a clicked point's bar, on the DTW sensor under the DTW representation),
-  `results_changed(MapResults)`. `_compute()` is the master pipeline: build representation → embed →
-  cluster (+ score) → typicality → novelty → redraw → fill the audit panel → emit `results_changed`.
+  sensors)` (a clicked point's bar, on the DTW sensor under the DTW representation).
+  `_compute()` is the master pipeline: build representation → embed → cluster (+ score) →
+  typicality → novelty → redraw → fill the audit panel.
   Toolbar controls that need a missing optional extra are greyed with the install command
   (`_grey(box, index, reason)`). The audit panel sits on a `QSplitter` beside the plot and is
   toggled by the *Label audit* action; `_sync_audit_panel()` retracts it under the DTW

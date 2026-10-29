@@ -36,8 +36,7 @@ of the process; everything is an analysis of the catalogue, recomputed on every 
   is the event or the well they came from.
 - **Typicality** is how ordinary an instance of its class each one is: its distance to the medoid
   of its class in the representation, as a rank inside the class (1 the medoid, 0 the farthest).
-  It colors the points, and it is a *Sort* order of the instance lists of the Faults and
-  Features pages, whose tooltips carry it.
+  It colors the points.
 - The **label audit** on the right is what a one-class model of the normal instances (a
   radial-basis one-class SVM, as in Siqueira's notebooks, 5 % of the normal instances allowed
   outside its boundary) makes of every label: class by class, the fault instances that *look

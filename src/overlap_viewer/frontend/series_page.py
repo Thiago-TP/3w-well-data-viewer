@@ -97,13 +97,6 @@ from overlap_viewer.backend.labels import (
     state_name,
 )
 from overlap_viewer.backend.palette import background_color, bar_color, tint, unknown_background
-from overlap_viewer.backend.profiles import (
-    DESCRIPTOR_CHOICES,
-    DESCRIPTOR_MODES,
-    GRID_CAVEAT,
-    DescriptorChoice,
-    descriptor_column,
-)
 from overlap_viewer.frontend.instance_window import AXIS_WIDTH, PlotStack
 from overlap_viewer.frontend.items import (
     AnchoredText,
@@ -167,38 +160,17 @@ ALIGN_MOOT_TIP = (
     "whichever moment it is aligned on. Ask for hours around the onset, or go back to the time "
     "series, to choose it again."
 )
-# How the instance lists can be ordered. The two map orders wait for the
-# Instances map to have computed something on the instances; the model order
-# for a set of model outputs to be loaded.
+# How the instance lists can be ordered. The model order waits for a set of
+# model outputs to be loaded.
 SORTS = (
     "Well and start",
-    "Typicality (Instances map)",
-    "Novelty score (Instances map)",
     "Agreement with the model outputs",
-    *(choice.name for choice in DESCRIPTOR_CHOICES),
-)
-FIRST_DESCRIPTOR_SORT = (
-    4  # the descriptor orders follow the four above, in DESCRIPTOR_CHOICES order
 )
 SORT_TIP = (
-    "The order of the list: by well and start, as the catalogue is; by typicality, the most "
-    "typical instance of its class first (its distance to the medoid of the class on the "
-    "Instances map, in the representation chosen there); by the one-class model's score, the "
-    "instance that looks most anomalous first; by the agreement of the loaded model outputs "
-    "with the labels, the instance the model disagrees with most first; or by one descriptor of "
-    "the feature on show (the time its autocorrelation takes to halve, its signal-to-noise "
-    "ratio, the slope of Zhang's Gaussianity regression, its skewness or its kurtosis, Melo's "
-    "characterisation of a variable), largest first, taken on the grid or on the measurements "
-    "as the box beside says. The two map orders are offered once the map has been computed on "
-    "the instances (not on the joined bars), the model order once outputs are loaded, the "
-    "descriptor orders once a feature is on show (the first look reads every instance in full, "
-    "behind a progress dialog, and keeps the result in the cache), and the tooltip of every "
-    "instance then carries the figures."
-)
-SORT_MODE_TIP = (
-    "What the descriptor is taken over. Interpolated: the whole 1 Hz grid, most of whose samples "
-    "the historian drew between the readings it archived, which is what a pipeline reads. "
-    f"Measurements: the readings alone. {GRID_CAVEAT.capitalize()}."
+    "The order of the list: by well and start, as the catalogue is; or by the agreement of the "
+    "loaded model outputs with the labels, the instance the model disagrees with most first. "
+    "The model order is offered once outputs are loaded, and the tooltip of every instance then "
+    "carries the figure."
 )
 # What shades the label periods behind a small plot: the experts' labels, or
 # the loaded model's verdicts in the same vocabulary.
@@ -404,12 +376,9 @@ class SeriesPage(QWidget):
         """What the status bar says when the pointer is over nothing in particular."""
         return self.HINT
 
-    def __init__(self, info: DatasetInfo, passes=None, parent=None):
+    def __init__(self, info: DatasetInfo, parent=None):
         super().__init__(parent)
         self.info = info
-        # Where the profiles of the instances come from, when a sort order asks
-        # for them; without it the descriptor orders are not offered.
-        self._passes = passes
         self._wells: dict[int, WellData] = {}
         self._series: list[Series] = []
         self._plots: list[pg.PlotItem] = []
@@ -429,11 +398,8 @@ class SeriesPage(QWidget):
         self._pool: dict[int, list[int]] = {}
         self._hover = -1
         self._x_range: tuple[float, float] | None = None
-        self._map_results = None  # what the Instances map computed, once it has
         self._model_results = None  # the model outputs loaded, once they are
         self._sort: QComboBox | None = None
-        self._sort_mode: QComboBox | None = None
-        self._sort_mode_label: QLabel | None = None
         self._shading: QComboBox | None = None
         self._shading_actions: list = []
 
@@ -461,7 +427,7 @@ class SeriesPage(QWidget):
             self.open_requested.emit(data, int(position), feature)
 
     def add_sort_control(self, layout) -> QComboBox:
-        """The *Sort* box of an instance list, its map orders greyed until the map has run."""
+        """The *Sort* box of an instance list, its model order greyed until outputs are loaded."""
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(4)
@@ -469,107 +435,26 @@ class SeriesPage(QWidget):
         self._sort = QComboBox()
         self._sort.addItems(list(SORTS))
         self._sort.setToolTip(SORT_TIP)
-        self._sort.currentIndexChanged.connect(self._on_sort_index_changed)
+        self._sort.currentIndexChanged.connect(self.on_sort_changed)
         row.addWidget(self._sort, 1)
-        # The descriptor orders' own box: on the grid, or on the measurements.
-        self._sort_mode_label = QLabel("on")
-        row.addWidget(self._sort_mode_label)
-        self._sort_mode = QComboBox()
-        self._sort_mode.addItems(list(DESCRIPTOR_MODES))
-        self._sort_mode.setToolTip(SORT_MODE_TIP)
-        self._sort_mode.currentIndexChanged.connect(self.on_sort_changed)
-        row.addWidget(self._sort_mode)
         layout.addLayout(row)
         self._sync_sort_control()
         return self._sort
 
-    def _on_sort_index_changed(self, *args) -> None:
-        self._sync_sort_control()
-        self.on_sort_changed()
-
     def _sync_sort_control(self) -> None:
+        """Offer the model order once outputs are loaded, and leave it when they go."""
         if self._sort is None:
             return
-        map_usable = self._map_results is not None and not self._map_results.joined
-        feature = self.sort_feature()
-        descriptors_usable = self._passes is not None and feature is not None
-        usable = {1: map_usable, 2: map_usable, 3: self._model_results is not None}
-        model = self._sort.model()
-        for k, choice in enumerate(DESCRIPTOR_CHOICES, start=FIRST_DESCRIPTOR_SORT):
-            usable[k] = descriptors_usable
-            # The order names the feature it reads, as the feature changes.
-            model.item(k).setText(f"{choice.name} of {feature}" if feature else choice.name)
-        for k, allowed in usable.items():
-            item = model.item(k)
-            flags = item.flags()
-            item.setFlags(
-                flags | Qt.ItemFlag.ItemIsEnabled if allowed else flags & ~Qt.ItemFlag.ItemIsEnabled
-            )
-        current = self._sort.currentIndex()
-        if current and not usable.get(current, True):
-            self._sort.blockSignals(True)
-            self._sort.setCurrentIndex(0)
-            self._sort.blockSignals(False)
-        by_descriptor = self.descriptor_sort() is not None
-        self._sort_mode_label.setVisible(by_descriptor)
-        self._sort_mode.setVisible(by_descriptor)
-
-    def sort_feature(self) -> str | None:
-        """The sensor whose descriptors the descriptor orders read; a page names its own."""
-        return None
-
-    def descriptor_sort(self) -> DescriptorChoice | None:
-        """The descriptor the list is ordered by, or ``None`` under the other orders."""
-        if self._sort is None or self._sort.currentIndex() < FIRST_DESCRIPTOR_SORT:
-            return None
-        return DESCRIPTOR_CHOICES[self._sort.currentIndex() - FIRST_DESCRIPTOR_SORT]
-
-    @property
-    def sort_measured(self) -> bool:
-        """Whether the descriptor orders read the measurements' figures rather than the grid's."""
-        return self._sort_mode is not None and self._sort_mode.currentIndex() == 1
-
-    def _sort_profiles(self):
-        """The profiles the descriptor orders read, reading the data if need be; ``None`` if declined."""
-        if self._passes is None:
-            return None
-        profiles = self._passes.profiles(self.info.sensor_names, parent=self.window())
-        if profiles is None and self._sort is not None:
-            # The pass was declined: back to the order that needs none.
-            self._sort.blockSignals(True)
-            self._sort.setCurrentIndex(0)
-            self._sort.blockSignals(False)
-            self._sync_sort_control()
-        return profiles
-
-    def descriptor_lines(self, entry: dict) -> list[str]:
-        """The descriptor an instance list is ordered by, in one instance, on the grid and on the measurements."""
-        choice, feature = self.descriptor_sort(), self.sort_feature()
-        profiles = (
-            self._passes.profiles_if_loaded(self.info.sensor_names)
-            if self._passes is not None
-            else None
+        allowed = self._model_results is not None
+        item = self._sort.model().item(1)
+        flags = item.flags()
+        item.setFlags(
+            flags | Qt.ItemFlag.ItemIsEnabled if allowed else flags & ~Qt.ItemFlag.ItemIsEnabled
         )
-        if choice is None or feature is None or profiles is None:
-            return []
-        key = (int(entry["fault"]), str(entry.get("file", "")))
-        grid = profiles.descriptor(key, feature, choice.column)
-        genuine = profiles.descriptor(key, feature, f"{choice.column}_g")
-        lines = [
-            (
-                f"{choice.name} of {feature}: {choice.format(grid)} on the grid, "
-                f"{choice.format(genuine)} on the measurements."
-            )
-        ]
-        if choice.inflated and not self.sort_measured:
-            lines.append(f"Ordered by the grid's figure; {GRID_CAVEAT}.")
-        return lines
-
-    def set_map_results(self, results) -> None:
-        """Take what the Instances map computed; the instance lists gain its figures and its orders."""
-        self._map_results = results
-        self._sync_sort_control()
-        self.on_map_results()
+        if self._sort.currentIndex() == 1 and not allowed:
+            self._sort.blockSignals(True)
+            self._sort.setCurrentIndex(0)
+            self._sort.blockSignals(False)
 
     def set_model_results(self, results) -> None:
         """Take the model outputs loaded (or none): a sort order, tooltip figures and a shading."""
@@ -581,7 +466,7 @@ class SeriesPage(QWidget):
             self._shading.setCurrentIndex(0)
             self._shading.blockSignals(False)
         self._sync_sort_control()
-        self.on_map_results()
+        self.on_model_results()
 
     @property
     def shade_by_model(self) -> bool:
@@ -598,19 +483,11 @@ class SeriesPage(QWidget):
             return []
         return self._model_results.class_runs(int(fault), str(file), self.info.transient_offset)
 
-    def on_map_results(self) -> None:
-        """Called once the map's or the model's figures are on hand; a page rebuilds its instance list."""
+    def on_model_results(self) -> None:
+        """Called once the model's figures are on hand; a page rebuilds its instance list."""
 
     def on_sort_changed(self, *args) -> None:
         """Called when the *Sort* box changes; a page rebuilds its instance list."""
-
-    def map_figures(self, fault: int, file: str) -> tuple[float, float]:
-        """The typicality rank and the novelty score of one instance, NaN when the map has none."""
-        results = self._map_results
-        if results is None or results.joined:
-            return (float("nan"), float("nan"))
-        key = (int(fault), str(file))
-        return (results.typicality_rank(key), results.novelty_score(key))
 
     def model_agreement(self, fault: int, file: str) -> float:
         """How far the loaded model agrees with the labels of one instance, NaN without outputs."""
@@ -621,54 +498,24 @@ class SeriesPage(QWidget):
     def sorted_entries(self, entries: list[dict]) -> list[dict]:
         """The entries of an instance list in the order the *Sort* box asks for.
 
-        The catalogue's own order stands; typicality puts the most typical
-        first; the novelty score puts the most anomalous-looking first; the
-        model agreement puts the instance the model disagrees with most
-        first. An instance without the figure goes last.
+        The catalogue's own order stands; the model agreement puts the
+        instance the model disagrees with most first. An instance without the
+        figure goes last.
         """
         if self._sort is None or self._sort.currentIndex() == 0:
             return entries
-        which = self._sort.currentIndex()
-        choice = self.descriptor_sort()
-        if choice is not None:
-            profiles, feature = self._sort_profiles(), self.sort_feature()
-            if profiles is None or feature is None:
-                return entries
-            column = descriptor_column(choice, self.sort_measured)
 
-            def descriptor(entry: dict) -> float:
-                value = profiles.descriptor(
-                    (int(entry["fault"]), str(entry.get("file", ""))), feature, column
-                )
-                # Largest first, an infinite figure largest of all, the unknown last.
-                return np.inf if np.isnan(value) else -value
-
-            return sorted(entries, key=descriptor)
-
-        def figure(entry: dict) -> float:
-            fault, file = entry["fault"], entry.get("file", "")
-            if which == 3:
-                value = self.model_agreement(fault, file)
-            else:
-                rank, score = self.map_figures(fault, file)
-                value = -rank if which == 1 else score
+        def agreement(entry: dict) -> float:
+            value = self.model_agreement(entry["fault"], entry.get("file", ""))
             return value if np.isfinite(value) else np.inf
 
-        return sorted(entries, key=figure)
+        return sorted(entries, key=agreement)
 
-    def map_tooltip_lines(self, entry: dict) -> str:
-        """What the map knows about one instance, for the tooltip of its list item."""
-        rank, score = self.map_figures(entry["fault"], entry.get("file", ""))
-        lines = []
-        if np.isfinite(rank):
-            lines.append(f"Typicality {rank:.2f} in its class on the Instances map.")
-        if np.isfinite(score):
-            verdict = "looks anomalous" if score < 0 else "looks normal"
-            lines.append(f"One-class score {score:+.2f}: {verdict} to the Instances map's model.")
-        if self._model_results is not None:
-            lines.append(self._model_results.describe(entry["fault"], entry.get("file", "")) + ".")
-        lines += self.descriptor_lines(entry)
-        return ("\n" + "\n".join(lines)) if lines else ""
+    def model_tooltip_lines(self, entry: dict) -> str:
+        """What the loaded model outputs say of one instance, for the tooltip of its list item."""
+        if self._model_results is None:
+            return ""
+        return "\n" + self._model_results.describe(entry["fault"], entry.get("file", "")) + "."
 
     def build_body(self, left: QWidget | None, right: QWidget | None) -> QWidget:
         """The plots, with the page's own panels on either side of them."""

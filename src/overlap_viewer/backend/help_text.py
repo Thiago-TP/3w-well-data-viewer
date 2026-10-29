@@ -1224,10 +1224,7 @@ MAP_NOTES = [
             "lowest (the most central instance the class actually has, which a mean need not "
             "be), and the typicality of an instance is its distance to that medoid, given as a "
             "rank inside its class: 1 for the medoid itself, 0 for the farthest member. It "
-            "colors the points (full for the medoid, faint for the farthest), and it is a sort "
-            "order of the instance lists of the Faults and "
-            "Features pages, whose tooltips carry it, so that the typical instances of an event "
-            "can be drawn first and the outliers last, or the other way round. The figure "
+            "colors the points (full for the medoid, faint for the farthest). The figure "
             "depends on the representation: an instance typical in its levels may be atypical "
             "in its shape."
         ),
@@ -1246,8 +1243,7 @@ MAP_NOTES = [
             "fault the sensors chosen never register, a normal instance recorded during "
             "something, a label to question), and each is a click away. Under the <i>Novelty</i> "
             "coloring the points that look normal are blue, those that look anomalous amber, "
-            "and a dark ring marks the disagreements. The score is also a sort order of the "
-            "instance lists of the Faults and Features pages. The audit needs coordinates, so it "
+            "and a dark ring marks the disagreements. The audit needs coordinates, so it "
             "rests under the DTW representation."
         ),
     ),
@@ -1259,8 +1255,7 @@ MAP_NOTES = [
             "single recording they were cut from and profiled as such by the same pass), so a "
             "well recorded twice is one point where it was one recording, and the largest join "
             "of the dataset, seventy-one windows over six days, is one point. Everything on the "
-            "page is computed again on the bars; the instance lists of the other pages, which "
-            "list instances, take its figures only from a map drawn on the instances."
+            "page is computed again on the bars."
         ),
     ),
 ]

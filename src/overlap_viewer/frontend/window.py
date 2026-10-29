@@ -128,9 +128,9 @@ class MainWindow(QMainWindow):
         report("Building the Availability page…")
         self.availability = AvailabilityPage(info, passes=self._passes)
         report("Building the Faults page…")
-        self.faults = FaultsPage(info, self._frames, passes=self._passes)
+        self.faults = FaultsPage(info, self._frames)
         report("Building the Features page…")
-        self.features = FeaturesPage(info, self._frames, passes=self._passes)
+        self.features = FeaturesPage(info, self._frames)
         report("Building the Dispersions page…")
         self.dispersion = DispersionPage(info, passes=self._passes)
         report("Building the Windows page…")
@@ -148,10 +148,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self._tabs)
         self._catalogue = None
         self._wells: list[WellData] = []
-        # Pages a theme switch left to be laid out when next shown, and what
-        # the Instances map last computed, to hand to a page laid out late.
+        # Pages a theme switch left to be laid out when next shown.
         self._stale: set = set()
-        self._map_results = None
 
         self._status = ElidedLabel(self.timelines.hint())
         self.statusBar().addWidget(self._status, 1)
@@ -169,7 +167,6 @@ class MainWindow(QMainWindow):
         self.windows_page.open_requested.connect(self.open_instances)
         self.faults.open_requested.connect(self._open_on_feature)
         self.features.open_requested.connect(self._open_on_feature)
-        self.map.results_changed.connect(self._on_map_results)
 
         self._restyle()
         self.set_catalogue(catalogue, progress=report)
@@ -194,12 +191,6 @@ class MainWindow(QMainWindow):
             self.windows_page,
             self.map,
         )
-
-    def _on_map_results(self, results) -> None:
-        """What the Instances map computed, handed to the pages that color and sort by it."""
-        self._map_results = results
-        self.faults.set_map_results(results)
-        self.features.set_map_results(results)
 
     def set_model_outputs(self, outputs: ModelOutputs | None) -> None:
         """Take a set of model outputs (or none) and hand its agreements to every page."""
@@ -300,7 +291,6 @@ class MainWindow(QMainWindow):
         """
         same = catalogue is self._catalogue and bool(self._wells)
         if not same:
-            self._map_results = None  # computed on the old catalogue
             self._discard_help()  # its instance counts describe the old catalogue
             self._wells = split_wells(catalogue)
             self._passes.set_wells(self._wells)
@@ -321,8 +311,6 @@ class MainWindow(QMainWindow):
         page.set_catalogue(self._catalogue, self._wells)
         if self._passes.model is not None and hasattr(page, "set_model_results"):
             page.set_model_results(self._passes.model)
-        if self._map_results is not None and hasattr(page, "set_map_results"):
-            page.set_map_results(self._map_results)
 
     def _discard_help(self) -> None:
         """Throw the help window away, so that the next F1 builds it over what is true now."""
