@@ -73,6 +73,7 @@ from overlap_viewer.backend.dataset import (
 )
 from overlap_viewer.backend.palette import bar_color, fault_color
 from overlap_viewer.backend.profiles import Profiles
+from overlap_viewer.frontend import styling
 from overlap_viewer.frontend.heatmap import HeatmapRow, HeatmapWidget, StateKey
 from overlap_viewer.frontend.items import IMPLAUSIBLE_MARK, ORDER_MARK, STATE_MARK
 from overlap_viewer.frontend.loading import (
@@ -238,12 +239,14 @@ class AvailabilityPage(QWidget):
         self._subject_action = bar.addWidget(self._subject_label)
         self._subject = QComboBox()
         self._subject.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        styling.limit_popup(self._subject)
         self._subject.currentIndexChanged.connect(self._refresh)
         self._subject_combo_action = bar.addWidget(self._subject)
 
         self._scope_actions = [bar.addWidget(QLabel(" Over "))]
         self._scope = QComboBox()
         self._scope.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        styling.limit_popup(self._scope)
         self._scope.setToolTip(
             "The instances the pairs are taken over: all of them, those of one fault class, or "
             "those of one well."

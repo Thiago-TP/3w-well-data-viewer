@@ -71,6 +71,7 @@ from overlap_viewer.backend.palette import (
 )
 from overlap_viewer.backend.profiles import DESCRIPTOR_CHOICES, GRID_CAVEAT
 from overlap_viewer.backend.timemap import TimeMap
+from overlap_viewer.frontend import styling
 from overlap_viewer.frontend.items import (
     ScrollFriendlyViewBox,
     SegmentsItem,
@@ -408,7 +409,7 @@ class WindowsPage(QWidget):
         bar.addWidget(QLabel(" Instance "))
         self._instance = QComboBox()
         self._instance.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-        self._instance.setMaxVisibleItems(25)
+        styling.limit_popup(self._instance, 25)
         self._instance.setToolTip(INSTANCE_TIP)
         self._instance.currentIndexChanged.connect(self._on_instance_changed)
         bar.addWidget(self._instance)

@@ -544,6 +544,11 @@ appearance mode (`light`/`dark`/`system`) via `QSettings`.
   switch, slower widget creation, and a palette change that did not reach the chrome).
 - `apply(mode)`: the single entry point: resolves the mode, activates it in `backend.theme`,
   configures pyqtgraph, and sets the application's palette and stylesheet.
+- `limit_popup(box, rows=POPUP_ROWS)`: opens a long combo box's list as a drop-down at most `rows`
+  entries tall, scrolling past that. Fusion opens a list as tall as its entries and ignores
+  `setMaxVisibleItems`, so the application's proxy style (`_VisibleChecks.styleHint`) turns its
+  popup mode off for a box marked this way; a style sheet would do the same, but would freeze the
+  list in the theme it was built in.
 
 ### `loading.py`
 

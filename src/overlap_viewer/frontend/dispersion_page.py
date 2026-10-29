@@ -44,6 +44,7 @@ from overlap_viewer.backend.dataset import (
     well_label,
 )
 from overlap_viewer.backend.palette import fault_color, tint
+from overlap_viewer.frontend import styling
 from overlap_viewer.frontend.heatmap import ColorKey
 from overlap_viewer.frontend.items import AnchoredText, ScrollFriendlyViewBox, restyle_axes
 from overlap_viewer.frontend.loading import progress_dialog
@@ -205,6 +206,7 @@ class DispersionPage(QWidget):
         bar.addWidget(QLabel(" Over "))
         self._scope = QComboBox()
         self._scope.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        styling.limit_popup(self._scope)
         self._scope.setToolTip(SCOPE_TIP)
         self._scope.currentIndexChanged.connect(self._refresh)
         bar.addWidget(self._scope)
