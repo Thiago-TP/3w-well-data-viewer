@@ -7,7 +7,7 @@ The package is laid out by focus, and the dependencies grow from one layer to th
   Pandas, numpy and pyarrow only; no Qt, so every module here is testable without a display.
 - **`algorithms`**: what is computed from the data: onsets and scaling, the signal transforms,
   and every analysis built for the later pages (interpolation, descriptors, cleaning, embedding,
-  correlation, dispersion). Numpy only; anything heavier (scikit-learn, UMAP, dtaidistance) is an
+  dispersion). Numpy only; anything heavier (scikit-learn, UMAP, dtaidistance) is an
   optional extra, declared in `pyproject.toml` and looked up through `backend.extras` so that a
   missing one greys a control instead of breaking the viewer.
 - **`frontend`**: how it is shown: the pyqtgraph items, the pages, the instance window and the
@@ -232,7 +232,7 @@ share further into measured-vs-filled when `profiles.Profiles` are supplied.
   `instance_shares`, `measured`; methods `measured_share`, `spacing_s`, `coverage_order`.
 - `Availability` (frozen dataclass): per-bar raw arrays; classmethods `from_wells(views, info,
   threshold, joined_stats=None, profiles=None)` (the main builder) and `from_catalogue(...)`; methods
-  `index_of(well, bar)`, `measured_of`, `shares_of`, `implausible_any`, `order_any`,
+  `index_of(well, bar)`, `shares_of`, `implausible_any`, `order_any`,
   `out_of_order_pairs`, `state_any`, `state_conflicts_of`, `grouped(keys, order, mask)`
   (folds bars into an `AvailabilityTable`), `total(key, mask)`.
 - `PairTable` (frozen dataclass): square sensor×sensor co-validity matrix for one scope; method

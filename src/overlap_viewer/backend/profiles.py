@@ -152,11 +152,6 @@ GRID_CAVEAT = (
 )
 
 
-def descriptor_column(choice: DescriptorChoice, measured: bool) -> str:
-    """The table column of one descriptor: the grid's, or the measurements' (``_g``)."""
-    return f"{choice.column}_g" if measured else choice.column
-
-
 def _step_seconds(index) -> float:
     """The sampling step of a frame, in seconds: the median positive gap of its index."""
     if len(index) < 2:
