@@ -176,7 +176,8 @@ SHADING_TIP = (
     "or the verdicts of the model outputs loaded (a detector's 'anomalous' drawn as the "
     "instance's own fault, its 'normal' as normal operation; a classifier's classes as "
     "themselves), so that where the model and the experts differ shows as a shading that does "
-    "not match the trace's list entry. Offered once model outputs are loaded."
+    "not match the trace's list entry. Offered once model outputs are loaded, and only in the "
+    "time series domain, the other two having no label periods to shade."
 )
 PLOT_PX = 230  # height of one overlaid section plot
 SMALL_PLOT_PX = 132  # height of one small multiple
@@ -397,6 +398,7 @@ class SeriesPage(QWidget):
         self._model_results = None  # the model outputs loaded, once they are
         self._sort: QComboBox | None = None
         self._shading: QComboBox | None = None
+        self._shading_label: QLabel | None = None
         self._shading_actions: list = []
 
     # -- construction, the parts every page shares
@@ -599,7 +601,8 @@ class SeriesPage(QWidget):
         self._normalize.setToolTip(normalize_tip)
         self._normalize.toggled.connect(self._replot)
         bar.addWidget(self._normalize)
-        self._shading_actions = [bar.addWidget(QLabel(" Shade by "))]
+        self._shading_label = QLabel(" Shade by ")
+        self._shading_actions = [bar.addWidget(self._shading_label)]
         self._shading = QComboBox()
         self._shading.addItems(list(SHADINGS))
         self._shading.setToolTip(SHADING_TIP)
@@ -630,6 +633,7 @@ class SeriesPage(QWidget):
         self._controls.show_bins(self.domain == "distribution")
         self._parameter_separator.setVisible(self.domain != "time")
         self._sync_alignment_control()
+        self._sync_shading_control()
 
     def _sync_overall_control(self) -> None:
         """Grey *Overall* in the time domain, and leave it if the domain moves there.
@@ -659,6 +663,12 @@ class SeriesPage(QWidget):
         moot = self.domain != "time"
         self._align.setEnabled(not moot)
         self._align.setToolTip(ALIGN_MOOT_TIP if moot else ALIGN_TIP)
+
+    def _sync_shading_control(self) -> None:
+        """Grey *Shade by* off the time axis: only a time series has label periods to shade."""
+        on_time = self.domain == "time"
+        self._shading_label.setEnabled(on_time)
+        self._shading.setEnabled(on_time)
 
     def _on_layout_changed(self, *args) -> None:
         self._sync_layout_controls()
@@ -1631,8 +1641,7 @@ class SeriesPage(QWidget):
         if self.small_multiples and len(xs) >= 4:
             # One instance recorded for days would leave every other plot of the
             # grid a sliver against its left edge, so the grid opens on the
-            # stretch most of the instances cover and leaves the rest to the
-            # zoom.
+            # stretch most of the instances cover and leaves the rest to the zoom.
             lo, hi = float(np.quantile(starts, 0.1)), float(np.quantile(ends, 0.9))
         else:
             lo, hi = min(starts), max(ends)
