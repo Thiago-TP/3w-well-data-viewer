@@ -1,9 +1,9 @@
 """The help window: what the fault classes, the variables and the colors mean.
 
 One window with a tab per question a reader of these plots actually has (what
-is this event, what is this variable, what is this well status, how do I work
-the viewer), rendered as rich text so the swatches can carry the very colors
-the plots draw. Both windows open it, on the tab that suits them.
+is this event, what is this variable, what is this well status, what is this
+dataset), rendered as rich text so the swatches can carry the very colors the
+plots draw. Both windows open it, on the tab that suits them.
 """
 
 import pandas as pd
@@ -54,7 +54,6 @@ from overlap_viewer.backend.help_text import (
     STATE_VALVE_NOTE,
     STATES,
     TRANSIENT_CAPABLE,
-    USAGE,
     VALVE_NAMES,
     VARIABLES,
     WINDOWS_INTRO,
@@ -491,14 +490,9 @@ def windows_help_page() -> str:
     return _document("".join(parts))
 
 
-def usage_page() -> str:
-    """How to work the pages and the windows, and what the dataset underneath them is."""
-    parts = ["<h2>Using the viewer</h2>"]
-    for section, lines in USAGE.items():
-        parts.append(f"<h3>{section}</h3><ul>")
-        parts.extend(f"<li>{line}</li>" for line in lines)
-        parts.append("</ul>")
-    parts.append("<h2>Notes on the data</h2>")
+def notes_page() -> str:
+    """What the dataset underneath every page is: its files, its overlaps, its labels, its gaps."""
+    parts = ["<h2>Notes on the data</h2>"]
     for title, text in DATASET_NOTES:
         parts.append(f"<h3>{title}</h3><p>{text}</p>")
     parts.append(f'<hr><p class="sub">Source: {PAPER}</p>')
@@ -517,7 +511,7 @@ class HelpWindow(QDialog):
         "Windows",
         "Instances map",
         "Model outputs",
-        "Using the viewer",
+        "Notes on the data",
     )
 
     def __init__(self, info: DatasetInfo, counts: dict[int, int] | None = None, parent=None):
@@ -528,20 +522,21 @@ class HelpWindow(QDialog):
 
         figures = Figures()
         self._tabs = QTabWidget()
-        for title, html in zip(
-            self.TABS,
-            (
-                fault_page(info, counts, figures),
-                variable_page(info, figures),
-                state_page(figures),
-                availability_help_page(figures),
-                map_help_page(),
-                dispersion_help_page(),
-                windows_help_page(),
-                model_help_page(),
-                usage_page(),
-            ),
-        ):
+        # Keyed by title rather than zipped in order, so that a tab can never
+        # show another's page, as three of them once did.
+        pages = {
+            "Fault classes": fault_page(info, counts, figures),
+            "Variables": variable_page(info, figures),
+            "Well status": state_page(figures),
+            "Data availability": availability_help_page(figures),
+            "Dispersions": dispersion_help_page(),
+            "Windows": windows_help_page(),
+            "Instances map": map_help_page(),
+            "Model outputs": model_help_page(),
+            "Notes on the data": notes_page(),
+        }
+        for title in self.TABS:
+            html = pages[title]
             browser = QTextBrowser()
             browser.setOpenExternalLinks(True)
             figures.attach(browser)  # before the html, so the img tags resolve

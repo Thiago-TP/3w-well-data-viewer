@@ -32,7 +32,7 @@ src/overlap_viewer/
 │   ├── model_outputs.py  the model-output format: model.json beside per-instance parquet files, its loader, the agreement with the labels
 │   ├── theme.py          every color of the light and of the dark mode
 │   ├── palette.py        fault hues tinted by reach, legend entries
-│   └── help_text.py      what the help says: classes, variables, statuses, availability, usage, sources
+│   └── help_text.py      what the help says: classes, variables, statuses, availability, sources
 ├── algorithms/           what is computed from the data: numpy only; anything heavier is an optional extra
 │   ├── faults.py         where the event begins in an instance, z-scores, the plausible extent of a series
 │   ├── interpolation.py  which samples are measurements and which the historian drew: held, interpolated, genuine, the spacing of the measurements
@@ -315,11 +315,12 @@ logic. Every entry names the document it leans on.
   explanation.
 - `VariableHelp(where, note, position, signature_of)`: one sensor's help entry.
 - Key tables: `FIGURES`, `FAULTS` (the ten fault-class explanations), `VARIABLES` (per-sensor help),
-  `STATES` (the nine well operational-status descriptions), `DATASET_NOTES`,
+  `STATES` (the nine well operational-status descriptions), `DATASET_NOTES` (the Notes on the data
+  tab),
   `AVAILABILITY_INTRO`/`AVAILABILITY_STATES`/`PLAUSIBLE_RANGE_NOTES`/`AVAILABILITY_NOTES`/
   `AVAILABILITY_SOURCES`, `MAP_INTRO`/`MAP_NOTES`/`MAP_SOURCES`, `MODEL_INTRO`/`MODEL_NOTES`/
-  `MODEL_SOURCES`, `DISPERSION_INTRO`/`DISPERSION_NOTES`/`DISPERSION_SOURCES`, and `USAGE` (the
-  largest table: per-page usage instructions shown in the help window's "How to" tabs).
+  `MODEL_SOURCES`, `DISPERSION_INTRO`/`DISPERSION_NOTES`/`DISPERSION_SOURCES`, and
+  `WINDOWS_INTRO`/`WINDOWS_NOTES`/`WINDOWS_SOURCES`.
 
 ## `algorithms/`
 
@@ -673,8 +674,8 @@ that title bar on hover.
 
 ### `help.py`
 
-The tabbed help/reference window (fault classes, variables, well status, data availability, Instances
-map, dispersion, windows, model outputs, usage) rendered as rich text with embedded figures and swatches,
+The tabbed help/reference window (fault classes, variables, well status, data availability,
+dispersions, windows, Instances map, model outputs, notes on the data) rendered as rich text with embedded figures and swatches,
 shared by both the main window and instance windows.
 
 - `Figures`: loads and caches every documented figure image, attachable to a `QTextBrowser`; method
@@ -682,10 +683,10 @@ shared by both the main window and instance windows.
 - `valve_rule_text(code)`: what the valves of one well state must read, from
   `config.STATE_VALVE_RULES`, for the Well status tab.
 - `fault_page`, `variable_page`, `state_page`, `availability_help_page`, `map_help_page`,
-  `model_help_page`, `dispersion_help_page`, `windows_help_page`, `usage_page`: each assembles one tab's HTML from
-  `backend.help_text` content.
-- `HelpWindow(QDialog)`: the `QTabWidget` of `QTextBrowser`s built from the page functions above;
-  method `show_tab(title)`.
+  `model_help_page`, `dispersion_help_page`, `windows_help_page`, `notes_page`: each assembles one
+  tab's HTML from `backend.help_text` content.
+- `HelpWindow(QDialog)`: the `QTabWidget` of `QTextBrowser`s built from the page functions above,
+  each keyed by its tab's title; method `show_tab(title)`.
 - `real_instance_counts(catalogue)`: per-fault-class real instance counts, for the class table.
 
 ### `overview.py`

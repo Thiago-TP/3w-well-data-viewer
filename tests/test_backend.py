@@ -702,14 +702,6 @@ def test_help_text_covers_the_dataset():
     # Every event but normal operation and the one added in 2.0.0 has a published
     # confirmation window; normal operation is not an occurrence to confirm.
     assert set(help_text.CONFIRMATION_WINDOWS) == set(DEFAULT_FAULT_NAMES) - {0, 9}
-    # The usage help knows every page of the viewer.
-    assert {
-        "Timelines page",
-        "Availability page",
-        "Faults page",
-        "Instance window",
-        "Signal views",
-    } <= set(help_text.USAGE)
 
 
 def test_every_state_names_its_valves_in_the_help():
