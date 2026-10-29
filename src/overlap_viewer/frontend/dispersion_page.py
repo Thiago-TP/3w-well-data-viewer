@@ -45,7 +45,7 @@ from overlap_viewer.backend.dataset import (
 )
 from overlap_viewer.backend.palette import fault_color, tint
 from overlap_viewer.frontend.heatmap import ColorKey
-from overlap_viewer.frontend.items import ScrollFriendlyViewBox, restyle_axes
+from overlap_viewer.frontend.items import AnchoredText, ScrollFriendlyViewBox, restyle_axes
 from overlap_viewer.frontend.loading import progress_dialog
 from overlap_viewer.frontend.overview import ElidedLabel
 from overlap_viewer.frontend.passes import Passes
@@ -170,6 +170,9 @@ class DispersionPage(QWidget):
         self._kin = pg.ScatterPlotItem(size=KIN_PX, pxMode=True)
         self._kin.setZValue(15)
         plot.addItem(self._kin, ignoreBounds=True)
+        # The Pearson coefficient of the samples on show, pinned to the top-left
+        # corner; built again with every cloud, so that it takes the theme too.
+        self._pearson: AnchoredText | None = None
         self._plot_widget.scene().sigMouseMoved.connect(self._on_mouse_moved)
         self._plot_widget.scene().sigMouseClicked.connect(self._on_mouse_clicked)
         body = QWidget()
@@ -499,6 +502,9 @@ class DispersionPage(QWidget):
         self._image.clear()
         self._highlight.setData([], [])
         self._kin.setData([], [])
+        if self._pearson is not None:
+            self._pearson.detach()
+            self._pearson = None
         self._hover_instance = -1
         self._dots = np.zeros(0, dtype=int)
         self._dot_instances = np.zeros(0, dtype=int)
@@ -621,6 +627,7 @@ class DispersionPage(QWidget):
         if pair.n and framing != self._framed:
             plot.getViewBox().autoRange(padding=0.04)
             self._framed = framing
+        self._show_pearson(pair)
         self._note.setText(self._caption(pair))
         self._summary = self._summary_text(pair)
         self.summary_changed.emit()
@@ -639,9 +646,6 @@ class DispersionPage(QWidget):
         if len(self.periods) < len(di.PERIODS):
             names = [di.PERIOD_NAMES[di.PERIODS[p]] for p in self.periods] or ["none"]
             parts.append("label periods: " + ", ".join(names))
-        rho = pair.pearson()
-        if np.isfinite(rho):
-            parts.append(f"Pearson over these samples {rho:+.2f}")
         if self.genuine_only:
             parts.append(
                 f"measurements only: both sensors read at the instant, "
@@ -655,6 +659,20 @@ class DispersionPage(QWidget):
         if self._read_s >= 1.0:
             parts.append(f"read in {self._read_s:.0f} s")
         return " | ".join(parts)
+
+    def _show_pearson(self, pair: di.Pair) -> None:
+        """Pin the Pearson coefficient of the samples on show to the plot's top-left corner."""
+        rho = pair.pearson()
+        if not np.isfinite(rho):
+            return
+        which = "measurements" if self.genuine_only else "samples"
+        self._pearson = AnchoredText(
+            f'<span style="color:{theme.current().text};">Pearson <b>{rho:+.2f}</b> over the '
+            f"{pair.n:,} {which} on show</span>",
+            frac=(0.0, 1.0),
+            anchor=(-0.03, -0.25),
+        )
+        self._pearson.attach(self._plot_widget.getPlotItem())
 
     def _summary_text(self, pair: di.Pair) -> str:
         cloud = self._cloud

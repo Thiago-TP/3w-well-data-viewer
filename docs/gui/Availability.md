@@ -1,7 +1,7 @@
 # Availability page
 Which sensors the real instances actually recorded. Every instance file
 carries every column the dataset declares, whether or not the well had the sensor, so what was
-recorded is a question of its own. The **Matrix** box holds three answers.
+recorded is a question of its own. The **Matrix** box holds two answers.
 
 *Sensor availability* is a column per sensor, a row per group of instances, and in every cell the
 share of the group in which the sensor is **live** (readings that move), **frozen** (readings, but
@@ -26,10 +26,6 @@ the width of the window.
 - **Cells** splits each cell by samples, so that a six-day instance weighs more than a six-hour
   one (as Rabelo counts), or by instances, each weighing the same (as Rozo counts). The two
   disagree because instances range from hours to days.
-- **Available from** sets the share of its samples a sensor needs readings in to count as
-  available in an instance at all; below it the instance counts as absent for that sensor,
-  readings and all. Rabelo's pipeline drops an instance whose P-TPT is more than half missing:
-  50 % shows what that rule keeps.
 - **Join overlapping instances** counts the bars the timelines draw when joined: overlapping
   instances whose labels agree, read as the single recording they were cut from, in which a
   sample two windows share is counted once and a sensor one window missed is filled in by
@@ -78,17 +74,15 @@ the width of the window.
 *Sensor pairs* puts the sensors on both axes and asks what no column of the first matrix answers:
 how often two sensors carry a reading **at the same instant**. Two sensors can each cover half a
 recording and never overlap, so a pair can be empty however well covered each of its sensors is,
-and a pair with little coverage is one no model can train on and a correlation nobody should
-trust. This is Rabelo's figure 2.10. Of the 351 pairs of 3W 2.0.0, 102 never carry a reading at
-the same instant.
+and a pair with little coverage is one no model can train on. This is Rabelo's figure 2.10. Of the
+351 pairs of 3W 2.0.0, 102 never carry a reading at the same instant.
 
 ![Sensor pairs](../assets/pairs.png)
 
 - The **diagonal** is each sensor's own coverage. **Over** counts the pairs over every real
   instance, or over those of one fault class or one well. **Count** asks either that both sensors
-  be *live* in an instance for it to count, so that a dead instrument and a sensor below the
-  availability threshold contribute nothing, or merely that both be *recorded*, frozen readings
-  included, which is how Rabelo counts.
+  be *live* in an instance for it to count, so that a dead instrument contributes
+  nothing, or merely that both be *recorded*, frozen readings included, which is how Rabelo counts.
 - **Sensors: grouped by co-occurrence** lays the sensors out so that those recorded at the same
   instant sit together, and both axes take that order. It is a spectral seriation: sensors are
   placed on a line by the second eigenvector of the Laplacian of their overlap, which puts
@@ -103,37 +97,3 @@ the same instant.
 - The footers cannot answer this one: a count of missing values says how much of a column is
   there, not *which* samples are there. So the first look reads the data (about 9 s for 3W 2.0.0,
   behind a progress dialog) and caches the result beside the catalogue.
-
-*Sensor correlations* asks the next question: of two sensors recorded together, how do they move
-together? Melo's exploratory methodology (doctoral thesis, section 4.1.5) reads the relations
-between variables three ways at once, and the matrix offers the three
-([`algorithms/correlation.py`](../../src/overlap_viewer/algorithms/correlation.py)).
-
-![Sensor correlations](../assets/correlations.png)
-
-- **Coefficient**: *Pearson*, the linear correlation, blue positive and amber negative, full at ±1,
-  exact over every sample of the scope in which both sensors carry a plausible reading, pooled;
-  *Mutual information*, Laarne's coefficient √(1 − e⁻²ᴵ) of the mutual information estimated by
-  nearest neighbours on an even subsample of a few thousand of the same samples, 0 for
-  independent sensors and 1 for a deterministic relation, equal to |Pearson| when the pair is
-  jointly Gaussian; *Nonlinear*, Zhang's ρ_I × (1 − |ρ|), what the second says beyond the first. The
-  title sums each into Melo's global coefficient (his equations 4.16 and 4.15). A pair with fewer
-  than 300 co-valid samples is left blank, and the valve states are left out: a position is not a
-  measurement. The two nonlinear coefficients need the `analysis` extra.
-- There is **no smoothing**. Melo's figures 4.11 and 4.26 show a process's coefficients rising as a
-  moving average grows, and the historian's lines between measurements (below) were his reason to
-  distrust any coefficient taken on the grid. On 3W 2.0.0 the pooled coefficients hardly moved
-  with one (the global coefficient of the whole dataset went from 0.420 to 0.424 between none and
-  five minutes), because a pooled coefficient is set by the levels the sensors sit at from one
-  instance to the next, not by what happens between two measurements; so the viewer takes them
-  on the grid as it is. The lines' spurious dynamics live inside one instance, at the scale of
-  seconds, where the Dispersions page looks.
-- **Over** is the scope, and it carries the caveat that does bite, stated in the title: pooling the
-  instances of a class or of the whole dataset mixes the levels of different wells into the
-  coefficient. With every well pooled the mutual-information coefficient of almost every pair reads
-  1.00, since knowing one sensor's level is enough to know the well and so the other's; over one
-  well (WELL-00007) nearly every pair of pressures and temperatures correlates at ±0.99, through
-  the well's shut-ins and restarts. **Join overlapping instances** pools the merged recordings of
-  the bars, so that a sample two windows share is counted once. The first look at a scope reads its
-  instances behind a progress dialog (about two minutes for the whole dataset); the result is kept
-  for the session.

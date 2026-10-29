@@ -29,9 +29,8 @@ the measurements alone
   own: a historian archives a reading when it has moved enough, so the instants at which both
   sensors were archived are instants at which both moved, and this cloud favours the relation
   between them: over the severe-slugging instances P-TPT × T-TPT reads +0.40 on every sample and
-  +0.95 on the 5 % at which both were measured. The caption gives the counts, one in how many, and the Pearson
-  coefficient over the samples on show, so that the cloud and the correlation matrix can be read
-  against each other: no pooled coefficient betrays the lines, every scatter plot does.
+  +0.95 on the 5 % at which both were measured. The caption gives the counts, one in how many; the
+  Pearson coefficient over the samples on show sits in the top-left corner of the plot.
 - **Hover** a dot for its instance, its instant, its label period, its two readings and whether
   each was measured or filled in. Every other dot of that instance is brought forward and the rest
   of the cloud fades, so one recording's trajectory through the plane can be followed with the

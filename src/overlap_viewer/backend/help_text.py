@@ -1012,54 +1012,6 @@ AVAILABILITY_NOTES = [
         ),
     ),
     (
-        "Sensor correlations",
-        (
-            "The <b>Sensor correlations</b> matrix asks the next question: of two sensors that "
-            "are recorded together, how do they move together? Melo's exploratory methodology "
-            "(doctoral thesis, section 4.1.5) reads the relations between the variables of a "
-            "dataset three ways at once, and the <i>Coefficient</i> box offers the three. "
-            "<b>Pearson</b> is the linear correlation, blue when positive and amber when negative, "
-            "the cell full at ±1, computed exactly over every sample of the instances of the "
-            "<i>Over</i> scope in which both sensors carry a plausible reading, pooled. <b>Mutual "
-            "information</b> is a nonlinear one: the mutual information of the two sensors, "
-            "estimated by nearest neighbours (Kraskov's estimator) on an even subsample of a few "
-            "thousand of the same samples, turned into a coefficient between 0 and 1 by Laarne's "
-            "normalisation √(1 − e⁻²ᴵ), which is the Pearson coefficient itself when the two are "
-            "jointly Gaussian; two sensors bound by a curve rather than a line score high here and "
-            "nothing on Pearson. <b>Nonlinear</b> is Zhang's coefficient, what the second says "
-            "beyond the first, ρ_I × (1 − |ρ|). The title sums each into Melo's global coefficient "
-            "over the sensors present (his equations 4.16 and 4.15), and a pair with fewer than "
-            "300 co-valid samples is left blank rather than trusted. The valve states are left "
-            "out: a position is not a measurement, and its two values would fill the matrix with "
-            "coefficients of ±1 that say only which valves open together. The two nonlinear "
-            "coefficients need the <i>analysis</i> extra.<br><br>"
-            "The coefficients are taken on the grid as it is, with no moving average first. Melo's "
-            "figures 4.11 and 4.26 show the coefficients of a process rising as a moving average "
-            "grows, the noise hiding the relations, and the lines the historian drew between "
-            "measurements (<i>Measurements and the lines between them</i>, above) were his reason "
-            "to distrust any coefficient taken on the grid. What 3W 2.0.0 said is more sobering "
-            "than either: pooled over a scope, the coefficients hardly moved with smoothing (the "
-            "global linear coefficient of the whole dataset went from 0.420 with none to 0.424 at "
-            "five minutes, and no pair of the severe-slugging class moved by more than 0.03) "
-            "because a pooled coefficient is "
-            "set by the levels the sensors sit at from one instance to the next, not by what "
-            "happens between two measurements, which is why the viewer offers none. The lines' spurious dynamics live inside one "
-            "instance, at the scale of seconds, which is where the Dispersions page looks. The "
-            "caveat that does bite stands in the title: pooling the instances of a class, or of "
-            "the whole dataset, mixes the levels of different wells into the coefficient, two "
-            "sensors that both run higher on one well than on another correlate through the "
-            "wells, not through the process, and with every well pooled the mutual-information "
-            "coefficient of almost every pair reads 1.00, knowing one sensor's level being enough "
-            "to know the well and so the other's, so a well's own scope is the one that shows the "
-            "process, and there (WELL-00007) nearly every pair of pressures and temperatures "
-            "correlates at ±0.99, through the well's shut-ins and restarts. The first look at a "
-            "scope reads its instances in full, behind a progress dialog (about two minutes for "
-            "the whole dataset); the result is kept for the session, not cached. <i>Join "
-            "overlapping instances</i> pools the merged recordings of the bars instead of the "
-            "windows, so that a sample two windows share is counted once."
-        ),
-    ),
-    (
         "How the shares are counted",
         (
             "Shares are of samples: every sample of every instance in a row is absent, frozen or "
@@ -1121,9 +1073,7 @@ AVAILABILITY_SOURCES = (
     "and of every pair of sensors (figure 2.10), and whose section 5.3.1 relates coverage to what "
     "the models learn; a survey of every instance of 3W 2.0.0 for the plausible ranges shown in "
     "this help; and the doctoral thesis of <b>A. Melo</b> (in <code>docs/papers</code>), whose section "
-    "4.1.5 reads the relations between variables through the Pearson, mutual-information and "
-    "nonlinear coefficients the correlation matrix shows, and whose section 4.2.5 found the "
-    "historian's lines. This page counts the real instances only, and every one of them, where "
+    "4.2.5 found the historian's lines. This page counts the real instances only, and every one of them, where "
     "Rozo counts a sample of them and Rabelo every kind of instance."
 )
 
@@ -1432,8 +1382,8 @@ DISPERSION_NOTES = [
             "instant. At most 150,000 of the rows are drawn as dots, evenly; the density counts "
             "them all. The caption "
             "says how many dots of how many samples of how many instances are on show, one in how "
-            "many, and the Pearson coefficient over those very samples, so that the cloud and the "
-            "correlation matrix can be read against each other."
+            "many, and the top-left corner of the plot the Pearson coefficient over those very "
+            "samples."
         ),
     ),
 ]
@@ -1441,8 +1391,7 @@ DISPERSION_NOTES = [
 DISPERSION_SOURCES = (
     "Sources: the doctoral thesis of <b>A. Melo</b> (in <code>docs/papers</code>), whose section "
     "4.2.5 reads the scatter plots of pairs of 3W variables and finds the historian's "
-    "interpolation in them, and whose section 4.1.5 reads the relations between variables through "
-    "the coefficients the correlation matrix shows; the readings the page draws as dots are the "
+    "interpolation in them; the readings the page draws as dots are the "
     "measurements found by the rule of <i>Measurements and the lines between them</i> under Data "
     "availability."
 )

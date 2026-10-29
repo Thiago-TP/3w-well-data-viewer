@@ -41,7 +41,6 @@ src/overlap_viewer/
 │   ├── consistency.py    whether the readings of one recording agree: the pressures in the order the flow imposes, line by line, and the well state with the valve states
 │   ├── embedding.py      the Instances map: representations, PCA and MDS in numpy, t-SNE and UMAP, the clusterings and their scores, typicality, the one-class audit
 │   ├── dtw.py            the DTW distance between the decimated, z-scored series of one sensor (the `dtw` extra)
-│   ├── correlation.py    how the sensors move together over a scope: Pearson exact over the pooled samples, the mutual-information and nonlinear coefficients
 │   ├── dispersion.py     two sensors against each other over a scope: an even subsample of every instance with its label periods and measurements, the pair, its density
 │   ├── spectral.py       the signal views: a series prepared, Welch's density and the dominant period, the Lomb-Scargle periodogram of the measurements, histograms stacked by label, with their peak
 │   └── windows.py        one sensor of a well cut into windows of a fixed size: one label each, zero padding at the end of a run, no overlap between instances; the descriptors of every window, the separation of normal from event windows
@@ -56,7 +55,7 @@ src/overlap_viewer/
     ├── legend.py             the clickable color key and its flow layout
     ├── help.py               the help window
     ├── overview.py           the timelines page: the grid of well timelines
-    ├── availability_page.py  the availability page: its three matrices (availability, sensor pairs, sensor correlations) and what each says
+    ├── availability_page.py  the availability page: its two matrices (availability, sensor pairs) and what each says
     ├── series_page.py        what the faults and features pages both are: sections of instances, in a chosen domain and layout
     ├── faults_page.py        the faults page: one fault, a section per feature, its instances in the color of their well
     ├── features_page.py      the features page: one sensor, a section per fault class, the classes over one another when overlaid
@@ -462,20 +461,6 @@ one fault class, for the Instances map's DTW representation. Requires the `dtw` 
 - `dtw_distances(series, window_share=0.1)`: the full symmetric DTW distance matrix over a list of
   decimated series, under a Sakoe-Chiba window.
 
-### `correlation.py`
-
-Computes how sensors move together over a scope (all instances, one class, or one well, pooled):
-exact Pearson correlation via streaming sufficient statistics, plus (via the `analysis` extra) a
-nonlinear mutual-information-based coefficient (Melo's thesis §4.1.5).
-
-- `Correlations` (frozen dataclass): the Pearson, pair-count, MI and nonlinear matrices; methods
-  `matrix(coefficient)`, `present()`, `global_coefficients()` (Melo's pooled figures,
-  eqs. 4.15-4.16).
-- `mi_coefficient(mutual_information)`: Laarne et al.'s `sqrt(1 - exp(-2I))` normalization into a
-  [0,1] coefficient.
-- `CorrelationPass`: streaming accumulator; `.add(frame)` folds one instance into running sums;
-  `.result(mutual_information=True)` finalizes into a `Correlations`.
-
 ### `dispersion.py`
 
 Backs the two-sensor scatter/density view: reads an even subsample of every instance's rows (all analog sensors, label period, measurement genuineness) into one `Cloud` so changing the sensor pair, coloring or filters afterward is free.
@@ -707,15 +692,13 @@ rule), with hover-to-highlight-overlaps and click-to-open.
 
 ### `availability_page.py`
 
-The Availability page: three matrices over the same bars (sensor availability, sensor pairs'
-co-occurrence, sensor-to-sensor correlations), grouped by fault class, well or instances of one, drawn
-via `HeatmapWidget`, with progress-dialog-gated passes for joined stats, pair counts, profiles and
-correlations.
+The Availability page: two matrices over the same bars (sensor availability, sensor pairs'
+co-occurrence), grouped by fault class, well or instances of one, drawn via `HeatmapWidget`, with
+progress-dialog-gated passes for joined stats, pair counts and profiles.
 
 - `AvailabilityPage(QWidget)`: signals `status`, `summary_changed`, `open_requested(well, bar,
-  sensor, joined)`. The toolbar offers *Matrix* (availability/pairs/correlations), *Rows*, *Over*,
-  *Sensors*, *Cells*, *Available from*, *Join*, plus per-matrix controls (coefficient,
-  IQR × for the Toolkit rule). `_ensure_data()` dispatches which passes the current matrix needs;
+  sensor, joined)`. The toolbar offers *Matrix* (availability/pairs), *Rows*, *Over*,
+  *Sensors*, *Cells*, *Join*, plus per-matrix controls (IQR × for the Toolkit rule). `_ensure_data()` dispatches which passes the current matrix needs;
   `_refresh()` redraws whichever matrix is selected. `summary()`.
 
 ### `series_page.py`
