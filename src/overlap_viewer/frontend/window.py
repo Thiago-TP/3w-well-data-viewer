@@ -419,9 +419,7 @@ class MainWindow(QMainWindow):
             self._help = HelpWindow(
                 self.info, counts=real_instance_counts(self._catalogue), parent=self
             )
-        self._help.show_tab(
-            HELP_TABS.get(type(self._tabs.currentWidget()), "Fault classes")
-        )
+        self._help.show_tab(HELP_TABS.get(type(self._tabs.currentWidget()), "Fault classes"))
 
     def open_instances(self, data: WellData, index: int, features: Sequence[str] = ()):
         """Open the time series of one bar of a timeline and of every bar it overlaps.
@@ -487,9 +485,7 @@ class MainWindow(QMainWindow):
         try:
             note = write_file_list(Path(path), self.info, files, page.shown_source())
         except OSError as error:
-            QMessageBox.critical(
-                self, "Export failed", f"{type(error).__name__}: {error}"
-            )
+            QMessageBox.critical(self, "Export failed", f"{type(error).__name__}: {error}")
             return
         self._status.setText(
             f"{len(set(files))} files written to {path}, their provenance to {note.name} | load "
@@ -502,9 +498,7 @@ class MainWindow(QMainWindow):
         except ScanCancelled:
             return
         except Exception as error:  # noqa: BLE001 - report, keep the current catalogue
-            QMessageBox.critical(
-                self, "Rescan failed", f"{type(error).__name__}: {error}"
-            )
+            QMessageBox.critical(self, "Rescan failed", f"{type(error).__name__}: {error}")
             return
         self.set_catalogue(catalogue)
 
