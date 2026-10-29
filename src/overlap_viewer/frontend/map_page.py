@@ -1,8 +1,7 @@
 """The Instances map: every real instance as one point, placed by what its sensors amount to.
 
 The other pages look at the instances one well, one fault or one sensor at a
-time. This one looks at all of them at once, from above: each instance (or,
-with *Join overlapping instances* ticked, each bar of the joined view) is a
+time. This one looks at all of them at once, from above: each instance is a
 point, placed on the plane by an embedding of its **representation**
 (``algorithms.embedding``): the descriptors of its sensors, taken on the 1 Hz
 grid or on the measurements alone; the same less the levels; or the DTW
@@ -33,7 +32,6 @@ from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
     QComboBox,
     QHBoxLayout,
     QLabel,
@@ -61,7 +59,7 @@ from overlap_viewer.frontend.passes import Passes
 from overlap_viewer.frontend.series_page import LIST_WIDTH
 
 HINT = (
-    "Every point is one real instance, or one joined bar | hover a point to name it, click it to "
+    "Every point is one real instance | hover a point to name it, click it to "
     "open its time series | the boxes choose what places the points, what colors them and how "
     "they are grouped | the list on the right is the label audit, drag its edge to resize it | "
     "F1 for help"
@@ -120,11 +118,6 @@ CLUSTERING_TIP = (
     "the classes, or the wells, under other names, near 0 for one unrelated to them. On 3W the "
     "wells usually win."
 )
-JOIN_TIP = (
-    "Make the points the bars of the joined view: the instances of a well that overlap with "
-    "labels that agree, read as the single recording they were cut from and profiled as such, so "
-    "that a well recorded twice is one point where it was one recording."
-)
 
 
 def cluster_color(label: int) -> str:
@@ -144,8 +137,8 @@ class Point:
     title: str
     fault: int
     well: int
-    data: WellData  # the view (plain or joined) the point belongs to
-    index: int  # its position in that view
+    data: WellData  # the well the point belongs to
+    index: int  # its position in that well
 
 
 class MapPage(QWidget):
@@ -283,11 +276,6 @@ class MapPage(QWidget):
         self._coloring.model().item(COLORINGS.index("Model agreement")).setEnabled(False)
         bar.addWidget(self._coloring)
 
-        bar.addSeparator()
-        self._join = QCheckBox("Join overlapping instances")
-        self._join.setToolTip(JOIN_TIP)
-        self._join.toggled.connect(self._recompute)
-        bar.addWidget(self._join)
         self._sync_representation_controls()
         return bar
 
@@ -438,10 +426,6 @@ class MapPage(QWidget):
     def clustering(self) -> str:
         return self._clustering.currentText()
 
-    @property
-    def joined(self) -> bool:
-        return self._join.isChecked()
-
     def set_coloring(self, name: str) -> None:
         self._coloring.setCurrentIndex(COLORINGS.index(name))
 
@@ -568,18 +552,17 @@ class MapPage(QWidget):
     # -- the points and their representation
 
     def _list_points(self, only_class: int | None = None) -> list[Point]:
-        """Every instance, or every joined bar, as a point; ``only_class`` keeps one class."""
+        """Every instance as a point; ``only_class`` keeps one class."""
         points: list[Point] = []
         for well in self._wells:
-            view = well.joined() if self.joined else well
-            rows = view.rows
+            rows = well.rows
             for index in range(len(rows)):
                 row = rows.iloc[index]
                 fault = int(row["fault_class"])
                 if only_class is not None and fault != only_class:
                     continue
-                key = (well.well, index) if self.joined else (fault, str(row["file"]))
-                points.append(Point(key, instance_title(row), fault, well.well, view, index))
+                key = (fault, str(row["file"]))
+                points.append(Point(key, instance_title(row), fault, well.well, well, index))
         return points
 
     def _build_representation(self) -> tuple[list[Point], em.Representation] | None:
@@ -590,7 +573,7 @@ class MapPage(QWidget):
         rep = em.feature_matrix(
             self._profiles,
             [p.key for p in points],
-            self.joined,
+            False,
             self.info,
             shape_only=self.representation == "shape",
             measured=self.measured,
@@ -691,8 +674,7 @@ class MapPage(QWidget):
         self._scores_label.setText(self._scores.describe() if self._scores else "")
         self._note.setText(" | ".join(part for part in (rep.note, self._caption) if part))
         n = rep.n
-        noun = "bars" if self.joined else "instances"
-        self._summary = f"{n} {noun} on the map | {self._caption} "
+        self._summary = f"{n} instances on the map | {self._caption} "
         self.summary_changed.emit()
         self.status.emit(HINT)
 

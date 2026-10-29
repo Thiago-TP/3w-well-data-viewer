@@ -45,8 +45,6 @@ of the process; everything is an analysis of the catalogue, recomputed on every 
   Its left edge drags to widen or narrow it, and **Label audit**, at the right end of the second
   row, hides it to give the map its width. It hides itself under the DTW representation, which
   compares the instances of one class, and comes back as it was on leaving it.
-- **Join overlapping instances** makes the points the bars of the joined view, each merged
-  recording profiled as the one series it is.
 - The first time the page is shown it reads every instance in full behind a progress dialog (the
   same pass the availability split uses) and keeps the result in the cache. t-SNE, the
   clusterings, their scores and the one-class model need the `analysis` extra, UMAP the `umap`

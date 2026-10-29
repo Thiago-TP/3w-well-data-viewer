@@ -762,7 +762,7 @@ across classes (optionally narrowed to one well). Subclasses `SeriesPage`; the m
 
 ### `map_page.py`
 
-The Instances map: every real instance (or joined bar) as a point placed by an embedding of its
+The Instances map: every real instance as a point placed by an embedding of its
 representation, colored by class, well, cluster, typicality, novelty or model agreement, with
 clustering scores and a "label audit" list of instances a one-class model disagrees with.
 

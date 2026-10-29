@@ -1129,9 +1129,8 @@ AVAILABILITY_SOURCES = (
 
 MAP_INTRO = (
     "The other pages look at the real instances one well, one fault or one sensor at a time. The "
-    "<b>Instances</b> page looks at all of them at once, from above: every instance (or, with "
-    "<i>Join overlapping instances</i> ticked, every bar of the joined view, the merged recording) "
-    "is one point, placed on the plane by what its sensors amount to, colored by its class, its "
+    "<b>Instances</b> page looks at all of them at once, from above: every instance is one "
+    "point, placed on the plane by what its sensors amount to, colored by its class, its "
     "well, its cluster, its typicality or the verdict of a one-class model, and one click away "
     "from its time series. The unit is the instance, never the window a pipeline cuts: 1,119 "
     "points, which a reader can hold in view. Nothing here is a model of the process; everything "
@@ -1245,17 +1244,6 @@ MAP_NOTES = [
             "coloring the points that look normal are blue, those that look anomalous amber, "
             "and a dark ring marks the disagreements. The audit needs coordinates, so it "
             "rests under the DTW representation."
-        ),
-    ),
-    (
-        "The joined view",
-        (
-            "With <i>Join overlapping instances</i> ticked the points are the bars of the joined "
-            "view (the instances of a well that overlap with labels that agree, read as the "
-            "single recording they were cut from and profiled as such by the same pass), so a "
-            "well recorded twice is one point where it was one recording, and the largest join "
-            "of the dataset, seventy-one windows over six days, is one point. Everything on the "
-            "page is computed again on the bars."
         ),
     ),
 ]
