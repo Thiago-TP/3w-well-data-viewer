@@ -217,6 +217,8 @@ def main(argv=None) -> int:
     # a padded window side by side. The feature view is WELL-00014's P-TPT under
     # severe slugging, whose spread tells the event windows from the normal ones.
     windows = window.windows_page
+    # The table of the windows starts hidden too; the figures show it, which Windows.md describes.
+    windows._show_details.setChecked(True)
     if page(windows, "windows", wait=1.0):
         settle(8.0)  # reads one sensor of every instance of the well the first time
         shooter.save(window, "windows")
