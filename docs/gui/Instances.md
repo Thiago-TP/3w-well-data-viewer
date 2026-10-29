@@ -36,8 +36,7 @@ of the process; everything is an analysis of the catalogue, recomputed on every 
   is the event or the well they came from.
 - **Typicality** is how ordinary an instance of its class each one is: its distance to the medoid
   of its class in the representation, as a rank inside the class (1 the medoid, 0 the farthest).
-  It colors the points, it is a *Bar color* of the Timelines, and it is a *Sort* order of the
-  instance lists of the Faults and Features pages, whose tooltips carry it.
+  It colors the points.
 - The **label audit** on the right is what a one-class model of the normal instances (a
   radial-basis one-class SVM, as in Siqueira's notebooks, 5 % of the normal instances allowed
   outside its boundary) makes of every label: class by class, the fault instances that *look
@@ -46,9 +45,6 @@ of the process; everything is an analysis of the catalogue, recomputed on every 
   Its left edge drags to widen or narrow it, and **Label audit**, at the right end of the second
   row, hides it to give the map its width. It hides itself under the DTW representation, which
   compares the instances of one class, and comes back as it was on leaving it.
-- **Join overlapping instances** makes the points the bars of the joined view, each merged
-  recording profiled as the one series it is; the Timelines take the map's colorings only on the
-  view it was drawn on.
 - The first time the page is shown it reads every instance in full behind a progress dialog (the
   same pass the availability split uses) and keeps the result in the cache. t-SNE, the
   clusterings, their scores and the one-class model need the `analysis` extra, UMAP the `umap`

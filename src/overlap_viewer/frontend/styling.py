@@ -21,6 +21,7 @@ from PySide6.QtGui import Qt as GuiQt  # ``mightBeRichText`` is on QtGui's Qt, n
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
+    QComboBox,
     QProxyStyle,
     QStyle,
     QTabBar,
@@ -190,8 +191,18 @@ class _VisibleChecks(QProxyStyle):
     palette the box is painted with rather than off the theme in force, so
     that a window keeping a theme of its own gets the edge its own theme asks
     for (``qt_palette`` puts the hint's weight in ``PlaceholderText`` and the
-    border in ``Mid``).
+    border in ``Mid``). It also opens the list of a combo box ``limit_popup``
+    marked as a plain drop-down, so that its height limit counts.
     """
+
+    def styleHint(self, hint, option=None, widget=None, returnData=None) -> int:
+        if (
+            hint == QStyle.StyleHint.SH_ComboBox_Popup
+            and widget is not None
+            and widget.property(LIMITED_POPUP)
+        ):
+            return 0
+        return super().styleHint(hint, option, widget, returnData)
 
     def drawPrimitive(self, element, option, painter, widget=None) -> None:
         super().drawPrimitive(element, option, painter, widget)
@@ -251,6 +262,27 @@ def bounded_tooltip(text: str) -> str:
             return text
     body = text if rich else escape(text).replace("\n", "<br>")
     return f'{_BOUNDED}><tr><td width="{TOOLTIP_WIDTH_PX}">{body}</td></tr></table>'
+
+
+# -- The list of a long combo box ---------------------------------------------------
+
+POPUP_ROWS = 20
+LIMITED_POPUP = "limitedPopup"  # the property ``limit_popup`` marks a box with
+
+
+def limit_popup(box: QComboBox, rows: int = POPUP_ROWS) -> None:
+    """Open the list of ``box`` under it, ``rows`` entries tall at most, scrolling past that.
+
+    Fusion opens a combo box's list over the box, as tall as all its entries
+    put together, which for the hundreds of instances of a well or the wells of
+    a dataset is taller than the screen, and ``setMaxVisibleItems`` is ignored
+    in that style. The application's style turns the popup style off for a box
+    marked here, which is what makes the limit count. A style sheet would do
+    the same for the one box, but would also freeze the colors of its list at
+    the theme it was built in.
+    """
+    box.setProperty(LIMITED_POPUP, True)
+    box.setMaxVisibleItems(rows)
 
 
 # -- How long a tooltip stays -----------------------------------------------------

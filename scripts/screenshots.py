@@ -13,17 +13,16 @@ below; without it the plugin reports zero font families and every glyph comes
 out an empty box.
 
 Each figure is framed on what it has to show rather than on one window size:
-the availability matrix is eleven rows and no taller, the correlation matrix
-holds the analog sensors alone, and the color key is grabbed as a widget of its
-own. A few are set up before they are taken (a fault that oscillates, a sensor
-that is not a flat valve opening, a pointer resting on a cell so that the status
-line reads it) because the default state of a page is not always the state that
-shows what the page is for; every such choice is commented where it is made.
+the availability matrix is eleven rows and no taller, and the color key is
+grabbed as a widget of its own. A few are set up before they are taken (a fault
+that oscillates, a sensor that is not a flat valve opening, a pointer resting on
+a cell so that the status line reads it) because the default state of a page is
+not always the state that shows what the page is for; every such choice is
+commented where it is made.
 
 The passes over the data are cached (``~/.cache/overlap-viewer`` or the platform
 equivalent), so the first run is minutes and the next is seconds; the
-correlation and dispersion scopes are read per session and always cost their
-read.
+dispersion scopes are read per session and always cost their read.
 """
 
 import argparse
@@ -49,7 +48,6 @@ from overlap_viewer.frontend import styling
 
 PAGE = (1600, 900)  # wide enough that no page's toolbar falls behind the overflow chevron
 SHORT = (1600, 545)  # the availability matrix is eleven rows and no taller
-CORR = (1600, 680)  # the correlation matrix holds the analog sensors alone
 WIDE = (1600, 1000)
 TALL = (1500, 1000)
 HELP = (1000, 800)
@@ -147,7 +145,7 @@ def main(argv=None) -> int:
         legend = window.timelines._legend
         shooter.save(legend, "color_key", (legend.width(), 186))
 
-    # -- Availability, its three matrices --------------------------------------
+    # -- Availability, its two matrices --------------------------------------
     if page(window.availability, "availability", wait=2.5):
         hover_cell(window.availability, 8, 20)  # P-TPT under Hydrate in Production Line
         settle(0.5)
@@ -158,12 +156,6 @@ def main(argv=None) -> int:
         hover_cell(window.availability, 19, 26)  # P-TPT × T-TPT, the best-covered pair
         settle(0.5)
         shooter.save(window, "pairs")
-    if page(window.availability, "correlations", wait=1.0):
-        window.availability._matrix.setCurrentText("Sensor correlations")
-        settle(180.0)  # reads every instance the first time
-        hover_cell(window.availability, 14, 17)  # T-JUS-CKP × T-TPT, the strongest common pair
-        settle(0.5)
-        shooter.save(window, "correlations", CORR)
     window.availability._matrix.setCurrentText("Sensor availability")
 
     # -- Faults ----------------------------------------------------------------

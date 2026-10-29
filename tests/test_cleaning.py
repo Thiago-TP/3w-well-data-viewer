@@ -1,14 +1,11 @@
-"""Tests of the Toolkit's CleanSignals rule as the viewer applies it, and of the file-list export."""
+"""Tests of the Toolkit's CleanSignals rule as the viewer applies it."""
 
-import json
 from pathlib import Path
 
 import numpy as np
 import pytest
 
 from overlap_viewer.algorithms.cleaning import CleanRule, clean_signals
-from overlap_viewer.backend.dataset import DatasetInfo
-from overlap_viewer.backend.export import file_list_config, relative_file, write_file_list
 
 
 def test_clean_signals_discards_by_the_quartiles_and_drops_the_missing_columns():
@@ -69,33 +66,6 @@ def test_clean_signals_discards_by_the_quartiles_and_drops_the_missing_columns()
     )
     assert strict.dropped.tolist() == [False, False, True, False]
     assert "IQR" in CleanRule().describe() and "60%" in CleanRule().describe()
-
-
-def test_the_file_list_is_what_the_toolkit_loader_takes(tmp_path: Path):
-    """Relative paths under the root, once each, sorted, in the configuration's own fields, with the provenance beside."""
-    info = DatasetInfo(Path("H:/somewhere/dataset"), version="2.0.0")
-    files = [
-        (4, "WELL-00014_20170918230000.parquet"),
-        (0, "WELL-00001_20170201010207.parquet"),
-        (4, "WELL-00014_20170918230000.parquet"),  # a joined bar hands its instance over twice
-    ]
-    assert (
-        relative_file(4, "WELL-00014_20170918230000.parquet")
-        == "4/WELL-00014_20170918230000.parquet"
-    )
-    config = file_list_config(info, files)
-    assert config["split"] == "list" and config["event_type"] == ["real"]
-    assert config["file_list"] == [
-        "0/WELL-00001_20170201010207.parquet",
-        "4/WELL-00014_20170918230000.parquet",
-    ]
-    assert set(config) == {"path", "split", "file_list", "event_type", "version"}
-    out = tmp_path / "list.json"
-    note = write_file_list(out, info, files, source="the Faults page, Severe Slugging, WELL-00014")
-    assert json.loads(out.read_text(encoding="utf-8")) == config
-    written = json.loads(note.read_text(encoding="utf-8"))
-    assert note.name == "list.provenance.json" and written["n_files"] == 2
-    assert "Faults page" in written["source"] and "ParquetDatasetConfig" in written["load_with"]
 
 
 def test_the_rule_reads_the_profiles_of_the_instances_and_of_the_bars(

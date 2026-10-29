@@ -143,20 +143,23 @@ LIGHT = Theme(
     conflict="#c62828",
     conflict_hatch="#ffffff",
     # Deeper than every fault hue, so a well line reads as ink over the pale
-    # wash the label periods put behind it.
+    # wash the label periods put behind it. Within that band the twelve are the
+    # set that keeps its two closest colors farthest apart (CIEDE2000 21, where
+    # the first set of this mode had 8), and each is listed as the farthest
+    # from all those before it, so that the wells of a short list stay apart too.
     wells=(
-        "#55140d",
-        "#7c0083",
-        "#006200",
-        "#341462",
-        "#003b21",
-        "#900034",
-        "#4827b1",
-        "#5c4100",
-        "#5c2e55",
-        "#aa1476",
-        "#0055cb",
-        "#002790",
+        "#6e37be",
+        "#5f6400",
+        "#b93200",
+        "#006eaf",
+        "#00825f",
+        "#5f050a",
+        "#64004b",
+        "#643c00",
+        "#003c05",
+        "#f50550",
+        "#0a1e5a",
+        "#d700a0",
     ),
     # One hue per fault-class folder. Normal is green; the faults get distinct
     # categorical colors.

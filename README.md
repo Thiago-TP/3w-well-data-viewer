@@ -21,8 +21,8 @@ summarized in the following table and detailed in their own READMEs.
 
 | Page                                    | Question/Exploration                                                                                 | Content                                                                                                                                                                                                                               |
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Timelines](docs/gui/Timelines.md)       | Show at a glance how instances and fault classes spread out across time per well                     | One interactive timeline per well; bars colored by fault, or optionally by sensor availability, measurements, a descriptor, the Toolkit's rule, the map or a loaded model; hover highlights overlaps, click opens the instance window |
-| [Availability](docs/gui/Availability.md) | Show what each sensor actually recorded, not just what the file declares                             | Three matrices: sensor availability (live/frozen/absent shares), sensor pairs (how often two sensors are recorded at the same instant) and sensor correlations, grouped by fault class, well, or the instances of one                 |
+| [Timelines](docs/gui/Timelines.md)       | Show at a glance how instances and fault classes spread out across time per well                     | One interactive timeline per well; bars colored by fault, or optionally by sensor availability or the Toolkit's rule; hover highlights overlaps, click opens the instance window                                                       |
+| [Availability](docs/gui/Availability.md) | Show what each sensor actually recorded, not just what the file declares                             | Two matrices: sensor availability (live/frozen/absent shares) and sensor pairs (how often two sensors are recorded at the same instant), grouped by fault class, well, or the instances of one                                        |
 | [Faults](docs/gui/Faults.md)             | Compare how one fault looks across every well it occurred on                                         | Every real instance of one fault, aligned at its onset, one section per sensor, as small multiples or overlaid, in the time, distribution or spectrum domain                                                                          |
 | [Features](docs/gui/Features.md)         | Compare what one sensor reads across every fault class                                               | One sensor fixed, one section per fault class, the same layouts, domains and transforms as the Faults page                                                                                                                            |
 | [Dispersions](docs/gui/Dispersions.md)   | See two sensors against each other, the way the historian's interpolation shows up in a scatter plot | A point cloud, with its density, of two sensors over a scope (every instance, one class or one well), colored by class, well or label period, thinnable to genuine measurements alone                                                 |
@@ -174,7 +174,7 @@ functions are documented in detail in the [source `README`](src/README.md).
 │   ├── assets/               screenshots, taken again by scripts/screenshots.py, the platform schematics the help shows
 │   └── papers/               the 3W data articles, the thesis and the graduation project the help draws on
 ├── examples/                 one explained example of every file the viewer reads or writes, with its provenance
-├── scripts/                  what produces the examples and the figures, outside the GUI: export_file_list.py, pca_control_chart.py, screenshots.py
+├── scripts/                  what produces the examples and the figures, outside the GUI: pca_control_chart.py, screenshots.py
 ├── tests/                    the test suite, one module per subpackage or analysis, sharing a synthetic 3W layout
 └── src/overlap_viewer/
     ├── app.py                command line and start-up
@@ -185,8 +185,8 @@ functions are documented in detail in the [source `README`](src/README.md).
 
 ## Integration with 3W Toolkit
 
-The viewer meets the [3W Toolkit](https://github.com/petrobras/3W) in two places, by rule and by
-file.
+The viewer applies one rule of the [3W Toolkit](https://github.com/petrobras/3W), and cannot read
+what the Toolkit's model assessment writes.
 
 **By rule.** The Toolkit's preprocessing step `CleanSignals` decides, per instance and per sensor,
 whether a signal is to be believed: fitted on the dataset, it puts bounds at the quartiles of the
@@ -205,16 +205,6 @@ header of every block of an instance window names the sensors the rule would dis
 the rule has been fitted anywhere. One difference is kept on purpose: the profiles describe the
 plausible readings, so a sensor whose readings are instrument garbage is not discarded here by a
 mean of 10⁴²; it wears the amber mark instead, which says more.
-
-**By file.** *Export file list…*, in the main toolbar, writes the instances the current page has on
-show (the wells filtered on the Timelines, the rows of the Availability page, the instances ticked
-on the Faults and Features pages, the points of the Instances map, a joined bar as its instances)
-as the JSON of a Toolkit `ParquetDatasetConfig` with `split="list"`, each file a path relative to
-the dataset root, which the Toolkit loads with `ParquetDatasetConfig(**json.load(open(path)))`;
-its provenance is written beside it. [`scripts/export_file_list.py`](scripts/export_file_list.py)
-writes the same from the command line, by fault class and by well, and
-[`examples/`](examples/README.md) holds one it produced, the severe-slugging instances of
-WELL-00014, with its provenance.
 
 **What cannot come back.** The Toolkit's `ModelAssessment` exports `predictions_<timestamp>.csv`
 with the columns `true_values`, `predictions`, `model_name`, `task_type` and `timestamp`: one row
@@ -249,7 +239,7 @@ reading them.
 **Where it shows.** *Load model outputs…*, in the main toolbar, opens a folder in the format. Then:
 a third band, *model*, under the class band of every instance window, plain where the verdict
 agrees with the label under it and **amber where it disagrees**, the header of the block giving the
-agreement; *Bar color: Agreement with the model outputs* on the Timelines; *Color by: Model
+agreement; *Color by: Model
 agreement* on the Instances map; *Sort: Agreement with the model outputs* and *Shade by: Model
 outputs* on the Faults and Features pages, the latter shading the label periods behind the small
 plots with the model's verdicts in the dataset's own vocabulary (a detector's *anomalous* as the
@@ -312,17 +302,12 @@ moments, quantiles, autocorrelation time, signal-to-noise ratio, Gaussianity, Me
 on the grid and on the measurements alone, so that wherever a figure taken on the grid is shown
 the viewer can say so.
 
-The measurements show in four places: as dots on every trace, in the *Measured vs filled* split of
-the availability page, in the Timelines' *Bar color: Measurements of a sensor*, and under the
+The measurements show in three places: as dots on every trace, in the *Measured vs filled* split of
+the availability page, and under the
 *Measurements only* tick of the signal views, where the spectrum becomes a Lomb-Scargle
 periodogram of the readings at their own instants.
 
-The descriptors travel as columns of the catalogue. *Bar color: Descriptor of a sensor*, on the
-Timelines, tints every bar by the autocorrelation time, the signal-to-noise ratio, the Gaussianity
-slope, the skewness or the kurtosis of one sensor, ranked among the bars on show; *Sort*, above the
-instance lists of the Faults and Features pages, orders the instances by the same figures of the
-feature on show, largest first, the tooltip of every instance carrying both the grid's and the
-measurements' value. Each has an *on* box choosing the grid or the measurements, and on the grid
-the key, the hover and the tooltip carry the caveat that the historian's lines inflate the first
-two: on 3W 2.0.0 the autocorrelation time of T-JUS-CKP is 444 s on the grid and 73 s on the
-measurements.
+The descriptors travel as columns of the catalogue, and the Instances map places the instances by
+them. Each is taken on the grid or on the measurements alone, and on the grid the key, the hover
+and the tooltip carry the caveat that the historian's lines inflate the first two: on 3W 2.0.0 the
+autocorrelation time of T-JUS-CKP is 444 s on the grid and 73 s on the measurements.

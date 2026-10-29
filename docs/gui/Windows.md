@@ -62,7 +62,7 @@ seconds, and kept for the session.
 **View** swaps the thumbnails for one statistic of every window, among the ones the viewer already
 computes (`algorithms/descriptors.py`): those of the instance window's [statistics
 table](InstanceWindow.md) (mean, median, standard deviation, minimum, first and third quartiles,
-maximum, skewness, excess kurtosis) and those the [Timelines](Timelines.md) color a bar by
+maximum, skewness, excess kurtosis) and those of the [Instances](Instances.md) map
 (autocorrelation time, signal-to-noise ratio, Gaussianity slope).
 
 - Every window is handed to the same `describe` the statistics table uses: its padding left out,

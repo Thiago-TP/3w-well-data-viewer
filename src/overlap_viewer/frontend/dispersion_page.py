@@ -5,7 +5,7 @@ figures of one instance, and what they show is the historian's lines: the
 cloud of two interpolated series is the trajectories of the interpolations,
 straight segments between the few instants that were measured. This page
 draws that cloud for any pair of sensors over every real instance, one fault
-class or one well (or the joined bars) and lets it be read rather than
+class or one well and lets it be read rather than
 looked at: every dot is a sample that names its instance and its instant on
 hover, lights up every other dot of that instance while the rest of the
 cloud fades, and opens it on click, on the two sensors of the plot; the
@@ -44,8 +44,9 @@ from overlap_viewer.backend.dataset import (
     well_label,
 )
 from overlap_viewer.backend.palette import fault_color, tint
+from overlap_viewer.frontend import styling
 from overlap_viewer.frontend.heatmap import ColorKey
-from overlap_viewer.frontend.items import ScrollFriendlyViewBox, restyle_axes
+from overlap_viewer.frontend.items import AnchoredText, ScrollFriendlyViewBox, restyle_axes
 from overlap_viewer.frontend.loading import progress_dialog
 from overlap_viewer.frontend.overview import ElidedLabel
 from overlap_viewer.frontend.passes import Passes
@@ -131,7 +132,7 @@ class DispersionPage(QWidget):
         self._catalogue: pd.DataFrame | None = None
         self._wells: list[WellData] = []
         self._availability: Availability | None = None
-        # The clouds read so far, by (scope kind, scope key, joined).
+        # The clouds read so far, by (scope kind, scope key).
         self._clouds: dict[tuple, di.Cloud] = {}
         self._cloud: di.Cloud | None = None
         self._pair: di.Pair | None = None
@@ -170,6 +171,9 @@ class DispersionPage(QWidget):
         self._kin = pg.ScatterPlotItem(size=KIN_PX, pxMode=True)
         self._kin.setZValue(15)
         plot.addItem(self._kin, ignoreBounds=True)
+        # The Pearson coefficient of the samples on show, pinned to the top-left
+        # corner; built again with every cloud, so that it takes the theme too.
+        self._pearson: AnchoredText | None = None
         self._plot_widget.scene().sigMouseMoved.connect(self._on_mouse_moved)
         self._plot_widget.scene().sigMouseClicked.connect(self._on_mouse_clicked)
         body = QWidget()
@@ -202,17 +206,10 @@ class DispersionPage(QWidget):
         bar.addWidget(QLabel(" Over "))
         self._scope = QComboBox()
         self._scope.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        styling.limit_popup(self._scope)
         self._scope.setToolTip(SCOPE_TIP)
         self._scope.currentIndexChanged.connect(self._refresh)
         bar.addWidget(self._scope)
-        self._join = QCheckBox("Join overlapping instances")
-        self._join.setToolTip(
-            "Read the joined bars (the merged recordings of the instances of a well that overlap "
-            "in time and agree in their labels) instead of the instances, so that a sample two "
-            "windows share is drawn once."
-        )
-        self._join.toggled.connect(self._refresh)
-        bar.addWidget(self._join)
 
         bar.addSeparator()
         bar.addWidget(QLabel(" Color by "))
@@ -232,12 +229,10 @@ class DispersionPage(QWidget):
     def _build_second_bar(self) -> QToolBar:
         bar = QToolBar("Filters")
         bar.setMovable(False)
-        label = QLabel(" Label periods ")
-        label.setToolTip(PERIODS_TIP)
-        bar.addWidget(label)
         self._periods: dict[int, QCheckBox] = {}
         for code, name in enumerate(di.PERIODS):
-            check = QCheckBox(di.PERIOD_NAMES[name])
+            text = di.PERIOD_NAMES[name]
+            check = QCheckBox(text[:1].upper() + text[1:])
             check.setChecked(True)
             check.setToolTip(PERIODS_TIP)
             check.toggled.connect(self._redraw)
@@ -286,10 +281,6 @@ class DispersionPage(QWidget):
         return None if data is None else str(data)
 
     @property
-    def joined(self) -> bool:
-        return self._join.isChecked()
-
-    @property
     def coloring(self) -> str:
         return self._coloring.currentText()
 
@@ -303,7 +294,7 @@ class DispersionPage(QWidget):
 
     def _scope_key(self) -> tuple:
         kind, key = self._scope.currentData() or ("all", -1)
-        return (str(kind), int(key), self.joined)
+        return (str(kind), int(key))
 
     def _scope_name(self) -> str:
         text = self._scope.currentText().split(" (")[0]
@@ -408,9 +399,6 @@ class DispersionPage(QWidget):
         self._pending = False
         self._refresh()
 
-    def _view_wells(self, joined: bool) -> list[WellData]:
-        return [well.joined() for well in self._wells] if joined else self._wells
-
     def _in_scope(self, data: WellData, index: int, kind: str, key: int) -> bool:
         if kind == "well":
             return data.well == key
@@ -431,10 +419,10 @@ class DispersionPage(QWidget):
             return True
         if self._availability is None:
             return False
-        kind, scope_key, joined = key
+        kind, scope_key = key
         bars = [
             (data, index)
-            for data in self._view_wells(joined)
+            for data in self._wells
             for index in range(data.n_instances)
             if self._in_scope(data, index, kind, scope_key)
         ]
@@ -444,9 +432,8 @@ class DispersionPage(QWidget):
         reader = di.DispersionPass(
             analog, bounds, len(bars), transient_offset=self.info.transient_offset
         )
-        noun = "bars" if joined else "instances"
         dialog, progress = progress_dialog(
-            f"Reading the {len(bars)} {noun} of {self._scope_name()} for the dispersion view "
+            f"Reading the {len(bars)} instances of {self._scope_name()} for the dispersion view "
             f"(every analog sensor, one row in a few)…",
             self.window(),
         )
@@ -461,7 +448,7 @@ class DispersionPage(QWidget):
                     int(data.well),
                     int(index),
                     int(row["fault_class"]),
-                    str(row["file"]) if "file" in data.rows.columns and not joined else "",
+                    str(row["file"]) if "file" in data.rows.columns else "",
                     str(row["title"]),
                     pd.Timestamp(frame.index[0]) if len(frame) else pd.Timestamp(row["start"]),
                 )
@@ -499,6 +486,9 @@ class DispersionPage(QWidget):
         self._image.clear()
         self._highlight.setData([], [])
         self._kin.setData([], [])
+        if self._pearson is not None:
+            self._pearson.detach()
+            self._pearson = None
         self._hover_instance = -1
         self._dots = np.zeros(0, dtype=int)
         self._dot_instances = np.zeros(0, dtype=int)
@@ -614,13 +604,16 @@ class DispersionPage(QWidget):
         unit_x, unit_y = self.info.shown_unit(x), self.info.shown_unit(y)
         plot.setLabel("bottom", f"{x}{f' [{unit_x}]' if unit_x else ''}")
         plot.setLabel("left", f"{y}{f' [{unit_y}]' if unit_y else ''}")
-        # Framed afresh only when what is drawn changes: a new cloud, pair or
-        # filter moves the points, while the coloring and the density behind
-        # them do not, and throwing away a zoom for those would be a nuisance.
-        framing = (self._scope_key(), x, y, tuple(self.periods), self.genuine_only)
+        # Framed afresh only when the cloud or the pair of sensors changes, which
+        # changes what the axes mean: the coloring and every tick box (the label
+        # periods, the measurements alone, the density behind the dots) only
+        # thin or recolor the dots on the same axes, and throwing away a zoom for
+        # them would be a nuisance (Reset views frames the dots again).
+        framing = (self._scope_key(), x, y)
         if pair.n and framing != self._framed:
             plot.getViewBox().autoRange(padding=0.04)
             self._framed = framing
+        self._show_pearson(pair)
         self._note.setText(self._caption(pair))
         self._summary = self._summary_text(pair)
         self.summary_changed.emit()
@@ -628,20 +621,16 @@ class DispersionPage(QWidget):
 
     def _caption(self, pair: di.Pair) -> str:
         cloud = self._cloud
-        noun = "bars" if self.joined else "instances"
         parts = [
             (
                 f"{len(self._dots):,} dots of {pair.n:,} samples of {self.x} × {self.y}, kept one "
                 f"in {cloud.stride:.0f} from the {cloud.n_samples:,} of the {cloud.n_instances} "
-                f"{noun} of {self._scope_name()}"
+                f"instances of {self._scope_name()}"
             )
         ]
         if len(self.periods) < len(di.PERIODS):
             names = [di.PERIOD_NAMES[di.PERIODS[p]] for p in self.periods] or ["none"]
             parts.append("label periods: " + ", ".join(names))
-        rho = pair.pearson()
-        if np.isfinite(rho):
-            parts.append(f"Pearson over these samples {rho:+.2f}")
         if self.genuine_only:
             parts.append(
                 f"measurements only: both sensors read at the instant, "
@@ -656,11 +645,24 @@ class DispersionPage(QWidget):
             parts.append(f"read in {self._read_s:.0f} s")
         return " | ".join(parts)
 
+    def _show_pearson(self, pair: di.Pair) -> None:
+        """Pin the Pearson coefficient of the samples on show to the plot's top-left corner."""
+        rho = pair.pearson()
+        if not np.isfinite(rho):
+            return
+        which = "measurements" if self.genuine_only else "samples"
+        self._pearson = AnchoredText(
+            f'<span style="color:{theme.current().text};">Pearson <b>{rho:+.2f}</b> over the '
+            f"{pair.n:,} {which} on show</span>",
+            frac=(0.0, 1.0),
+            anchor=(-0.03, -0.25),
+        )
+        self._pearson.attach(self._plot_widget.getPlotItem())
+
     def _summary_text(self, pair: di.Pair) -> str:
         cloud = self._cloud
-        noun = "bars" if self.joined else "instances"
         return (
-            f"{pair.n:,} samples of {self.x} × {self.y} over {cloud.n_instances} {noun} of "
+            f"{pair.n:,} samples of {self.x} × {self.y} over {cloud.n_instances} instances of "
             f"{self._scope_name()} "
         )
 
@@ -775,7 +777,7 @@ class DispersionPage(QWidget):
             return
         event.accept()
         ref = self._cloud.ref(int(self._pair.rows[index]))
-        data = next((w for w in self._view_wells(self.joined) if w.well == ref.well), None)
+        data = next((w for w in self._wells if w.well == ref.well), None)
         if data is not None:
             # On the two sensors of the plot, so the relation read in the plane
             # can be followed in time.
@@ -802,31 +804,6 @@ class DispersionPage(QWidget):
             *measured,
         ]
         return " | ".join(parts)
-
-    # -- what leaves the page
-
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances behind the cloud on show, for the file list a Toolkit loader takes."""
-        if self._availability is None:
-            return []
-        kind, key, joined = self._scope_key()
-        files = []
-        for data in self._view_wells(joined):
-            origin = data.origin.rows
-            for index in range(data.n_instances):
-                if not self._in_scope(data, index, kind, key):
-                    continue
-                for member in data.members[index]:
-                    files.append(
-                        (int(origin["fault_class"].iloc[member]), str(origin["file"].iloc[member]))
-                    )
-        return files
-
-    def shown_source(self) -> str:
-        """Where the file list came from, for its provenance."""
-        return f"the Dispersions page | {self.x} × {self.y} | over {self._scope_name()}" + (
-            " | joined bars" if self.joined else ""
-        )
 
     def wait_cursor(self):
         """The wait cursor while the plot is rebuilt, for callers that redraw a large cloud."""

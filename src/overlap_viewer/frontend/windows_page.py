@@ -18,7 +18,7 @@ name, and placed on the well's time axis in a strip above the grid. The
 window selected is drawn large at the bottom, beside the instance it was cut
 from with the window's place in it. *View* can swap the signal for one figure
 of every window, among the viewer's own descriptors (those of the instance
-window's statistics table and of the Timelines' descriptor coloring): one
+window's statistics table and of the Instances map): one
 point per window along the well, colored by label period, beside the
 distribution of the figure per period and how well it tells normal windows from
 event ones.
@@ -71,6 +71,7 @@ from overlap_viewer.backend.palette import (
 )
 from overlap_viewer.backend.profiles import DESCRIPTOR_CHOICES, GRID_CAVEAT
 from overlap_viewer.backend.timemap import TimeMap
+from overlap_viewer.frontend import styling
 from overlap_viewer.frontend.items import (
     ScrollFriendlyViewBox,
     SegmentsItem,
@@ -141,7 +142,7 @@ VIEW_TIP = (
     "The signal of every window as a thumbnail, or one figure of every window: one point per "
     "window along the well, colored by label period, beside its distribution per period. The "
     "figures are the viewer's own descriptors, those of the instance window's statistics table "
-    "and of the Timelines' descriptor coloring, taken over a window's real samples (the padding "
+    "and of the Instances map, taken over a window's real samples (the padding "
     "and the missing readings left out); the first figure asked of a cut computes them all, "
     f"behind a progress dialog, and keeps them for the session. {GRID_CAVEAT.capitalize()}."
 )
@@ -408,7 +409,7 @@ class WindowsPage(QWidget):
         bar.addWidget(QLabel(" Instance "))
         self._instance = QComboBox()
         self._instance.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-        self._instance.setMaxVisibleItems(25)
+        styling.limit_popup(self._instance, 25)
         self._instance.setToolTip(INSTANCE_TIP)
         self._instance.currentIndexChanged.connect(self._on_instance_changed)
         bar.addWidget(self._instance)
@@ -1704,19 +1705,3 @@ class WindowsPage(QWidget):
                 item.getViewBox().autoRange()
         if self._feature_plot is not None:
             self._draw_features()
-
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances behind the windows on show, for the file list a Toolkit loader takes."""
-        if self._windows is None:
-            return []
-        positions = sorted(set(self._windows.instance[self._shown].tolist()))
-        return [(self._refs[p].fault, self._refs[p].file) for p in positions]
-
-    def shown_source(self) -> str:
-        """Where the file list came from, for its provenance."""
-        filters = [self._fault.currentText(), self._label.currentText()]
-        return (
-            f"the Windows page | {well_label(self.well)} | {self.sensor} | windows of "
-            f"{self.size} samples | {self._instance.currentText()} | "
-            + " | ".join(text.split(" (")[0] for text in filters)
-        )

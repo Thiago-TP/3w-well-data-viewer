@@ -4,34 +4,6 @@ Every file format the viewer exchanges with the outside ships with one example h
 example says where it came from: what produced it, with which command and which choice, on which
 dataset version, when. A file whose provenance is not written down is not an example.
 
-## Toolkit file lists
-
-The 3W Toolkit loads a dataset through `ParquetDatasetConfig`
-(`ThreeWToolkit.dataset.parquet_dataset`); with `split="list"` it loads exactly the files named in
-`file_list`, each a path relative to the dataset root such as `4/WELL-00014_20170918230000.parquet`.
-The viewer writes the instances a page has on show in that form (*Export file list…* in the main
-toolbar), and `scripts/export_file_list.py` writes the same from the command line, for a choice made
-by fault class and by well. Both write two files: the configuration, holding the Toolkit's own
-fields and nothing else so that it loads unchanged, and `<name>.provenance.json` beside it.
-
-Load one with:
-
-```python
-import json
-from ThreeWToolkit.dataset.parquet_dataset import ParquetDataset, ParquetDatasetConfig
-
-config = ParquetDatasetConfig(**json.load(open("examples/file_list_severe_slugging_well14.json")))
-dataset = ParquetDataset(config)
-```
-
-The `path` field is the dataset root the list was written against; point it at your own copy.
-
-| File | What it lists | Produced by |
-| ---- | ------------- | ----------- |
-| `file_list_severe_slugging_well14.json` | the real instances of Severe Slugging (class 4) recorded on WELL-00014 in 3W 2.0.0 | `python scripts/export_file_list.py --raw-dir ../3W/dataset --fault 4 --well 14 -o examples/file_list_severe_slugging_well14.json` |
-
-Its `.provenance.json` carries the dataset version, the count and the timestamp of the run.
-
 ## Model outputs
 
 The viewer draws a model's verdicts onto the data when they come in its model-output format

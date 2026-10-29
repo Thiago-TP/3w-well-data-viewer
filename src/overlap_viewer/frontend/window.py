@@ -33,7 +33,6 @@ from overlap_viewer.backend.dataset import (
     WellData,
     split_wells,
 )
-from overlap_viewer.backend.export import write_file_list
 from overlap_viewer.backend.model_outputs import ModelOutputs
 from overlap_viewer.frontend import styling
 from overlap_viewer.frontend.availability_page import AvailabilityPage
@@ -129,9 +128,9 @@ class MainWindow(QMainWindow):
         report("Building the Availability page…")
         self.availability = AvailabilityPage(info, passes=self._passes)
         report("Building the Faults page…")
-        self.faults = FaultsPage(info, self._frames, passes=self._passes)
+        self.faults = FaultsPage(info, self._frames)
         report("Building the Features page…")
-        self.features = FeaturesPage(info, self._frames, passes=self._passes)
+        self.features = FeaturesPage(info, self._frames)
         report("Building the Dispersions page…")
         self.dispersion = DispersionPage(info, passes=self._passes)
         report("Building the Windows page…")
@@ -149,10 +148,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self._tabs)
         self._catalogue = None
         self._wells: list[WellData] = []
-        # Pages a theme switch left to be laid out when next shown, and what
-        # the Instances map last computed, to hand to a page laid out late.
+        # Pages a theme switch left to be laid out when next shown.
         self._stale: set = set()
-        self._map_results = None
 
         self._status = ElidedLabel(self.timelines.hint())
         self.statusBar().addWidget(self._status, 1)
@@ -170,7 +167,6 @@ class MainWindow(QMainWindow):
         self.windows_page.open_requested.connect(self.open_instances)
         self.faults.open_requested.connect(self._open_on_feature)
         self.features.open_requested.connect(self._open_on_feature)
-        self.map.results_changed.connect(self._on_map_results)
 
         self._restyle()
         self.set_catalogue(catalogue, progress=report)
@@ -196,17 +192,10 @@ class MainWindow(QMainWindow):
             self.map,
         )
 
-    def _on_map_results(self, results) -> None:
-        """What the Instances map computed, handed to the pages that color and sort by it."""
-        self._map_results = results
-        self.timelines.set_map_results(results)
-        self.faults.set_map_results(results)
-        self.features.set_map_results(results)
-
     def set_model_outputs(self, outputs: ModelOutputs | None) -> None:
         """Take a set of model outputs (or none) and hand its agreements to every page."""
         results = self._passes.set_model_outputs(outputs)
-        for page in (self.timelines, self.faults, self.features, self.map):
+        for page in (self.faults, self.features, self.map):
             page.set_model_results(results)
         for window in list(self._windows):
             window.set_model_results(results)
@@ -261,15 +250,6 @@ class MainWindow(QMainWindow):
         rescan.setToolTip("Read every instance again, ignoring the cached catalogue")
         rescan.triggered.connect(self._rescan)
         bar.addAction(rescan)
-        export = QAction("Export file list…", self)
-        export.setToolTip(
-            "Write the instances the current page has on show (the wells filtered, the instances "
-            "ticked, the bars of a joined view) as the JSON of a 3W Toolkit ParquetDatasetConfig "
-            "with split='list', which the Toolkit loads with "
-            "ParquetDatasetConfig(**json.load(open(path))); its provenance is written beside it."
-        )
-        export.triggered.connect(self._export_file_list)
-        bar.addAction(export)
         load_model = QAction("Load model outputs…", self)
         load_model.setToolTip(
             "Open a folder of model outputs (model.json beside one <class>/<instance>.parquet per "
@@ -311,7 +291,6 @@ class MainWindow(QMainWindow):
         """
         same = catalogue is self._catalogue and bool(self._wells)
         if not same:
-            self._map_results = None  # computed on the old catalogue
             self._discard_help()  # its instance counts describe the old catalogue
             self._wells = split_wells(catalogue)
             self._passes.set_wells(self._wells)
@@ -332,8 +311,6 @@ class MainWindow(QMainWindow):
         page.set_catalogue(self._catalogue, self._wells)
         if self._passes.model is not None and hasattr(page, "set_model_results"):
             page.set_model_results(self._passes.model)
-        if self._map_results is not None and hasattr(page, "set_map_results"):
-            page.set_map_results(self._map_results)
 
     def _discard_help(self) -> None:
         """Throw the help window away, so that the next F1 builds it over what is true now."""
@@ -419,9 +396,7 @@ class MainWindow(QMainWindow):
             self._help = HelpWindow(
                 self.info, counts=real_instance_counts(self._catalogue), parent=self
             )
-        self._help.show_tab(
-            HELP_TABS.get(type(self._tabs.currentWidget()), "Fault classes")
-        )
+        self._help.show_tab(HELP_TABS.get(type(self._tabs.currentWidget()), "Fault classes"))
 
     def open_instances(self, data: WellData, index: int, features: Sequence[str] = ()):
         """Open the time series of one bar of a timeline and of every bar it overlaps.
@@ -464,47 +439,13 @@ class MainWindow(QMainWindow):
         """Open one bar with ``sensor`` drawn, or on the window's own default without one."""
         self.open_instances(data, index, [sensor] if sensor else ())
 
-    def _export_file_list(self) -> None:
-        """Write the instances the current page has on show as a Toolkit file list, where the user says."""
-        page = self._tabs.currentWidget()
-        files = page.shown_files() if hasattr(page, "shown_files") else []
-        if not files:
-            QMessageBox.information(
-                self,
-                "Export file list",
-                "The current page has no instances on show to export.",
-            )
-            return
-        name = type(page).__name__.removesuffix("Page").lower()
-        path, _filter = QFileDialog.getSaveFileName(
-            self,
-            "Export the instances on show as a 3W Toolkit file list",
-            f"file_list_{name}.json",
-            "JSON (*.json)",
-        )
-        if not path:
-            return
-        try:
-            note = write_file_list(Path(path), self.info, files, page.shown_source())
-        except OSError as error:
-            QMessageBox.critical(
-                self, "Export failed", f"{type(error).__name__}: {error}"
-            )
-            return
-        self._status.setText(
-            f"{len(set(files))} files written to {path}, their provenance to {note.name} | load "
-            "with ParquetDatasetConfig(**json.load(open(path)))"
-        )
-
     def _rescan(self) -> None:
         try:
             catalogue = catalogue_with_progress(self.info, use_cache=False, parent=self)
         except ScanCancelled:
             return
         except Exception as error:  # noqa: BLE001 - report, keep the current catalogue
-            QMessageBox.critical(
-                self, "Rescan failed", f"{type(error).__name__}: {error}"
-            )
+            QMessageBox.critical(self, "Rescan failed", f"{type(error).__name__}: {error}")
             return
         self.set_catalogue(catalogue)
 

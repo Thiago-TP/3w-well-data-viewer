@@ -656,7 +656,7 @@ STATE_VALVE_NOTE = (
     "WELL-00029."
 )
 
-# The dataset's own facts, for the tab that explains what is being looked at.
+# The dataset's own facts, for the help's Notes on the data tab.
 DATASET_NOTES = [
     (
         "One file, one instance",
@@ -937,13 +937,11 @@ AVAILABILITY_NOTES = [
             "the grid and 1.5 on its measurements; its autocorrelation takes seven minutes to "
             "halve on the grid and 73 s on the measurements. Wherever the viewer shows such a "
             "figure taken on the grid, it says so.<br><br>"
-            "The viewer shows the measurements in four places. Every time series draws them as "
+            "The viewer shows the measurements in three places. Every time series draws them as "
             "dots, with the line through every sample (which between two dots is exactly the "
             "historian's line) faint beneath: dense dots are a sensor read every second, sparse "
             "dots on a faint line a sensor filled in. <i>Measured vs filled</i>, on this page, "
-            "splits the live share of every cell, and the Timelines' <i>Bar color: Measurements "
-            "of a sensor</i> tints every bar by the share of its live samples that were measured. "
-            "And <i>Measurements only</i>, in the toolbar of the signal views, counts and "
+            "splits the live share of every cell. And <i>Measurements only</i>, in the toolbar of the signal views, counts and "
             "transforms the measurements alone: the histograms count what was read, and the "
             "spectrum becomes the Lomb-Scargle periodogram of the readings at their own instants, "
             "which needs no grid and is the honest spectrum of an irregularly sampled series, "
@@ -1014,54 +1012,6 @@ AVAILABILITY_NOTES = [
         ),
     ),
     (
-        "Sensor correlations",
-        (
-            "The <b>Sensor correlations</b> matrix asks the next question: of two sensors that "
-            "are recorded together, how do they move together? Melo's exploratory methodology "
-            "(doctoral thesis, section 4.1.5) reads the relations between the variables of a "
-            "dataset three ways at once, and the <i>Coefficient</i> box offers the three. "
-            "<b>Pearson</b> is the linear correlation, blue when positive and amber when negative, "
-            "the cell full at ±1, computed exactly over every sample of the instances of the "
-            "<i>Over</i> scope in which both sensors carry a plausible reading, pooled. <b>Mutual "
-            "information</b> is a nonlinear one: the mutual information of the two sensors, "
-            "estimated by nearest neighbours (Kraskov's estimator) on an even subsample of a few "
-            "thousand of the same samples, turned into a coefficient between 0 and 1 by Laarne's "
-            "normalisation √(1 − e⁻²ᴵ), which is the Pearson coefficient itself when the two are "
-            "jointly Gaussian; two sensors bound by a curve rather than a line score high here and "
-            "nothing on Pearson. <b>Nonlinear</b> is Zhang's coefficient, what the second says "
-            "beyond the first, ρ_I × (1 − |ρ|). The title sums each into Melo's global coefficient "
-            "over the sensors present (his equations 4.16 and 4.15), and a pair with fewer than "
-            "300 co-valid samples is left blank rather than trusted. The valve states are left "
-            "out: a position is not a measurement, and its two values would fill the matrix with "
-            "coefficients of ±1 that say only which valves open together. The two nonlinear "
-            "coefficients need the <i>analysis</i> extra.<br><br>"
-            "The coefficients are taken on the grid as it is, with no moving average first. Melo's "
-            "figures 4.11 and 4.26 show the coefficients of a process rising as a moving average "
-            "grows, the noise hiding the relations, and the lines the historian drew between "
-            "measurements (<i>Measurements and the lines between them</i>, above) were his reason "
-            "to distrust any coefficient taken on the grid. What 3W 2.0.0 said is more sobering "
-            "than either: pooled over a scope, the coefficients hardly moved with smoothing (the "
-            "global linear coefficient of the whole dataset went from 0.420 with none to 0.424 at "
-            "five minutes, and no pair of the severe-slugging class moved by more than 0.03) "
-            "because a pooled coefficient is "
-            "set by the levels the sensors sit at from one instance to the next, not by what "
-            "happens between two measurements, which is why the viewer offers none. The lines' spurious dynamics live inside one "
-            "instance, at the scale of seconds, which is where the Dispersions page looks. The "
-            "caveat that does bite stands in the title: pooling the instances of a class, or of "
-            "the whole dataset, mixes the levels of different wells into the coefficient, two "
-            "sensors that both run higher on one well than on another correlate through the "
-            "wells, not through the process, and with every well pooled the mutual-information "
-            "coefficient of almost every pair reads 1.00, knowing one sensor's level being enough "
-            "to know the well and so the other's, so a well's own scope is the one that shows the "
-            "process, and there (WELL-00007) nearly every pair of pressures and temperatures "
-            "correlates at ±0.99, through the well's shut-ins and restarts. The first look at a "
-            "scope reads its instances in full, behind a progress dialog (about two minutes for "
-            "the whole dataset); the result is kept for the session, not cached. <i>Join "
-            "overlapping instances</i> pools the merged recordings of the bars instead of the "
-            "windows, so that a sample two windows share is counted once."
-        ),
-    ),
-    (
         "How the shares are counted",
         (
             "Shares are of samples: every sample of every instance in a row is absent, frozen or "
@@ -1123,17 +1073,14 @@ AVAILABILITY_SOURCES = (
     "and of every pair of sensors (figure 2.10), and whose section 5.3.1 relates coverage to what "
     "the models learn; a survey of every instance of 3W 2.0.0 for the plausible ranges shown in "
     "this help; and the doctoral thesis of <b>A. Melo</b> (in <code>docs/papers</code>), whose section "
-    "4.1.5 reads the relations between variables through the Pearson, mutual-information and "
-    "nonlinear coefficients the correlation matrix shows, and whose section 4.2.5 found the "
-    "historian's lines. This page counts the real instances only, and every one of them, where "
+    "4.2.5 found the historian's lines. This page counts the real instances only, and every one of them, where "
     "Rozo counts a sample of them and Rabelo every kind of instance."
 )
 
 MAP_INTRO = (
     "The other pages look at the real instances one well, one fault or one sensor at a time. The "
-    "<b>Instances</b> page looks at all of them at once, from above: every instance (or, with "
-    "<i>Join overlapping instances</i> ticked, every bar of the joined view, the merged recording) "
-    "is one point, placed on the plane by what its sensors amount to, colored by its class, its "
+    "<b>Instances</b> page looks at all of them at once, from above: every instance is one "
+    "point, placed on the plane by what its sensors amount to, colored by its class, its "
     "well, its cluster, its typicality or the verdict of a one-class model, and one click away "
     "from its time series. The unit is the instance, never the window a pipeline cuts: 1,119 "
     "points, which a reader can hold in view. Nothing here is a model of the process; everything "
@@ -1215,8 +1162,7 @@ MAP_NOTES = [
             "against the fault classes and against the wells: 1 for a clustering that is the "
             "classes (or the wells) under other names, about 0 for one unrelated to them. That "
             "is the question this page was built to ask: whether what places the instances is "
-            "the event or the well they came from. The clusters are also offered as a bar color "
-            "of the Timelines, in the same colors."
+            "the event or the well they came from."
         ),
     ),
     (
@@ -1227,10 +1173,7 @@ MAP_NOTES = [
             "lowest (the most central instance the class actually has, which a mean need not "
             "be), and the typicality of an instance is its distance to that medoid, given as a "
             "rank inside its class: 1 for the medoid itself, 0 for the farthest member. It "
-            "colors the points (full for the medoid, faint for the farthest), it is a bar color "
-            "of the Timelines, and it is a sort order of the instance lists of the Faults and "
-            "Features pages, whose tooltips carry it, so that the typical instances of an event "
-            "can be drawn first and the outliers last, or the other way round. The figure "
+            "colors the points (full for the medoid, faint for the farthest). The figure "
             "depends on the representation: an instance typical in its levels may be atypical "
             "in its shape."
         ),
@@ -1249,22 +1192,8 @@ MAP_NOTES = [
             "fault the sensors chosen never register, a normal instance recorded during "
             "something, a label to question), and each is a click away. Under the <i>Novelty</i> "
             "coloring the points that look normal are blue, those that look anomalous amber, "
-            "and a dark ring marks the disagreements. The score is also a sort order of the "
-            "instance lists of the Faults and Features pages. The audit needs coordinates, so it "
+            "and a dark ring marks the disagreements. The audit needs coordinates, so it "
             "rests under the DTW representation."
-        ),
-    ),
-    (
-        "The joined view",
-        (
-            "With <i>Join overlapping instances</i> ticked the points are the bars of the joined "
-            "view (the instances of a well that overlap with labels that agree, read as the "
-            "single recording they were cut from and profiled as such by the same pass), so a "
-            "well recorded twice is one point where it was one recording, and the largest join "
-            "of the dataset, seventy-one windows over six days, is one point. Everything on the "
-            "page is computed again on the bars; the Timelines take the map's colorings only on "
-            "the view the map was drawn on, and the instance lists of the other pages, which "
-            "list instances, take its figures only from a map drawn on the instances."
         ),
     ),
 ]
@@ -1331,11 +1260,9 @@ MODEL_NOTES = [
             "band of every block the model scored: plain, in the live blue, where the verdict "
             "agrees with the label under it, <b>amber where it disagrees</b>, faint where the "
             "experts left the stretch unlabeled; hovering it names the verdict, and the header of "
-            "the block gives the agreement. On the <b>Timelines</b>, <i>Bar color: Agreement with "
-            "the model outputs</i> tints every bar by it, faint for none and full for all, empty "
-            "where the model scored nothing, a joined bar weighted by the time compared in each of "
-            "its instances. On the <b>Instances map</b>, <i>Color by: Model agreement</i> does the "
-            "same for the points. On the <b>Faults</b> and <b>Features</b> pages the instance lists "
+            "the block gives the agreement. On the <b>Instances map</b>, <i>Color by: Model "
+            "agreement</i> tints the points by it, faint for none and full for all, empty where "
+            "the model scored nothing. On the <b>Faults</b> and <b>Features</b> pages the instance lists "
             "sort by it (<i>Sort: Agreement with the model outputs</i>, the instance the model "
             "disagrees with most first), every tooltip carries it, and <i>Shade by: Model "
             "outputs</i> shades the label periods behind the small plots with the model's verdicts "
@@ -1384,8 +1311,8 @@ MODEL_SOURCES = (
 
 DISPERSION_INTRO = (
     "The <b>Dispersions</b> page draws two sensors against each other, every sample of the "
-    "instances of a scope one dot (over every real instance, one fault class or one well, as "
-    "instances or as the joined bars), with the density of the samples shaded behind the dots. "
+    "instances of a scope one dot (over every real instance, one fault class or one well), "
+    "with the density of the samples shaded behind the dots. "
     "It is the scatter plot of Melo's exploratory methodology made readable: a static scatter of "
     "a million points is a smear, and this one names the instance and the instant of every dot "
     "on hover and lights up every other dot of that instance, opens the instance on a click, "
@@ -1434,14 +1361,13 @@ DISPERSION_NOTES = [
             "<i>Over</i> is the scope, and it carries the caveat of every pooled view: two clouds "
             "side by side may be two wells rather than one relation, since wells run at different "
             "levels, so a well's own scope is the one that shows the process alone, and "
-            "<i>Color by: Well</i> is how to tell the two apart in a class's cloud. <i>Label "
-            "periods</i> choose the samples by what the experts labeled the well as doing at that "
+            "<i>Color by: Well</i> is how to tell the two apart in a class's cloud. The "
+            "<i>label period</i> boxes (normal operation, transient, steady state, unlabeled) "
+            "choose the samples by what the experts labeled the well as doing at that "
             "instant: a fault's steady state alone shows the relation under the fault, normal "
             "operation alone the relation the fault departs from, the transient the path between; "
-            "<i>Color by: Label period</i> draws the three in one cloud. <i>Color by: Fault "
-            "class</i> colors every dot by the folder of its instance. <i>Join overlapping "
-            "instances</i> reads the merged recordings of the bars instead of the windows, so that "
-            "a sample two windows share is drawn once."
+            "<i>Color by: Label period</i> draws them in one cloud. <i>Color by: Fault "
+            "class</i> colors every dot by the folder of its instance."
         ),
     ),
     (
@@ -1455,8 +1381,7 @@ DISPERSION_NOTES = [
             "instant. At most 150,000 of the rows are drawn as dots, evenly; the density counts "
             "them all. The caption "
             "says how many dots of how many samples of how many instances are on show, one in how "
-            "many, and the Pearson coefficient over those very samples, so that the cloud and the "
-            "correlation matrix can be read against each other."
+            "many, and the top-left corner of the plot the Pearson coefficient over those very samples."
         ),
     ),
 ]
@@ -1464,8 +1389,7 @@ DISPERSION_NOTES = [
 DISPERSION_SOURCES = (
     "Sources: the doctoral thesis of <b>A. Melo</b> (in <code>docs/papers</code>), whose section "
     "4.2.5 reads the scatter plots of pairs of 3W variables and finds the historian's "
-    "interpolation in them, and whose section 4.1.5 reads the relations between variables through "
-    "the coefficients the correlation matrix shows; the readings the page draws as dots are the "
+    "interpolation in them; the readings the page draws as dots are the "
     "measurements found by the rule of <i>Measurements and the lines between them</i> under Data "
     "availability."
 )
@@ -1526,8 +1450,8 @@ WINDOWS_NOTES = [
             "only</i> (no padding) and <i>No missing readings</i> thin them further. <i>View</i> "
             "offers one statistic of every window among those the viewer already computes: the "
             "instance window's statistics table (mean, median, standard deviation, minimum, "
-            "quartiles, maximum, skewness, excess kurtosis) and the Timelines' descriptor "
-            "coloring (autocorrelation time, signal-to-noise ratio, Gaussianity slope), taken by "
+            "quartiles, maximum, skewness, excess kurtosis) and the descriptors of the "
+            "Instances map (autocorrelation time, signal-to-noise ratio, Gaussianity slope), taken by "
             "the same <code>describe</code> over a window's real samples, its padding left out "
             "and its missing readings dropped. The first statistic asked of a cut describes every "
             "window at once and the others are then instant. The statistic is drawn one point "
@@ -1542,697 +1466,5 @@ WINDOWS_SOURCES = (
     "Sources: the division of <code>3w_estudo</code> (<code>w3e/divisao.py</code>, audited by "
     "<code>scripts/verificar_janelas.py</code>) and its <i>Janelas</i> tab, whose separation of "
     "normal from event windows is the one drawn here; the statistics are the viewer's own "
-    "descriptors, under <i>Instance window</i> and <i>Timelines page</i> in <i>Using the "
-    "viewer</i>."
+    "descriptors, the ones the <i>Instances map</i> places its points by."
 )
-
-# How to work the viewer, shown in both windows.
-USAGE = {
-    "Timelines page": [
-        (
-            "Every plot is one well; every bar is one real instance, from its first to its last "
-            "sample. Bars that overlap in time are stacked, so the stack level is how many "
-            "instances cover that moment. The line above a plot counts the well's instances and "
-            "samples (a shared sample once per instance, or once when joined) and, under a bar "
-            "color that names a sensor, that sensor's measurements on the well once the profiles "
-            "have been read."
-        ),
-        (
-            "Hover a bar to outline it, outline the instances it overlaps, hatch the stretch they "
-            "share and dim the rest. The status bar names them and the color key lights up the "
-            "matching entries. Rest the pointer on the bar for a tooltip with its start, its end "
-            "and its duration; a joined bar spans from its first instance's start to its last's "
-            "end."
-        ),
-        "Click a bar to open the time series of that instance and of every instance it overlaps.",
-        (
-            "Click an entry of the color key to show only the wells that recorded that fault; "
-            "click it again, or the button at the right of the toolbar, to show them all again."
-        ),
-        (
-            "Click the title of the color key, or press Ctrl+L, to retract it to that one line and "
-            "give the grid the room. Retracted it still answers hovering: the entries of the "
-            "instance under the pointer, and of the instances it overlaps, pop into the title row."
-        ),
-        (
-            "A well is recorded in bursts separated by months of silence, so the silences are "
-            "collapsed to narrow dashed blanks. The time scale stays uniform everywhere else: bar "
-            "length is duration, and two bars overlap on screen exactly when the instances overlap "
-            "in time. Untick 'Compress silences' for a true calendar axis."
-        ),
-        (
-            "Tick 'Join overlapping instances' to merge the instances of a well that overlap in "
-            "time into one bar wherever their labels agree on the shared stretch (an unlabeled "
-            "sample agrees with anything). Instances whose labels disagree there stay apart, so "
-            "the overlaps left are exactly the labeling conflicts. A bar joined from instances of "
-            "several fault folders is striped with every folder's color and says how many more "
-            "instances it joins after its timestamp; clicking it opens them as the single "
-            "continuous recording they were cut from."
-        ),
-        (
-            "Tick 'Stitch instances' to see how the levels of a well changed from one recording "
-            "to the next: the joined bars of every well are laid end to end, the silences between "
-            "them left out, so each well becomes one bar holding its whole history, a solid line "
-            "marking each stitch. Clicking it opens every reading of the well as one recording, on "
-            "an axis that keeps the real timestamps and jumps at each stitch. The stitch joins "
-            "the instances first, so it ticks 'Join overlapping instances' and holds it ticked; "
-            "unticking the stitch leaves the join as it was before. 'Compress silences' rests "
-            "meanwhile, there being no silence left. The descriptor and CleanSignals colorings "
-            "judge one recording at a time and leave a stitched bar empty. A well of hundreds of "
-            "instances takes some seconds to open this way (WELL-00002, 4.6 million samples, "
-            "about ten)."
-        ),
-        (
-            "'Bar color: Availability of a sensor' tints every bar by the share of its samples in "
-            "which the chosen sensor is live, faint for a few and full for all, grey under the "
-            "frozen key for a sensor that never moved, empty for one never recorded, so the grid "
-            "becomes the history of that sensor on every well: an era of absence, or a scattering "
-            "of it. The key above the grid changes with it."
-        ),
-        (
-            "A small amber triangle in the corner of a bar marks an instance in which a sensor "
-            "reads outside its plausible range; the status bar names the sensors. The same "
-            "triangle in the bottom-right corner marks pressures read out of order along their "
-            "line, the status bar naming the pairs, and a red one in the top-left corner a valve "
-            "that contradicts the well status, the status bar naming the statuses and the valves. "
-            "Known once the profile pass has run (the first tick of 'Measured vs filled' runs it, and its cache serves later sessions), since it reads every sample. Tinted by one sensor, the marks "
-            "are for that sensor alone."
-        ),
-        (
-            "'Bar color: Measurements of a sensor' tints every bar by the share of the sensor's "
-            "live samples that were actually measured rather than filled in by the historian, "
-            "faint for a few, full for all, so an era in which a sensor was archived every two "
-            "minutes reads apart from one in which it was read every second. Hover a bar for the "
-            "share and the interval. The first time, it reads every instance in full behind a "
-            "progress dialog and keeps the result in the cache."
-        ),
-        (
-            "'Bar color: Descriptor of a sensor' tints every bar by one figure of the sensor's "
-            "series (the time its autocorrelation takes to halve, its signal-to-noise ratio, the "
-            "slope of Zhang's Gaussianity regression, its skewness or its kurtosis, Melo's "
-            "characterisation of a variable), ranked among the bars on show, faint for the "
-            "smallest and full for the largest, so that the grid shows which recordings of a "
-            "sensor were slow, noisy, heavy-tailed or skewed. The 'on' box takes the figure over "
-            "the whole 1 Hz grid ('Interpolated', which is what a pipeline reads) or over the "
-            "measurements alone; interpolated, the historian's lines inflate the autocorrelation "
-            "time and "
-            "the signal-to-noise ratio, and the key and the hover say so. Hover a bar for both "
-            "values and the rank."
-        ),
-    ],
-    "Availability page": [
-        (
-            "Every column is a sensor and every row a group of instances: choose the fault "
-            "classes, the wells, or the instances of one well or of one fault class in the Rows "
-            "box. The last row folds every instance shown."
-        ),
-        (
-            "A cell splits the samples of its row into live, frozen and absent, left to right, in "
-            "the colors of the key at the right of the toolbar; the fuller the cell, the more of "
-            "the sensor there is. A small triangle in its top-right corner marks a reading "
-            "outside the plausible range, one in its bottom-right corner a pressure read out of "
-            "order with another of its line, and a red one in its top-left corner a valve that "
-            "contradicts the well status."
-        ),
-        (
-            "Hover a cell for the shares, the instance counts, the extreme readings and the "
-            "implausible ones; hover a sensor's name for what it is and its plausible range; "
-            "hover a row's label for what the row holds. A tooltip carries the figure the cell "
-            "draws, where the pointer is, as a printed availability map writes it inside the "
-            "cell; the status bar carries that and the rest."
-        ),
-        (
-            "The 'Matrix' box switches to 'Sensor pairs': the sensors on both axes, every cell "
-            "the share of the samples in which both carry a reading at the same instant. The "
-            "'Over' box counts them over every real instance or over one fault class or one well, "
-            "and 'Count' asks either that both sensors be live or merely that both be recorded."
-        ),
-        (
-            "In the pair map 'Sensors' offers a third order, 'Grouped by co-occurrence', which "
-            "puts the sensors recorded at the same instant next to one another, so that the "
-            "blocks of the matrix read as the sets of sensors a well carries or lacks together "
-            "rather than as a ranking. 'Join overlapping instances' applies here too, and changes "
-            "what the map says: a sensor one window missed is filled in by the window it overlaps."
-        ),
-        (
-            "The 'Matrix' box's third entry, 'Sensor correlations', colors every pair of sensors "
-            "by how they move together over the samples of the 'Over' scope, pooled: blue "
-            "positive, amber negative, full at ±1. 'Coefficient' chooses Pearson, the "
-            "mutual-information coefficient or Zhang's nonlinear coefficient (the last two need "
-            "the analysis extra). Hover a cell for all three coefficients and the co-valid sample "
-            "count. The first look at a scope reads "
-            "its instances behind a progress dialog."
-        ),
-        (
-            "Click a fault class or a well, on its label or on any of its cells, to see its "
-            "instances one by one; the Rows box takes you back. Click an instance, on its label "
-            "or on a cell, to open its time series with that sensor drawn."
-        ),
-        (
-            "'Sensors: By coverage' orders the columns by the share of what is on show in which "
-            "each sensor is live, largest first."
-        ),
-        (
-            "'Cells' splits each cell by samples, so that a six-day instance weighs more than a "
-            "six-hour one (as Rabelo counts), or by instances, each weighing the same (as Rozo "
-            "counts); the two disagree because instances range from hours to days."
-        ),
-        (
-            "'Available from' sets the share of its samples a sensor needs readings in to count "
-            "as available in an instance at all; below it the instance counts as absent for that "
-            "sensor, readings and all. Rabelo's pipeline drops an instance whose P-TPT is more "
-            "than half missing: 50 % shows what that rule keeps."
-        ),
-        (
-            "'Join overlapping instances' counts the bars the timelines draw when joined: "
-            "overlapping instances whose labels agree, read as the single recording they were cut "
-            "from, in which a sample two windows share is counted once and a sensor one window "
-            "missed is filled in by another. The footers of the files cannot say which instants "
-            "two windows share, so the first tick reads the data, behind a progress dialog, and "
-            "keeps the result in the cache."
-        ),
-        (
-            "'Measured vs filled' splits the live share of every cell into the samples that were "
-            "measured, solid, and the samples the historian filled in between measurements, pale, "
-            "which is most of every live cell on 3W 2.0.0. The cell's tooltip and the status bar "
-            "then say the share and the interval between measurements. The split is of samples, "
-            "so it rests while the cells count instances; the first tick reads every instance in "
-            "full, behind a progress dialog, and keeps the result in the cache."
-        ),
-    ],
-    "Faults page": [
-        (
-            "Pick a fault: every real instance of it, from every well, is drawn in the color of "
-            "its well on a time axis that starts where the event begins in it, so the shapes line "
-            "up whatever the clock said; 'Align at' chooses that moment, the onset of the "
-            "transient, of the steady state, or the start of the recording."
-        ),
-        (
-            "A well keeps its color whatever fault is on show, so that the same line means the "
-            "same well from one fault to the next; the list on the right is the key. The colors "
-            "are deliberately not the fault hues: since both codes are drawn in one plot (a "
-            "trace over the shading of its label periods, the outline of a histogram over stacks "
-            "in the fault's own hue), the wells are separated from the faults by lightness rather "
-            "than by hue, deeper than every fault hue here and paler than every one of them in "
-            "the dark mode."
-        ),
-        (
-            "'Layout' chooses among three. <b>Small multiples</b>, the default, give every "
-            "instance a plot of its own in a grid under a heading per feature (which counts the "
-            "samples drawn in the window of hours and how many of them were measured), each with "
-            "its own value axis and its label periods shaded behind the trace (hatched where nobody "
-            "labeled it, as everywhere else in the viewer), so that two dozen shapes can be read "
-            "one against the next; 'Columns' sets the width of the grid and 'Axis' "
-            "puts every plot on its own value axis or all of them on one, which says how far "
-            "apart the levels are and flattens most of the plots saying it. <b>Overlaid</b> draws "
-            "them all on one set of axes, and <b>Overall</b> pools them into one curve first, off "
-            "the time axis only (see <i>Signal views</i>). The grid opens on the stretch of time "
-            "most of the instances cover, so that one instance recorded for days does not leave "
-            "every other plot a sliver; Ctrl + wheel zooms out to the rest."
-        ),
-        (
-            "An instance whose labels never reach the moment chosen cannot be aligned on it and "
-            "is greyed out in the list on the right. Beyond two dozen instances the earliest are "
-            "ticked to start with, and the grid draws at most four dozen of them; tick and untick "
-            "to choose, All and Clear do it at once."
-        ),
-        (
-            "'Normalize per instance' scales every series to its own level, each reading as "
-            "standard deviations from the mean of that sensor over the whole instance, which is "
-            "how Rabelo's pipeline normalizes: wells run at different levels, and the shape of "
-            "the change is what the instances share. 'Show … h before/after' narrows the plots "
-            "to the hours around the onset; at zero, everything recorded is drawn."
-        ),
-        (
-            "Hover a line to bring it forward and name it, with the label, the well status and the "
-            "readings of that instance at that moment in the status bar; pointing at an instance "
-            "in the list does the same. Readings outside the plausible range are left out of the "
-            "value axis, so one broken gauge does not flatten every other line; the instance "
-            "carrying them wears the ⚠ in the list."
-        ),
-        (
-            "Click a plot to open the instance window of its instance on that feature: a small "
-            "plot opens the one instance it holds, an overlaid plot the line the hover has named; "
-            "a pooled curve stands for many instances and opens none. Click an instance's name in "
-            "the list to open its window on its default features; its check box still ticks it."
-        ),
-        (
-            "The page opens on the analog sensors of the seabed (P-ANULAR, P-TPT, T-TPT), the same "
-            "for every fault. 'Topside', 'Seabed' and 'Subsurface' tick every recorded sensor measured at one placement of the production system: on the platform above water (the production choke and shutdown valve, the gas-lift and service lines), at the christmas tree on the seabed, and in the well below it. A second click clears the placement; the boxes add up, and a box shows half ticked while only some of its sensors are selected. Which part of the system matters for an analysis is left to the user; the variables the papers read each event in are listed in the Fault classes tab. Features no instance of the fault recorded are "
-            "greyed out."
-        ),
-    ],
-    "Features page": [
-        (
-            "The faults page fixes a fault and asks what its instances did to each sensor; this "
-            "page turns the question round. Pick a <b>Feature</b>, one sensor, and every fault "
-            "class gets a section, so that what a gauge reads under a hydrate can be set beside "
-            "what the same gauge reads under severe slugging and under normal operation. That is "
-            "the feature-wise grouping of the catalogue: the timelines are the well-wise one and "
-            "the faults page the fault-wise one."
-        ),
-        (
-            "The count beside a sensor's name is how many real instances recorded it; one no "
-            "instance recorded is greyed out. The page opens on the sensor the most instances "
-            "record a <i>moving</i> reading of, which keeps a valve state out of the way of the "
-            "default: nearly every instance carries one, and a valve holding its position for a "
-            "whole recording would open the page on a row of flat lines. <b>Well</b> narrows "
-            "everything to one well, so that the classes are compared at one place and one set of "
-            "instruments."
-        ),
-        (
-            "The classes on the left choose the sections and are the color key; the instances on "
-            "the right choose what is read from disk. The earliest few of each class are ticked "
-            "to start with: of <i>each</i> class rather than the earliest few overall, since a "
-            "class whose instances all come later would otherwise open with nothing in its "
-            "section, and the grid likewise spends its cap per class."
-        ),
-        (
-            "<b>Layout</b> means something particular here. Small multiples give every instance a "
-            "plot of its own in a grid under a heading per class (with the samples drawn and how "
-            "many were measured); because the heading already "
-            "names the class, the trace takes the neutral color and the class hues are left to "
-            "the shading of the label periods behind it and to the stacks of a histogram, which "
-            "a line of the same hue would vanish into. <b>Overlaid</b> puts every class on one "
-            "set of axes, each instance in its class's color, which is the view the page exists "
-            "for and the natural one for histograms and spectra, where the question is whether "
-            "the classes sit at different values or peak at different periods."
-        ),
-        (
-            "'Align at' starts on the start of the recording, the one anchor every class has: "
-            "normal operation has no transient and no steady fault state, so anchoring on either "
-            "leaves every normal instance greyed out."
-        ),
-        (
-            "Click a plot, or an instance's name in the list, to open its instance window, as on "
-            "the Faults page: from a plot on the sensor on show, from the list on its default "
-            "features."
-        ),
-    ],
-    "Instance window": [
-        (
-            "One block per bar of the overview, stacked in chronological order on one shared time "
-            "axis, so the stretches they share line up vertically. The band at the very top marks "
-            "those stretches. A block's header names it on its first line and says what it holds "
-            "on the second: its samples, the time it spends in normal operation, in the transient, "
-            "in the steady state and unlabeled, and how many of its samples the historian archived "
-            "for every ticked feature."
-        ),
-        (
-            "A bar the overview has joined opens as one block: its instances are read as the "
-            "single continuous recording they were cut from, drawn as one series over one set of "
-            "bands, with a dashed line where each further instance begins. Every instant appears "
-            "once, and what one window says nothing about the others fill in, so the label band "
-            "of a merged recording carries far less Unknown than its instances did apart, which "
-            "is what a model trained on it would see, unlabeled samples being dropped. Each "
-            "stretch keeps the color of the file that labeled it, so a normal period labeled by a "
-            "Normal Operation file stays that file's color inside a recording that goes on to "
-            "develop a fault."
-        ),
-        (
-            "'Join overlapping instances' is in this window's toolbar too, and merges exactly the "
-            "instances on screen: the group the window opened on is all it is about, so two of "
-            "them that overlap only through an instance outside the window stay apart, and what "
-            "the well as a whole would join is not brought in. It changes this window alone, and "
-            "turning it off lands where it started. A window opened from a bar the overview had "
-            "already merged is showing that merge, so its box is ticked and disabled; so is one "
-            "opened from a stitched well, whose recordings are laid end to end on an axis that "
-            "jumps at each solid line, the silences left out."
-        ),
-        (
-            "Tick features on the left to add a plot of them to every instance. The plots of one "
-            "feature share their value axis, so the same reading sits at the same height in all of "
-            "them. 'Features' in the toolbar, beside 'Join overlapping instances', hides that "
-            "panel to give the plots its width; the choice survives a join toggled or a new group "
-            "opened."
-        ),
-        (
-            "'Theme', in the toolbar, paints this window alone light or dark, whatever the main "
-            "window is in; 'As the main window' follows it again. A window with a theme of its own "
-            "ignores the main window's switches."
-        ),
-        (
-            "'Normalize per instance', in the Views row, draws every trace as z-scores over its own "
-            "block, readings outside the plausible range left out first, so that blocks recorded at "
-            "different levels share one value axis and their shapes compare; the histograms, the "
-            "spectra and the readout follow, and the figures beside each trace stay in its unit."
-        ),
-        (
-            "'Topside', 'Seabed' and 'Subsurface' tick every recorded sensor measured at one placement of the production system: on the platform above water (the production choke and shutdown valve, the gas-lift and service lines), at the christmas tree on the seabed, and in the well below it. A second click clears the placement; the boxes add up, and a box shows half ticked while only some of its sensors are selected. Which part of the system matters for an analysis is left to the user; the variables the papers read each event in are listed in the Fault classes tab. A window opens on the analog sensors of the seabed (P-ANULAR, "
-            "P-TPT, T-TPT), the same for every event, unless it was opened on one sensor (from the "
-            "availability page, or from a plot of the Faults or Features page) or on two (from a "
-            "dot of the Dispersions page, its X and Y), or none of them was recorded, when it "
-            "opens on the first recorded feature."
-        ),
-        (
-            "A crosshair follows the pointer through every plot, and the status bar reads out the "
-            "label, the well status and the selected readings of each instance at that moment."
-        ),
-        (
-            "The bands and the plot backgrounds carry the colors of the overview bars. A stretch "
-            "nobody labeled is hatched instead of merely grey, so it cannot be taken for one of "
-            "the two faults whose own color is grey."
-        ),
-        (
-            "Each panel reports the total variation of the signal and how much of the instance the "
-            "sensor actually recorded. A sensor that never moves is marked flat and drawn on a "
-            "padded axis instead of being magnified into noise."
-        ),
-        (
-            "A reading outside the plausible range is drawn in amber over the trace, sample by "
-            "sample, so the stretch that is garbage is seen for what it is; the panel's figures "
-            "call it out, the header of the block names the sensors, and the feature's checkbox "
-            "wears a ⚠."
-        ),
-        (
-            "Two pressures of one line that read <b>out of order</b> (downstream above upstream, "
-            "which the flow cannot do) are warned of the same way: the header of the block names "
-            "the pair and how often, the samples that contradict each other are drawn dashed in "
-            "amber on both plots, whose figures give the share and the largest gap, and both "
-            "checkboxes wear a ⚠. The Data availability tab of the help says which pairs are "
-            "compared and why."
-        ),
-        (
-            "A <b>well status its valves contradict</b> (labeled Open while the wing valve reads "
-            "closed, Shut-In while every valve of the production path reads open) is warned of "
-            "in red: the header of the block names the status, the valves and how often, the "
-            "stretch is hatched over red on the state band, named by its status and its valves, "
-            "the valve's plot hatches it in see-through red behind the trace with the share in "
-            "its figures, the hovered line adds the valves to the status, and the valve's "
-            "checkbox wears a ⚠. The Well status tab "
-            "of the help gives what the valves of each status must read and why."
-        ),
-        (
-            "Every trace draws its <b>measurements as dots</b>, with the line through every sample "
-            "faint beneath them: between two dots that line is exactly the straight line the "
-            "historian drew, so dense dots are a sensor read every second and sparse dots on a "
-            "faint line a sensor read every two minutes and filled in between. The panel's "
-            "figures say the share measured and the interval. A valve state is not tested and "
-            "keeps its plain line; so does a sensor measured at every sample. Untick "
-            "<b>'Measurement dots'</b>, in the Views row, for the plain line throughout, which is "
-            "what the file holds and what a pipeline reads; the figures go on saying how much of "
-            "it was measured."
-        ),
-    ],
-    "Signal views": [
-        (
-            "The 'Views' boxes of the instance window add, to every feature plot, two more "
-            "views of the same signal, each placed where it shares an axis with the trace. "
-            "<b>Distribution</b> is a histogram turned on its side to the right of the trace, on "
-            "the trace's value axis, its bars stacked by label period in the class colors, so "
-            "that how the event moves the readings is seen inside one instance; a bimodal shape "
-            "is an oscillation. A solid line marks the mean and a dashed one the median. "
-            "<b>Spectrum</b> takes a row under the trace, the period along the bottom; whenever "
-            "it is on, one cycle of its dominant period is laid as a bar against the trace, so "
-            "the claim can be checked against the waves."
-        ),
-        (
-            "Both are counted over the stretch of time on screen, so zooming the trace is "
-            "brushing: narrow the view to a stretch and read its distribution and its spectrum. "
-            "A merged recording is transformed as the single series it is, never stitched from "
-            "its parts."
-        ),
-        (
-            "The spectral axis is the <b>period</b>, logarithmic, from two seconds up to the "
-            "length of the stretch, and not a frequency: the events are slow (severe slugging on "
-            "WELL-00014 cycles every 50 to 90 minutes, flow instability on WELL-00001 every 45), "
-            "which in hertz reads 0.0002 and says nothing. The spectrum is Welch's estimate of "
-            "the power spectral density, the mean and the linear trend removed first (a trend "
-            "would otherwise own every long period), the missing samples interpolated (the grid "
-            "is a fixed 1 Hz and the holes are rare), readings outside the plausible range left "
-            "out. A frozen sensor, or a stretch with fewer than half its readings, gets a note "
-            "instead."
-        ),
-        (
-            "'Segment' sets the length of the segments the spectrum averages over, once 'whole "
-            "stretch' is unticked; 'Overlap' how much each repeats of the last; 'Window' the "
-            "taper. Nothing longer than a segment can be resolved, and the plots grey the "
-            "periods beyond it rather than leave them silently empty. With 'whole stretch' "
-            "ticked the spectrum is the periodogram of everything on screen, which is the only "
-            "way to see the slugging line: a segment of five minutes, the size a pipeline "
-            "windows by, holds no cycle of it. 'Bins' is the number of bins of the histograms."
-        ),
-        (
-            "<b>'Plausible only'</b>, beside 'Bins', is what every histogram counts by default: "
-            "the readings inside the plausible range. It is what a histogram is normally asked "
-            "for (one gauge reporting 1e12 Pa would otherwise put every genuine reading into the "
-            "first bin), but it hides the very thing a data review is looking for, so unticking "
-            "it counts the garbage too, on an amber ground beyond the range, with the caption "
-            "saying how many were counted rather than how many were left out. The same tick "
-            "serves the marginal of an instance window, the Distribution domain of the faults "
-            "page and the features page. Spectra are not affected: interpolating over a spike of "
-            "1e12 gives the spectrum of the spike, not of the signal, so they always mask it."
-        ),
-        (
-            "The caption of a spectrum gives its <b>dominant period</b> and the share of the power "
-            "in it: a few percent for a normal instance, whose power is spread thin, half or more "
-            "for an oscillating one. The period is looked for among those the stretch holds at "
-            "least four cycles of, so a trend is not mistaken for a line."
-        ),
-        (
-            "On the Faults page the 'Domain' box draws every instance of the fault in one of the "
-            "three domains (time series, distribution, spectrum), in either layout, over the "
-            "stretch the hours before and after the onset select, so '2 h after' gives the "
-            "spectrum of the fault alone. Overlaid spectra read together where overlaid traces "
-            "did not, since the question is whether their peaks line up. Histograms are drawn as "
-            "a share of each instance's samples, so instances of different length compare: "
-            "stacked bars in the grid, a filled area in the series color when overlaid, so that "
-            "where two of them sit on top of one another reads as a deeper shade. The mean and "
-            "the median of each are lines in the grid, and a triangle over the fullest bin of "
-            "each, in either layout, marks the value that instance spends most of its time at, "
-            "which the mean and the median both miss once a fault has skewed the readings or "
-            "split them in two, and which hovering the curve reads out. 'Normalize per instance' "
-            "puts those of different wells on one z-score axis. The second row of the toolbar "
-            "holds the hours around the onset, the normalization and the parameters of the "
-            "domain chosen; 'Features' and 'Instances' at the right end of the first row hide "
-            "the feature panel and the instance list to give the plots its width."
-        ),
-        (
-            "<b>'Overall'</b>, the third entry of 'Layout', is not a third placement but a "
-            "reduction before them: the instances of a group are pooled into one curve, which "
-            "the overlaid arrangement then draws. On the faults page a group is everything on "
-            "show, so each feature gets one curve across every well at once; on the features "
-            "page a group is a fault class, so the plot becomes one distribution, or one "
-            "spectrum, per class. It is offered off the time axis only: instances cut from "
-            "different months have no common clock to be drawn against."
-        ),
-        (
-            "A distribution pools by putting the readings together, a histogram of the union "
-            "being a histogram whatever order the samples arrive in. A <b>spectrum does not</b>, "
-            "and is never taken over the concatenation: a transform reads consecutive samples as "
-            "one second apart, so the months between two instances would become a step and the "
-            "seams would spread power across the whole axis. The estimates are averaged band by "
-            "band on a shared period axis instead (which is what Welch's method already does "
-            "one level down), and a band only the longest instances reach stays theirs alone."
-        ),
-        (
-            "<b>'Join overlapping'</b>, beside it, is what keeps the counts honest. The windows "
-            "of a well are cut from one recording, so two that overlap hold the same samples "
-            "twice and a pooled histogram would count them twice, inflating it at exactly the "
-            "levels that well was recorded twice at. Ticked, those windows are first read as the "
-            "single recording they were cut from, by the same rule as everywhere else in the "
-            "viewer: every instant once, what one window missed filled in by the one it "
-            "overlaps, and windows whose labels disagree there left apart."
-        ),
-        (
-            "Off the time axis nothing is drawn against the hours from the onset, so 'Align at' "
-            "reaches a distribution or a spectrum only through the stretch those hours cut around "
-            "the anchor. With both hour boxes at 'all' the whole recording is transformed "
-            "whichever moment it is aligned on, and the box is greyed to say so; it comes back as "
-            "soon as hours around the onset are asked for, or the time series is."
-        ),
-        (
-            "There is no phase spectrum of a single signal: the phase of a transform at a period "
-            "is the instant inside the record at which that cycle peaks, so it depends on where "
-            "the file happens to begin and tells nothing the trace does not. The phase "
-            "<i>difference</i> between two sensors over the same stretch is meaningful, and is "
-            "left for a later version."
-        ),
-        (
-            "<b>'Measurements only'</b>, beside 'Plausible only', counts and transforms the "
-            "measurements alone, leaving out the samples the historian filled in between them. A "
-            "histogram then counts what was read, its caption saying so; a spectrum becomes the "
-            "<b>Lomb-Scargle periodogram</b> of the readings at their own instants, which fits a "
-            "sinusoid of each period to them by least squares and needs no grid: the honest "
-            "spectrum of a series read every ten seconds or every two minutes, where a transform "
-            "of the 1 Hz grid is a transform of the historian's lines. Its caption gives the "
-            "share of the variance a sinusoid of the peak period explains, and how many "
-            "measurements it was taken over; the periods run from twice the typical interval "
-            "between measurements up to the stretch. It is scaled so that it integrates to the "
-            "variance of the measurements, as a density does, so it sits on the axis Welch's "
-            "estimate would and pools with it band by band. The same tick serves the instance "
-            "window, the Faults page and the Features page."
-        ),
-    ],
-    "Instances map": [
-        (
-            "Every point is one real instance, or one bar of the joined view. Hover it to name it "
-            "and read its cluster, its typicality and the one-class verdict in the status bar; "
-            "click it to open its time series (under DTW, on the sensor the distance compared). "
-            "Drag to pan, Ctrl + wheel to zoom, Ctrl+R to see every point again."
-        ),
-        (
-            "'Representation' chooses what places the points (the descriptors of the sensors, the "
-            "same less the levels, or the DTW distance of one sensor within one class), 'on' "
-            "whether the descriptors were taken over the whole 1 Hz grid ('Interpolated') or over "
-            "the measurements alone, "
-            "'Embedding' how the points are laid on the plane, 'Color by' what colors them. "
-            "'Clustering' and 'k' group them, and the line beside scores the grouping: the "
-            "silhouette, and the agreement with the fault classes and with the wells."
-        ),
-        (
-            "The list on the right is the label audit: class by class, the instances whose label "
-            "disagrees with the one-class model of the normal instances: fault instances that "
-            "look normal, normal instances that look anomalous. Hover one to find its point, click "
-            "it to open it. Drag its left edge to widen or narrow it; 'Label audit', at the right "
-            "of the second row, hides it to give the map its width. It hides itself under the DTW "
-            "representation, which compares the instances of one class, and comes back as it was "
-            "on leaving it."
-        ),
-        (
-            "What the map computes travels: 'Bar color' on the Timelines can take the cluster or "
-            "the typicality of every bar, and 'Sort' above the instance lists of the Faults and "
-            "Features pages can order them by typicality or by the one-class score, the figures "
-            "appearing in the tooltip of every instance. The first time the page is shown it "
-            "reads every instance in full, behind a progress dialog, and keeps the result in the "
-            "cache, the same pass the 'Measured vs filled' split uses."
-        ),
-        (
-            "The descriptors themselves travel too: 'Sort' also orders the instance lists of the "
-            "Faults and Features pages by the autocorrelation time, the signal-to-noise ratio, "
-            "the Gaussianity slope, the skewness or the kurtosis of the feature on show (on the "
-            "Faults page, the first feature ticked), largest first, with an 'on' box choosing the "
-            "grid or the measurements; the tooltip of every instance then carries both values, "
-            "and the caveat that the historian's lines inflate the first two on the grid. On the "
-            "Timelines, 'Bar color: Descriptor of a sensor' tints every bar by the same figures."
-        ),
-        (
-            "A control whose optional group is not installed is greyed, and its tooltip names "
-            "the group and the command that installs it: 'analysis' for t-SNE, the clusterings, "
-            "their scores and the one-class model, 'umap' for UMAP, 'dtw' for the DTW "
-            "representation."
-        ),
-    ],
-    "Dispersions page": [
-        (
-            "Pick two sensors in 'X' and 'Y' and a scope in 'Over': every sample of the "
-            "instances of the scope is one dot, the density of the samples shaded behind. The "
-            "first look at a scope reads its instances behind a progress dialog and keeps a "
-            "subsample for the session; everything else is instant."
-        ),
-        (
-            "Hover a dot for its instance, its instant, its label period and its two readings, "
-            "and whether each was measured or filled in by the historian; every other dot of that "
-            "instance is brought forward and the rest of the cloud fades, so one recording's "
-            "trajectory through the plane can be followed, and the status bar counts the dots of "
-            "it on show and the samples in the density cell under the pointer. Click a dot to "
-            "open its instance on the two sensors of the plot, X and Y alone, so that the relation "
-            "read in the plane can be followed in time. Drag to pan, Ctrl + wheel to zoom, Ctrl+R "
-            "to see the whole cloud."
-        ),
-        (
-            "'Color by' colors the dots by fault class, by well or by label period, or shows the "
-            "density alone; the key at the right of the second bar names the colors. 'Label "
-            "periods' switches the samples of normal operation, the transient, the steady state "
-            "and the unlabeled on and off."
-        ),
-        (
-            "'Measurements only' keeps the samples at which both sensors were actually read, "
-            "which is where the historian's straight trajectories vanish. 'Join overlapping "
-            "instances' reads the joined bars. The caption gives the counts and the Pearson "
-            "coefficient over the samples on show."
-        ),
-    ],
-    "Windows page": [
-        (
-            "Pick a well and a sensor: the first look reads that sensor from every instance of "
-            "the well behind a progress dialog and keeps it for the session, then cuts it into "
-            "windows of the 'Size' chosen, one label each. 'Instance' keeps one instance's "
-            "windows; 'Fault', 'Label' and the ticks filter them."
-        ),
-        (
-            "Click a row, a thumbnail, a window of the strip or a point of a feature to draw the "
-            "window large at the bottom, with its label, beside the instance it was cut from "
-            "(the window a band with a labeled marker, its stretch of the trace drawn full over "
-            "the rest of the instance, faded; the instance shaded by label). Hover the strip for a window's "
-            "instance, start and label. Double-click a row, or 'Open instance', to open its "
-            "instance in an instance window on this sensor. Ctrl + wheel zooms the plots below "
-            "and the strip; Ctrl+R shows them whole."
-        ),
-        (
-            "'View' swaps the thumbnails for one statistic of every window, those of the "
-            "statistics table and of the Timelines' descriptor coloring: a point per window "
-            "along the well, colored by label period, its distribution per period and the "
-            "separation of normal from event windows. The table gains the statistic's column "
-            "and the window selected draws it over the signal, a line for a level, a band of one "
-            "standard deviation around the mean for the spread. The first statistic asked of a "
-            "cut describes every window behind a progress dialog (one to three seconds on the "
-            "largest well); the others are then instant."
-        ),
-    ],
-    "3W Toolkit": [
-        (
-            "<b>'Export file list…'</b>, in the main toolbar, writes the instances the current page "
-            "has on show (the wells filtered on the Timelines, the rows of the Availability page, "
-            "the instances ticked on the Faults and Features pages, the points of the Instances "
-            "map, a joined bar as its instances) as the JSON of a Toolkit "
-            '<code>ParquetDatasetConfig</code> with <code>split="list"</code>, each file a path '
-            "relative to the dataset root. It loads with "
-            "<code>ParquetDatasetConfig(**json.load(open(path)))</code>; its provenance (the "
-            "dataset, the page and the choice it was taken from, when) is written beside it as "
-            "<code>&lt;name&gt;.provenance.json</code>. <code>scripts/export_file_list.py</code> "
-            "writes the same from the command line, by fault class and well, and "
-            "<code>examples/</code> holds one it produced, with its provenance."
-        ),
-        (
-            "'Toolkit's CleanSignals', on the Availability page, and 'Bar color: Sensors the "
-            "Toolkit's CleanSignals keeps', on the Timelines, apply the Toolkit's cleaning rule to "
-            "the instances on show; see <i>Data availability</i>."
-        ),
-        (
-            "Nothing comes back the other way. The Toolkit's <code>ModelAssessment</code> exports "
-            "<code>predictions_&lt;timestamp&gt;.csv</code> with the columns "
-            "<code>true_values</code>, <code>predictions</code>, <code>model_name</code>, "
-            "<code>task_type</code> and <code>timestamp</code>: one row per window the model "
-            "scored, in the order the windows were fed, with no instance and no instant in it. "
-            "Nothing in that file says which file, let alone which second, a prediction belongs "
-            "to, so it cannot be drawn onto the data. What such an export would have to carry is "
-            "what the viewer's own model-output format asks for: the instance's file, and the "
-            "timestamp of every label."
-        ),
-    ],
-    "Model outputs": [
-        (
-            "'Load model outputs…', in the main toolbar, opens a folder holding model.json and one "
-            "<class>/<instance>.parquet per instance scored (see the <i>Model outputs</i> tab for "
-            "the format). The status bar then says how many of the catalogue's instances the model "
-            "scored."
-        ),
-        (
-            "Once loaded: a 'model' band under the class band of every instance window, plain "
-            "where the verdict agrees with the label and amber where it disagrees; 'Bar color: "
-            "Agreement with the model outputs' on the Timelines; 'Color by: Model agreement' on "
-            "the Instances map; 'Sort: Agreement with the model outputs' and 'Shade by: Model "
-            "outputs' on the Faults and Features pages, whose tooltips carry the figure."
-        ),
-        (
-            "examples/model_outputs holds one set, a PCA control chart over four wells, with its "
-            "provenance in its model.json; scripts/pca_control_chart.py produced it and can score "
-            "any choice of wells and faults the same way."
-        ),
-    ],
-    "Everywhere": [
-        "Drag a plot to pan it. Ctrl with the mouse wheel zooms; the wheel alone scrolls the page.",
-        "Ctrl+R resets the views of the window, F1 opens this help.",
-        (
-            "The Theme box of the main toolbar switches the windows and the plots inside them "
-            "together, so the two never disagree; System follows the desktop. The dark mode lifts "
-            "the fault hues and shades toward its own dark ground, so the ladder of tints keeps "
-            "meaning the same thing. The choice is remembered."
-        ),
-        (
-            "Right-click a plot for pyqtgraph's own menu, which can export the plot as an image or "
-            "as data."
-        ),
-    ],
-}

@@ -33,7 +33,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from overlap_viewer.algorithms.interpolation import format_spacing
 from overlap_viewer.backend import theme
 from overlap_viewer.backend.availability import ABSENT, FROZEN, LIVE, Availability
 from overlap_viewer.backend.config import (
@@ -58,13 +57,6 @@ from overlap_viewer.backend.palette import (
     legend_entries,
     legend_key,
     legend_label,
-)
-from overlap_viewer.backend.profiles import (
-    DESCRIPTOR_CHOICES,
-    DESCRIPTOR_MODES,
-    GRID_CAVEAT,
-    DescriptorChoice,
-    descriptor_column,
 )
 from overlap_viewer.backend.timemap import TimeMap
 from overlap_viewer.frontend.heatmap import StateKey, ramp_color
@@ -99,47 +91,20 @@ SORT_KEYS = {
     "Deepest pile-up": lambda w: (-w.n_lanes, -w.n_overlapping, w.well),
 }
 
-# What a bar's fill can say: the fault; how much of a sensor was recorded, or
-# how much of what was recorded was actually measured rather than filled in by
-# the historian (these two name a sensor and take the ramp key); and what the
-# Instances map made of the instance, its cluster or its typicality, once that
-# page has computed them.
+# What a bar's fill can say: the fault; how much of a sensor was recorded (this
+# one names a sensor and takes the ramp key); and how many of its live sensors
+# the Toolkit's CleanSignals rule keeps.
 COLORINGS = (
     "Fault folder",
     "Availability of a sensor",
-    "Measurements of a sensor",
-    "Descriptor of a sensor",
     "Sensors the Toolkit's CleanSignals keeps",
-    "Cluster of the Instances map",
-    "Typicality of the Instances map",
-    "Agreement with the model outputs",
 )
 COLORING_KINDS = (
     "fault",
     "availability",
-    "measured",
-    "descriptor",
     "cleaned",
-    "cluster",
-    "typicality",
-    "model",
 )
-SENSOR_KINDS = ("availability", "measured", "descriptor")
-MAP_KINDS = ("cluster", "typicality")
-DESCRIPTOR_TIP = (
-    "Which figure of the sensor's series tints the bars: how long its autocorrelation takes to "
-    "halve (a slow, smooth series against a busy one); its signal-to-noise ratio, the variance of "
-    "the series over the variance of its sample-to-sample differences; the slope of Zhang's "
-    "Gaussianity regression, 1 for a Gaussian series, more for heavier tails; its skewness; or "
-    "its excess kurtosis. Melo's characterisation of a variable (thesis, section 4.1). Every bar "
-    "is ranked among the bars on show, faint for the smallest and full for the largest; hover a "
-    "bar for the value."
-)
-DESCRIPTOR_MODE_TIP = (
-    "What the figure is taken over. Interpolated: the whole 1 Hz grid, most of whose samples the "
-    "historian drew between the readings it archived, which is what a pipeline reads. "
-    f"Measurements: the readings alone. {GRID_CAVEAT.capitalize()}."
-)
+SENSOR_KINDS = ("availability",)
 
 
 def faults_of(data: WellData, index: int, info: DatasetInfo) -> str:
@@ -281,29 +246,13 @@ def bar_tooltip(data: WellData, index: int) -> str:
 
 
 def describe_sensor_in_bar(
-    availability: Availability, data: WellData, index: int, sensor: str, measured: bool = False
+    availability: Availability, data: WellData, index: int, sensor: str
 ) -> str:
-    """How much of one sensor the instances behind a bar recorded: the sentence behind its tint.
-
-    ``measured`` leads with how much of the live signal was measured rather
-    than filled in, which is what the bar says under that coloring.
-    """
+    """How much of one sensor the instances behind a bar recorded: the sentence behind its tint."""
     rows = bar_rows(availability, data, index)
     column = availability.sensors.index(sensor)
     shares, flagged = availability.shares_of(rows, column)
-    parts = []
-    if measured and availability.measured:
-        share, spacing = availability.measured_of(rows, column)
-        if np.isfinite(share):
-            parts.append(
-                f"{sensor}: {share:.0%} of its live samples are measurements, one every "
-                f"{format_spacing(spacing)} of signal"
-            )
-        else:
-            parts.append(f"{sensor}: live nowhere, so nothing to measure")
-        parts.append(f"live in {shares[LIVE]:.0%} of the samples")
-    else:
-        parts.append(f"{sensor}: live in {shares[LIVE]:.0%} of the samples")
+    parts = [f"{sensor}: live in {shares[LIVE]:.0%} of the samples"]
     if shares[FROZEN] > 0:
         parts.append(f"frozen in {shares[FROZEN]:.0%}")
     if shares[ABSENT] > 0:
@@ -721,12 +670,6 @@ class TimelinesPage(QWidget):
         self.wells: list[WellData] = []
         self._joined_wells: list[WellData] = []
         self._availability: Availability | None = None
-        self._map_results = None  # what the Instances map computed, once it has
-        self._model_results = None  # the model outputs loaded, once they are
-        # Under the descriptor coloring: every bar's value and its rank among
-        # the bars on show, by (well, bar).
-        self._descriptor_values: dict[tuple[int, int], float] = {}
-        self._descriptor_ranks: dict[tuple[int, int], float] = {}
         self._fault_filter: int | None = None
         self._catalogue = None
         self._summary = ""
@@ -832,44 +775,21 @@ class TimelinesPage(QWidget):
             "What fills a bar: the fault folder of its instance, tinted by how far the fault "
             "developed; how much of one sensor the instance recorded, so that the grid shows "
             "the history of that sensor on every well, an era of absence or a scattering of it; "
-            "how much of what it recorded was actually measured, the rest being the straight "
-            "lines the historian drew between measurements; one descriptor of the sensor's "
-            "series (autocorrelation time, signal-to-noise ratio, Gaussianity, skewness, "
-            "kurtosis), ranked among the bars on show; how many of its live sensors the 3W "
-            "Toolkit's CleanSignals rule would keep, at the Toolkit's default thresholds, full for "
-            "all of them and faint for few (hover a bar for which it discards, and why); or what "
-            "the Instances map made of it. The sensor and Toolkit colorings read every instance in "
-            "full the first time, behind a progress dialog, and keep the result in the cache."
+            "or how many of its live sensors the 3W Toolkit's CleanSignals rule would keep, at "
+            "the Toolkit's default thresholds, full for all of them and faint for few (hover a "
+            "bar for which it discards, and why). The sensor and Toolkit colorings read every "
+            "instance in full the first time, behind a progress dialog, and keep the result in "
+            "the cache."
         )
         self._coloring.currentIndexChanged.connect(self._recolor)
         bar.addWidget(self._coloring)
         if passes is None:
-            for kind in ("measured", "descriptor", "cleaned"):
-                self._coloring.model().item(COLORING_KINDS.index(kind)).setEnabled(False)
-        # The map's colorings wait for the map to have computed something, the
-        # model's for a set of outputs to be loaded.
-        for kind in (*MAP_KINDS, "model"):
-            self._coloring.model().item(COLORING_KINDS.index(kind)).setEnabled(False)
+            self._coloring.model().item(COLORING_KINDS.index("cleaned")).setEnabled(False)
         self._sensor = QComboBox()
         self._sensor.setToolTip("The sensor the bars are tinted by")
         self._sensor.currentIndexChanged.connect(self._recolor)
         self._sensor_action = bar.addWidget(self._sensor)
         self._sensor_action.setVisible(False)
-        # The descriptor coloring's own boxes: which figure, and on what.
-        self._descriptor = QComboBox()
-        for choice in DESCRIPTOR_CHOICES:
-            self._descriptor.addItem(choice.name, choice.column)
-        self._descriptor.setToolTip(DESCRIPTOR_TIP)
-        self._descriptor.currentIndexChanged.connect(self._recolor)
-        self._descriptor_actions = [bar.addWidget(self._descriptor)]
-        self._descriptor_actions.append(bar.addWidget(QLabel(" on ")))
-        self._descriptor_mode = QComboBox()
-        self._descriptor_mode.addItems(list(DESCRIPTOR_MODES))
-        self._descriptor_mode.setToolTip(DESCRIPTOR_MODE_TIP)
-        self._descriptor_mode.currentIndexChanged.connect(self._recolor)
-        self._descriptor_actions.append(bar.addWidget(self._descriptor_mode))
-        for action in self._descriptor_actions:
-            action.setVisible(False)
 
         # No button of its own: the key's own title bar is how it is retracted.
         key_action = QAction("Color key", self)
@@ -963,9 +883,6 @@ class TimelinesPage(QWidget):
         self._plots = {}
         self._cells = {}
         shown = self._shown_wells()
-        if self.coloring_kind == "descriptor":
-            # The bars on show changed (joined or not), and so did their ranks.
-            self._rank_descriptors()
         self.slots = lane_slots(shown, MIN_LANE_SLOTS, MAX_LANE_SLOTS)
         height = PLOT_CHROME_PX + LANE_PX * self.slots
         for well in shown:
@@ -1017,21 +934,9 @@ class TimelinesPage(QWidget):
         )
         return Availability.from_wells(self.wells, self.info, profiles=profiles)
 
-    def _ensure_profiles(self) -> bool:
-        """Have the bars' profiles on hand, reading the data if need be; ``False`` if cancelled."""
-        if self._availability is not None and self._availability.measured:
-            return True
-        if self._passes is None:
-            return False
-        profiles = self._passes.profiles(self.info.sensor_names, parent=self.window())
-        if profiles is None:
-            return False
-        self._availability = Availability.from_wells(self.wells, self.info, profiles=profiles)
-        return True
-
     @property
     def coloring_kind(self) -> str:
-        """``fault``, ``availability``, ``measured``, ``cluster`` or ``typicality``: what the Bar color box asks for."""
+        """``fault``, ``availability`` or ``cleaned``: what the Bar color box asks for."""
         return COLORING_KINDS[self._coloring.currentIndex()]
 
     @property
@@ -1040,16 +945,6 @@ class TimelinesPage(QWidget):
         if self.coloring_kind not in SENSOR_KINDS or self._availability is None:
             return None
         return self._sensor.currentText() or None
-
-    @property
-    def descriptor_choice(self) -> DescriptorChoice:
-        """The descriptor the bars are tinted by under that coloring."""
-        return DESCRIPTOR_CHOICES[max(self._descriptor.currentIndex(), 0)]
-
-    @property
-    def descriptor_measured(self) -> bool:
-        """Whether the descriptor is taken on the measurements alone rather than on the grid."""
-        return self._descriptor_mode.currentIndex() == 1
 
     def _loaded_profiles(self):
         return (
@@ -1079,154 +974,6 @@ class TimelinesPage(QWidget):
             return f"{sensor}: no readings"
         return f"{sensor}: {genuine:,.0f} measurements of {valid:,.0f} readings ({genuine / valid:.1%})"
 
-    def _rank_descriptors(self) -> None:
-        """Look up the chosen descriptor of the chosen sensor for every bar on show, and rank them."""
-        self._descriptor_values, self._descriptor_ranks = {}, {}
-        profiles, sensor = self._loaded_profiles(), self.sensor_coloring
-        if profiles is None or sensor is None:
-            return
-        column = descriptor_column(self.descriptor_choice, self.descriptor_measured)
-        keys, values = [], []
-        for data in self._shown_wells():
-            for index in range(data.n_instances):
-                keys.append((data.well, index))
-                values.append(
-                    profiles.descriptor(
-                        self._bar_key(data, index), sensor, column, data.joined_view
-                    )
-                )
-        values = np.asarray(values, dtype=float)
-        ranks = np.full(len(values), np.nan)
-        known = ~np.isnan(values)  # an infinite figure ranks largest
-        if known.sum() > 1:
-            order = values[known].argsort().argsort()
-            ranks[known] = order / (known.sum() - 1)
-        elif known.sum() == 1:
-            ranks[known] = 1.0
-        self._descriptor_values = dict(zip(keys, values.tolist()))
-        self._descriptor_ranks = dict(zip(keys, ranks.tolist()))
-
-    def describe_descriptor_in_bar(self, data: WellData, index: int) -> str:
-        """The descriptor's value in one bar, on the grid and on the measurements, and its rank."""
-        profiles, sensor = self._loaded_profiles(), self.sensor_coloring
-        choice, measured = self.descriptor_choice, self.descriptor_measured
-        if profiles is None or sensor is None:
-            return f"{sensor}: the profiles have not been read"
-        if data.stitched_view:
-            return (
-                f"{sensor}: the descriptors are taken over one recording at a time, not over a "
-                "stitched well; untick 'Stitch instances' to rank the recordings"
-            )
-        key = self._bar_key(data, index)
-        grid = profiles.descriptor(key, sensor, choice.column, data.joined_view)
-        genuine = profiles.descriptor(key, sensor, f"{choice.column}_g", data.joined_view)
-        first, second = (genuine, grid) if measured else (grid, genuine)
-        where, elsewhere = (
-            ("on the measurements", "on the grid")
-            if measured
-            else ("on the grid", "on the measurements")
-        )
-        if np.isnan(first):
-            return f"{sensor}: no {choice.name.lower()} {where} (nothing live to describe)"
-        parts = [
-            (
-                f"{sensor}: {choice.name.lower()} {choice.format(first)} {where} "
-                f"({choice.format(second)} {elsewhere})"
-            )
-        ]
-        rank = self._descriptor_ranks.get((data.well, index), float("nan"))
-        if np.isfinite(rank):
-            parts.append(f"rank {rank:.2f} among the {len(self._descriptor_ranks)} bars on show")
-        if not measured and choice.inflated:
-            parts.append(GRID_CAVEAT)
-        return " | ".join(parts)
-
-    def set_map_results(self, results) -> None:
-        """Take what the Instances map computed, and offer its colorings."""
-        self._map_results = results
-        for kind in MAP_KINDS:
-            self._coloring.model().item(COLORING_KINDS.index(kind)).setEnabled(results is not None)
-        if self.coloring_kind in MAP_KINDS:
-            self._recolor()
-
-    def set_model_results(self, results) -> None:
-        """Take the model outputs loaded (or none), and offer the coloring by their agreement."""
-        self._model_results = results
-        self._coloring.model().item(COLORING_KINDS.index("model")).setEnabled(results is not None)
-        if self.coloring_kind == "model":
-            if results is None:
-                self._coloring.setCurrentIndex(0)
-            else:
-                self._recolor()
-
-    def _member_keys(self, data: WellData, index: int) -> list[tuple[int, str]]:
-        """The instances behind one bar as ``(fault_class, file)`` keys."""
-        origin = data.origin.rows
-        return [
-            (int(origin["fault_class"].iloc[m]), str(origin["file"].iloc[m]))
-            for m in data.members[index]
-        ]
-
-    def _model_fills(self, data: WellData) -> list[list[str]]:
-        """The bars of one well tinted by how far the model agrees with their labels."""
-        colors = theme.current()
-        results = self._model_results
-        fills = []
-        for index in range(data.n_instances):
-            share = results.agreement_of_members(self._member_keys(data, index))
-            fills.append([ramp_color(share) if np.isfinite(share) else colors.block_fill])
-        return fills
-
-    def describe_model_in_bar(self, data: WellData, index: int) -> str:
-        """How far the model agrees with the labels of one bar."""
-        results = self._model_results
-        if results is None:
-            return "no model outputs loaded"
-        keys = self._member_keys(data, index)
-        if len(keys) == 1:
-            return results.describe(*keys[0])
-        share = results.agreement_of_members(keys)
-        scored = sum(1 for key in keys if key in results.agreements)
-        if not np.isfinite(share):
-            return f"none of its {len(keys)} instances scored by {results.name}"
-        return (
-            f"{results.name}: agrees with the labels {share:.0%} of the compared time over "
-            f"{scored} of its {len(keys)} instances"
-        )
-
-    def _map_key(self, data: WellData, index: int):
-        """The key the map knows one bar by, or ``None`` when the map was drawn on the other view."""
-        results = self._map_results
-        if results is None or data.stitched_view or results.joined != data.joined_view:
-            return None
-        if data.joined_view:
-            return (data.well, index)
-        row = data.rows.iloc[index]
-        return (int(row["fault_class"]), str(row["file"]))
-
-    def _map_fills(self, data: WellData) -> list[list[str]]:
-        """What the map's coloring fills the bars of one well with: the cluster's color, or the typicality ramp."""
-        colors = theme.current()
-        results = self._map_results
-        fills = []
-        for index in range(data.n_instances):
-            key = self._map_key(data, index)
-            fill = None
-            if key is not None:
-                if self.coloring_kind == "cluster":
-                    fill = results.cluster_color(key)
-                else:
-                    rank = results.typicality_rank(key)
-                    fill = ramp_color(rank) if np.isfinite(rank) else None
-            fills.append([fill or colors.block_fill])
-        return fills
-
-    def _cleaned_for(self, data: WellData):
-        """The Toolkit's verdicts on the view one well is drawn in, if the profiles are on hand."""
-        if self._passes is None:
-            return None
-        return self._passes.cleaning_if_loaded(data.joined_view)
-
     def _bar_key(self, data: WellData, index: int):
         """The key the profile table knows one bar by; ``None`` for a stitched bar, which it does not."""
         if data.stitched_view:
@@ -1235,6 +982,12 @@ class TimelinesPage(QWidget):
             return (data.well, index)
         row = data.rows.iloc[index]
         return (int(row["fault_class"]), str(row["file"]))
+
+    def _cleaned_for(self, data: WellData):
+        """The Toolkit's verdicts on the view one well is drawn in, if the profiles are on hand."""
+        if self._passes is None:
+            return None
+        return self._passes.cleaning_if_loaded(data.joined_view)
 
     def _cleaned_fills(self, data: WellData) -> list[list[str]]:
         """The bars of one well tinted by the share of their live sensors the Toolkit's rule keeps."""
@@ -1258,30 +1011,6 @@ class TimelinesPage(QWidget):
             return "the Toolkit's rule has not been fitted yet"
         return cleaned.describe(self._bar_key(data, index))
 
-    def describe_map_in_bar(self, data: WellData, index: int) -> str:
-        """What the map said about one bar: its cluster, or its typicality."""
-        results = self._map_results
-        key = self._map_key(data, index)
-        if results is None or key is None:
-            view = "joined bars" if results is not None and results.joined else "instances"
-            return f"the Instances map was drawn on the {view}, not on these bars"
-        if self.coloring_kind == "cluster":
-            if results.clusters is None:
-                return "no clustering is on in the Instances map"
-            label = results.clusters.get(key)
-            if label is None:
-                return "not on the Instances map"
-            return (
-                "left out of every cluster"
-                if label < 0
-                else f"cluster {label + 1} of the Instances map"
-            )
-        rank = results.typicality_rank(key)
-        if not np.isfinite(rank):
-            return "not on the Instances map"
-        distance = results.typicality[key][0]
-        return f"typicality {rank:.2f} in its class on the Instances map (distance {distance:.2f} to the medoid)"
-
     def _coloring_of(self, data: WellData) -> tuple[list[list[str]] | None, list[int]]:
         """What fills the bars of one well and which marks they wear, under the current choice.
 
@@ -1291,8 +1020,6 @@ class TimelinesPage(QWidget):
         hand) or any of its valves contradicts the well state (top-left, in
         red, likewise); tinted by one sensor, it is marked for that sensor
         alone, the bar being about that sensor.
-        Tinted by the measurements of a sensor, the ramp is the share of the
-        sensor's live samples that were measured rather than filled in.
         """
         availability = self._availability
         if availability is None:
@@ -1307,30 +1034,17 @@ class TimelinesPage(QWidget):
                     | (ORDER_MARK if availability.order_any(rows) else 0)
                     | (STATE_MARK if availability.state_any(rows) else 0)
                 )
-            if self.coloring_kind in MAP_KINDS and self._map_results is not None:
-                return self._map_fills(data), marks
             if self.coloring_kind == "cleaned" and self._cleaned_for(data) is not None:
                 return self._cleaned_fills(data), marks
-            if self.coloring_kind == "model" and self._model_results is not None:
-                return self._model_fills(data), marks
             return None, marks
         colors = theme.current()
         column = availability.sensors.index(sensor)
-        measured = self.coloring_kind == "measured" and availability.measured
-        descriptor = self.coloring_kind == "descriptor"
         fills, marks = [], []
         for index in range(data.n_instances):
             rows = bar_rows(availability, data, index)
             shares, flagged = availability.shares_of(rows, column)
-            if descriptor:
-                rank = self._descriptor_ranks.get((data.well, index), float("nan"))
-                fills.append([ramp_color(rank) if np.isfinite(rank) else colors.block_fill])
-            elif shares[LIVE] > 0:
-                strength = shares[LIVE]
-                if measured:
-                    share, _spacing = availability.measured_of(rows, column)
-                    strength = share if np.isfinite(share) else 0.0
-                fills.append([ramp_color(strength)])
+            if shares[LIVE] > 0:
+                fills.append([ramp_color(shares[LIVE])])
             elif shares[FROZEN] > 0:
                 fills.append([colors.frozen])
             else:
@@ -1354,18 +1068,11 @@ class TimelinesPage(QWidget):
     def _recolor(self, *args) -> None:
         """Fill the bars again under the choice of the Bar color box, without rebuilding the grid."""
         kind = self.coloring_kind
-        declined = (kind in ("measured", "descriptor") and not self._ensure_profiles()) or (
-            kind == "cleaned" and not self._ensure_cleaning()
-        )
-        if declined:
+        if kind == "cleaned" and not self._ensure_cleaning():
             # The pass was declined: back to the coloring that needs none.
             self._coloring.blockSignals(True)
             self._coloring.setCurrentIndex(0)
             self._coloring.blockSignals(False)
-        if self.coloring_kind == "descriptor":
-            self._rank_descriptors()
-        else:
-            self._descriptor_values, self._descriptor_ranks = {}, {}
         for plot in self._plots.values():
             plot.set_coloring(*self._coloring_of(plot.data))
         for cell in self._cells.values():
@@ -1374,58 +1081,25 @@ class TimelinesPage(QWidget):
         self.status.emit(HINT)
 
     def _show_key(self) -> None:
-        """Show the key that names the bars' fills: the faults', the sensor's, or the map's."""
+        """Show the key that names the bars' fills: the faults', the sensor's, or the Toolkit's."""
         sensor = self.sensor_coloring
         kind = self.coloring_kind
         self._sensor_action.setVisible(kind in SENSOR_KINDS)
-        for action in self._descriptor_actions:
-            action.setVisible(kind == "descriptor")
         self._legend.setVisible(kind == "fault")
-        # The map's clusters have no ramp: the map itself is their key, and
-        # hovering a bar names its cluster.
-        self._state_key.setVisible(sensor is not None or kind in ("typicality", "cleaned", "model"))
+        self._state_key.setVisible(sensor is not None or kind == "cleaned")
         self._state_key.set_visible(
             "order", self._availability is not None and self._availability.out_of_order is not None
         )
         self._state_key.set_visible(
             "state", self._availability is not None and self._availability.against_state is not None
         )
-        if sensor is not None and kind == "descriptor":
-            choice = self.descriptor_choice
-            where = (
-                "on the measurements" if self.descriptor_measured else "on the interpolated grid"
-            )
-            caveat = f", {GRID_CAVEAT}" if choice.inflated and not self.descriptor_measured else ""
-            self._state_key.set_text(
-                "ramp",
-                f"{sensor}: {choice.name.lower()} {where}, ranked among the bars on show from "
-                f"the smallest to the largest{caveat}",
-            )
-        elif sensor is not None:
-            self._state_key.set_text(
-                "ramp",
-                f"{sensor}: share of its live samples that are measurements, from a few to all"
-                if kind == "measured"
-                else f"{sensor}: share of samples live, from a few to all",
-            )
-        elif kind == "typicality":
-            self._state_key.set_text(
-                "ramp",
-                "typicality on the Instances map, from the farthest instance of its class to "
-                "the medoid",
-            )
+        if sensor is not None:
+            self._state_key.set_text("ramp", f"{sensor}: share of samples live, from a few to all")
         elif kind == "cleaned":
             self._state_key.set_text(
                 "ramp",
                 "share of the bar's live sensors the Toolkit's CleanSignals keeps, from none to "
                 "all (defaults: 3 IQR, dropped when missing in 60 %)",
-            )
-        elif kind == "model":
-            name = self._model_results.name if self._model_results else "the model"
-            self._state_key.set_text(
-                "ramp",
-                f"share of the compared time {name} agrees with the labels, from none to all; "
-                "empty where it scored nothing",
             )
 
     # -- appearance
@@ -1547,18 +1221,10 @@ class TimelinesPage(QWidget):
             return
         text = describe_instance(plot.data, index, self.info, self._availability)
         sensor = self.sensor_coloring
-        if sensor is not None and self.coloring_kind == "descriptor":
-            text += " | " + self.describe_descriptor_in_bar(plot.data, index)
-        elif sensor is not None:
-            text += " | " + describe_sensor_in_bar(
-                self._availability, plot.data, index, sensor, self.coloring_kind == "measured"
-            )
-        elif self.coloring_kind in MAP_KINDS:
-            text += " | " + self.describe_map_in_bar(plot.data, index)
+        if sensor is not None:
+            text += " | " + describe_sensor_in_bar(self._availability, plot.data, index, sensor)
         elif self.coloring_kind == "cleaned":
             text += " | " + self.describe_cleaning_in_bar(plot.data, index)
-        elif self.coloring_kind == "model":
-            text += " | " + self.describe_model_in_bar(plot.data, index)
         self.status.emit(text)
         data = plot.data
         self._legend.highlight(
@@ -1571,23 +1237,3 @@ class TimelinesPage(QWidget):
 
     def _on_click(self, plot: WellTimelinePlot, index: int) -> None:
         self.open_requested.emit(plot.data, index)
-
-    # -- what leaves the page
-
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances of the wells on show, for the file list a Toolkit loader takes."""
-        files = []
-        for well in self._selected_wells():
-            rows = well.origin.rows
-            files += [
-                (int(rows["fault_class"].iloc[i]), str(rows["file"].iloc[i]))
-                for i in range(len(rows))
-            ]
-        return files
-
-    def shown_source(self) -> str:
-        """Where the file list came from, for its provenance."""
-        parts = [f"the Timelines page | {self._filter.currentText()}"]
-        if self._fault_filter is not None:
-            parts.append(f"wells that recorded {self.info.fault_name(self._fault_filter)}")
-        return " | ".join(parts)

@@ -13,25 +13,23 @@ the measurements alone
 ![Dispersions page](../assets/dispersion.png)
 
 - **X**, **Y** are the two sensors (analog ones; readings outside the plausible range left out) and
-  **Over** the scope: every real instance, one fault class or one well, the joined bars with **Join
-  overlapping instances**. The first look at a scope reads its instances in full behind a progress
+  **Over** the scope: every real instance, one fault class or one well. The first look at a scope reads its instances in full behind a progress
   dialog, every analog sensor at once, and keeps an even subsample of the rows for the session,
   400,000 in all (one row in a few for one well, one in fifty for the whole dataset, which takes
   about two minutes), so that everything else is instant; at most 150,000 of them are drawn as
   dots, evenly, and the **density** behind the dots, a two-dimensional histogram on a logarithmic
   scale, counts them all.
 - **Color by** colors the dots by fault class, by well or by label period, or shows the density
-  alone; **Label periods** switches the samples of normal operation, the transient, the steady
-  state and the unlabeled on and off, so that a fault's steady state alone shows the relation under
+  alone; the **Normal operation**, **Transient**, **Steady state** and **Unlabeled** boxes switch
+  those samples on and off, so that a fault's steady state alone shows the relation under
   the fault and normal operation alone the relation it departs from.
 - **Measurements only** keeps the samples at which both sensors were actually read, a few per cent
   of the dots, from which the historian's straight trajectories vanish. It carries a caveat of its
   own: a historian archives a reading when it has moved enough, so the instants at which both
   sensors were archived are instants at which both moved, and this cloud favours the relation
   between them: over the severe-slugging instances P-TPT × T-TPT reads +0.40 on every sample and
-  +0.95 on the 5 % at which both were measured. The caption gives the counts, one in how many, and the Pearson
-  coefficient over the samples on show, so that the cloud and the correlation matrix can be read
-  against each other: no pooled coefficient betrays the lines, every scatter plot does.
+  +0.95 on the 5 % at which both were measured. The caption gives the counts, one in how many; the
+  Pearson coefficient over the samples on show sits in the top-left corner of the plot.
 - **Hover** a dot for its instance, its instant, its label period, its two readings and whether
   each was measured or filled in. Every other dot of that instance is brought forward and the rest
   of the cloud fades, so one recording's trajectory through the plane can be followed with the

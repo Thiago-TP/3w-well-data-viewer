@@ -6,8 +6,8 @@ section, every instance of that fault drawn inside it in the color of its well;
 the features page fixes a sensor and gives each **fault class** a section, the
 instances of that class drawn inside it in the color of the class. Everything
 between the choice and the picture is the same: the same three arrangements,
-the same three domains, the same window of hours around an onset, the same
-normalization, the same transforms, the same hover.
+the same three domains, the same normalization, the same transforms, the same
+hover.
 
 So that machinery lives here, and a page supplies only what differs: which
 instances it reads, what a section is, what color a series takes and what the
@@ -44,7 +44,6 @@ from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
-    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -62,7 +61,6 @@ from overlap_viewer.algorithms.faults import (
     ALIGNMENTS,
     plausible_extent,
     relative_hours,
-    window_mask,
     zscore,
 )
 from overlap_viewer.algorithms.interpolation import GENUINE, MISSING, sample_kinds
@@ -97,13 +95,6 @@ from overlap_viewer.backend.labels import (
     state_name,
 )
 from overlap_viewer.backend.palette import background_color, bar_color, tint, unknown_background
-from overlap_viewer.backend.profiles import (
-    DESCRIPTOR_CHOICES,
-    DESCRIPTOR_MODES,
-    GRID_CAVEAT,
-    DescriptorChoice,
-    descriptor_column,
-)
 from overlap_viewer.frontend.instance_window import AXIS_WIDTH, PlotStack
 from overlap_viewer.frontend.items import (
     AnchoredText,
@@ -159,46 +150,23 @@ JOIN_TIP = (
     "apart, as they do everywhere else in the viewer."
 )
 # Why the box is greyed: off the time axis nothing is drawn against the hours
-# from the onset, and with both hour boxes at *all* the whole recording is
-# transformed whatever the anchor, so the choice has nothing left to change.
+# from the onset, and the whole recording is transformed whatever the anchor, so
+# the choice has nothing to change.
 ALIGN_MOOT_TIP = (
-    "The anchor only reaches a distribution or a spectrum through the stretch the hours before "
-    "and after it select, and both hour boxes are at 'all', so the whole recording is transformed "
-    "whichever moment it is aligned on. Ask for hours around the onset, or go back to the time "
-    "series, to choose it again."
+    "A distribution or a spectrum is taken over the whole recording of every instance, so the "
+    "moment it is aligned on changes nothing. Go back to the time series to choose it again."
 )
-# How the instance lists can be ordered. The two map orders wait for the
-# Instances map to have computed something on the instances; the model order
-# for a set of model outputs to be loaded.
+# How the instance lists can be ordered. The model order waits for a set of
+# model outputs to be loaded.
 SORTS = (
     "Well and start",
-    "Typicality (Instances map)",
-    "Novelty score (Instances map)",
     "Agreement with the model outputs",
-    *(choice.name for choice in DESCRIPTOR_CHOICES),
-)
-FIRST_DESCRIPTOR_SORT = (
-    4  # the descriptor orders follow the four above, in DESCRIPTOR_CHOICES order
 )
 SORT_TIP = (
-    "The order of the list: by well and start, as the catalogue is; by typicality, the most "
-    "typical instance of its class first (its distance to the medoid of the class on the "
-    "Instances map, in the representation chosen there); by the one-class model's score, the "
-    "instance that looks most anomalous first; by the agreement of the loaded model outputs "
-    "with the labels, the instance the model disagrees with most first; or by one descriptor of "
-    "the feature on show (the time its autocorrelation takes to halve, its signal-to-noise "
-    "ratio, the slope of Zhang's Gaussianity regression, its skewness or its kurtosis, Melo's "
-    "characterisation of a variable), largest first, taken on the grid or on the measurements "
-    "as the box beside says. The two map orders are offered once the map has been computed on "
-    "the instances (not on the joined bars), the model order once outputs are loaded, the "
-    "descriptor orders once a feature is on show (the first look reads every instance in full, "
-    "behind a progress dialog, and keeps the result in the cache), and the tooltip of every "
-    "instance then carries the figures."
-)
-SORT_MODE_TIP = (
-    "What the descriptor is taken over. Interpolated: the whole 1 Hz grid, most of whose samples "
-    "the historian drew between the readings it archived, which is what a pipeline reads. "
-    f"Measurements: the readings alone. {GRID_CAVEAT.capitalize()}."
+    "The order of the list: by well and start, as the catalogue is; or by the agreement of the "
+    "loaded model outputs with the labels, the instance the model disagrees with most first. "
+    "The model order is offered once outputs are loaded, and the tooltip of every instance then "
+    "carries the figure."
 )
 # What shades the label periods behind a small plot: the experts' labels, or
 # the loaded model's verdicts in the same vocabulary.
@@ -208,7 +176,8 @@ SHADING_TIP = (
     "or the verdicts of the model outputs loaded (a detector's 'anomalous' drawn as the "
     "instance's own fault, its 'normal' as normal operation; a classifier's classes as "
     "themselves), so that where the model and the experts differ shows as a shading that does "
-    "not match the trace's list entry. Offered once model outputs are loaded."
+    "not match the trace's list entry. Offered once model outputs are loaded, and only in the "
+    "time series domain, the other two having no label periods to shade."
 )
 PLOT_PX = 230  # height of one overlaid section plot
 SMALL_PLOT_PX = 132  # height of one small multiple
@@ -404,12 +373,9 @@ class SeriesPage(QWidget):
         """What the status bar says when the pointer is over nothing in particular."""
         return self.HINT
 
-    def __init__(self, info: DatasetInfo, passes=None, parent=None):
+    def __init__(self, info: DatasetInfo, parent=None):
         super().__init__(parent)
         self.info = info
-        # Where the profiles of the instances come from, when a sort order asks
-        # for them; without it the descriptor orders are not offered.
-        self._passes = passes
         self._wells: dict[int, WellData] = {}
         self._series: list[Series] = []
         self._plots: list[pg.PlotItem] = []
@@ -429,12 +395,10 @@ class SeriesPage(QWidget):
         self._pool: dict[int, list[int]] = {}
         self._hover = -1
         self._x_range: tuple[float, float] | None = None
-        self._map_results = None  # what the Instances map computed, once it has
         self._model_results = None  # the model outputs loaded, once they are
         self._sort: QComboBox | None = None
-        self._sort_mode: QComboBox | None = None
-        self._sort_mode_label: QLabel | None = None
         self._shading: QComboBox | None = None
+        self._shading_label: QLabel | None = None
         self._shading_actions: list = []
 
     # -- construction, the parts every page shares
@@ -461,7 +425,7 @@ class SeriesPage(QWidget):
             self.open_requested.emit(data, int(position), feature)
 
     def add_sort_control(self, layout) -> QComboBox:
-        """The *Sort* box of an instance list, its map orders greyed until the map has run."""
+        """The *Sort* box of an instance list, its model order greyed until outputs are loaded."""
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(4)
@@ -469,107 +433,26 @@ class SeriesPage(QWidget):
         self._sort = QComboBox()
         self._sort.addItems(list(SORTS))
         self._sort.setToolTip(SORT_TIP)
-        self._sort.currentIndexChanged.connect(self._on_sort_index_changed)
+        self._sort.currentIndexChanged.connect(self.on_sort_changed)
         row.addWidget(self._sort, 1)
-        # The descriptor orders' own box: on the grid, or on the measurements.
-        self._sort_mode_label = QLabel("on")
-        row.addWidget(self._sort_mode_label)
-        self._sort_mode = QComboBox()
-        self._sort_mode.addItems(list(DESCRIPTOR_MODES))
-        self._sort_mode.setToolTip(SORT_MODE_TIP)
-        self._sort_mode.currentIndexChanged.connect(self.on_sort_changed)
-        row.addWidget(self._sort_mode)
         layout.addLayout(row)
         self._sync_sort_control()
         return self._sort
 
-    def _on_sort_index_changed(self, *args) -> None:
-        self._sync_sort_control()
-        self.on_sort_changed()
-
     def _sync_sort_control(self) -> None:
+        """Offer the model order once outputs are loaded, and leave it when they go."""
         if self._sort is None:
             return
-        map_usable = self._map_results is not None and not self._map_results.joined
-        feature = self.sort_feature()
-        descriptors_usable = self._passes is not None and feature is not None
-        usable = {1: map_usable, 2: map_usable, 3: self._model_results is not None}
-        model = self._sort.model()
-        for k, choice in enumerate(DESCRIPTOR_CHOICES, start=FIRST_DESCRIPTOR_SORT):
-            usable[k] = descriptors_usable
-            # The order names the feature it reads, as the feature changes.
-            model.item(k).setText(f"{choice.name} of {feature}" if feature else choice.name)
-        for k, allowed in usable.items():
-            item = model.item(k)
-            flags = item.flags()
-            item.setFlags(
-                flags | Qt.ItemFlag.ItemIsEnabled if allowed else flags & ~Qt.ItemFlag.ItemIsEnabled
-            )
-        current = self._sort.currentIndex()
-        if current and not usable.get(current, True):
-            self._sort.blockSignals(True)
-            self._sort.setCurrentIndex(0)
-            self._sort.blockSignals(False)
-        by_descriptor = self.descriptor_sort() is not None
-        self._sort_mode_label.setVisible(by_descriptor)
-        self._sort_mode.setVisible(by_descriptor)
-
-    def sort_feature(self) -> str | None:
-        """The sensor whose descriptors the descriptor orders read; a page names its own."""
-        return None
-
-    def descriptor_sort(self) -> DescriptorChoice | None:
-        """The descriptor the list is ordered by, or ``None`` under the other orders."""
-        if self._sort is None or self._sort.currentIndex() < FIRST_DESCRIPTOR_SORT:
-            return None
-        return DESCRIPTOR_CHOICES[self._sort.currentIndex() - FIRST_DESCRIPTOR_SORT]
-
-    @property
-    def sort_measured(self) -> bool:
-        """Whether the descriptor orders read the measurements' figures rather than the grid's."""
-        return self._sort_mode is not None and self._sort_mode.currentIndex() == 1
-
-    def _sort_profiles(self):
-        """The profiles the descriptor orders read, reading the data if need be; ``None`` if declined."""
-        if self._passes is None:
-            return None
-        profiles = self._passes.profiles(self.info.sensor_names, parent=self.window())
-        if profiles is None and self._sort is not None:
-            # The pass was declined: back to the order that needs none.
-            self._sort.blockSignals(True)
-            self._sort.setCurrentIndex(0)
-            self._sort.blockSignals(False)
-            self._sync_sort_control()
-        return profiles
-
-    def descriptor_lines(self, entry: dict) -> list[str]:
-        """The descriptor an instance list is ordered by, in one instance, on the grid and on the measurements."""
-        choice, feature = self.descriptor_sort(), self.sort_feature()
-        profiles = (
-            self._passes.profiles_if_loaded(self.info.sensor_names)
-            if self._passes is not None
-            else None
+        allowed = self._model_results is not None
+        item = self._sort.model().item(1)
+        flags = item.flags()
+        item.setFlags(
+            flags | Qt.ItemFlag.ItemIsEnabled if allowed else flags & ~Qt.ItemFlag.ItemIsEnabled
         )
-        if choice is None or feature is None or profiles is None:
-            return []
-        key = (int(entry["fault"]), str(entry.get("file", "")))
-        grid = profiles.descriptor(key, feature, choice.column)
-        genuine = profiles.descriptor(key, feature, f"{choice.column}_g")
-        lines = [
-            (
-                f"{choice.name} of {feature}: {choice.format(grid)} on the grid, "
-                f"{choice.format(genuine)} on the measurements."
-            )
-        ]
-        if choice.inflated and not self.sort_measured:
-            lines.append(f"Ordered by the grid's figure; {GRID_CAVEAT}.")
-        return lines
-
-    def set_map_results(self, results) -> None:
-        """Take what the Instances map computed; the instance lists gain its figures and its orders."""
-        self._map_results = results
-        self._sync_sort_control()
-        self.on_map_results()
+        if self._sort.currentIndex() == 1 and not allowed:
+            self._sort.blockSignals(True)
+            self._sort.setCurrentIndex(0)
+            self._sort.blockSignals(False)
 
     def set_model_results(self, results) -> None:
         """Take the model outputs loaded (or none): a sort order, tooltip figures and a shading."""
@@ -581,7 +464,7 @@ class SeriesPage(QWidget):
             self._shading.setCurrentIndex(0)
             self._shading.blockSignals(False)
         self._sync_sort_control()
-        self.on_map_results()
+        self.on_model_results()
 
     @property
     def shade_by_model(self) -> bool:
@@ -598,19 +481,11 @@ class SeriesPage(QWidget):
             return []
         return self._model_results.class_runs(int(fault), str(file), self.info.transient_offset)
 
-    def on_map_results(self) -> None:
-        """Called once the map's or the model's figures are on hand; a page rebuilds its instance list."""
+    def on_model_results(self) -> None:
+        """Called once the model's figures are on hand; a page rebuilds its instance list."""
 
     def on_sort_changed(self, *args) -> None:
         """Called when the *Sort* box changes; a page rebuilds its instance list."""
-
-    def map_figures(self, fault: int, file: str) -> tuple[float, float]:
-        """The typicality rank and the novelty score of one instance, NaN when the map has none."""
-        results = self._map_results
-        if results is None or results.joined:
-            return (float("nan"), float("nan"))
-        key = (int(fault), str(file))
-        return (results.typicality_rank(key), results.novelty_score(key))
 
     def model_agreement(self, fault: int, file: str) -> float:
         """How far the loaded model agrees with the labels of one instance, NaN without outputs."""
@@ -621,66 +496,24 @@ class SeriesPage(QWidget):
     def sorted_entries(self, entries: list[dict]) -> list[dict]:
         """The entries of an instance list in the order the *Sort* box asks for.
 
-        The catalogue's own order stands; typicality puts the most typical
-        first; the novelty score puts the most anomalous-looking first; the
-        model agreement puts the instance the model disagrees with most
-        first. An instance without the figure goes last.
+        The catalogue's own order stands; the model agreement puts the
+        instance the model disagrees with most first. An instance without the
+        figure goes last.
         """
         if self._sort is None or self._sort.currentIndex() == 0:
             return entries
-        which = self._sort.currentIndex()
-        choice = self.descriptor_sort()
-        if choice is not None:
-            profiles, feature = self._sort_profiles(), self.sort_feature()
-            if profiles is None or feature is None:
-                return entries
-            column = descriptor_column(choice, self.sort_measured)
 
-            def descriptor(entry: dict) -> float:
-                value = profiles.descriptor(
-                    (int(entry["fault"]), str(entry.get("file", ""))), feature, column
-                )
-                # Largest first, an infinite figure largest of all, the unknown last.
-                return np.inf if np.isnan(value) else -value
-
-            return sorted(entries, key=descriptor)
-
-        def figure(entry: dict) -> float:
-            fault, file = entry["fault"], entry.get("file", "")
-            if which == 3:
-                value = self.model_agreement(fault, file)
-            else:
-                rank, score = self.map_figures(fault, file)
-                value = -rank if which == 1 else score
+        def agreement(entry: dict) -> float:
+            value = self.model_agreement(entry["fault"], entry.get("file", ""))
             return value if np.isfinite(value) else np.inf
 
-        return sorted(entries, key=figure)
+        return sorted(entries, key=agreement)
 
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances ticked, for the file list a Toolkit loader takes."""
-        return [
-            (int(entry["fault"]), str(entry["file"]))
-            for entry in self._checked_instances()
-            if entry.get("file")
-        ]
-
-    def _checked_instances(self) -> list[dict]:
-        """The entries of the instance list that are ticked; a page supplies its own."""
-        return []
-
-    def map_tooltip_lines(self, entry: dict) -> str:
-        """What the map knows about one instance, for the tooltip of its list item."""
-        rank, score = self.map_figures(entry["fault"], entry.get("file", ""))
-        lines = []
-        if np.isfinite(rank):
-            lines.append(f"Typicality {rank:.2f} in its class on the Instances map.")
-        if np.isfinite(score):
-            verdict = "looks anomalous" if score < 0 else "looks normal"
-            lines.append(f"One-class score {score:+.2f}: {verdict} to the Instances map's model.")
-        if self._model_results is not None:
-            lines.append(self._model_results.describe(entry["fault"], entry.get("file", "")) + ".")
-        lines += self.descriptor_lines(entry)
-        return ("\n" + "\n".join(lines)) if lines else ""
+    def model_tooltip_lines(self, entry: dict) -> str:
+        """What the loaded model outputs say of one instance, for the tooltip of its list item."""
+        if self._model_results is None:
+            return ""
+        return "\n" + self._model_results.describe(entry["fault"], entry.get("file", "")) + "."
 
     def build_body(self, left: QWidget | None, right: QWidget | None) -> QWidget:
         """The plots, with the page's own panels on either side of them."""
@@ -756,7 +589,7 @@ class SeriesPage(QWidget):
         self._grid_only.append(bar.addWidget(self._value_axis))
 
     def build_parameter_bar(self, normalize_tip: str) -> QToolBar:
-        """The second row: the stretch around the onset, the normalization, the transforms.
+        """The second row: the normalization, the shading, the transforms.
 
         On one row with the rest these fell behind the toolbar's overflow
         chevron as soon as the page was narrower than a screen; the first row
@@ -764,36 +597,12 @@ class SeriesPage(QWidget):
         """
         bar = QToolBar("Parameters")
         bar.setMovable(False)
-        bar.addWidget(QLabel(" Show "))
-        self._before = QDoubleSpinBox()
-        self._before.setRange(0.0, 999.0)
-        self._before.setDecimals(1)
-        self._before.setSingleStep(0.5)
-        self._before.setSuffix(" h before")
-        self._before.setSpecialValueText("all before")
-        self._before.setToolTip(
-            "Hours before the onset to draw; at zero, everything recorded before it"
-        )
-        self._before.valueChanged.connect(self._on_window_changed)
-        bar.addWidget(self._before)
-        self._after = QDoubleSpinBox()
-        self._after.setRange(0.0, 999.0)
-        self._after.setDecimals(1)
-        self._after.setSingleStep(0.5)
-        self._after.setSuffix(" h after")
-        self._after.setSpecialValueText("all after")
-        self._after.setToolTip(
-            "Hours after the onset to draw; at zero, everything recorded after it"
-        )
-        self._after.valueChanged.connect(self._on_window_changed)
-        bar.addWidget(self._after)
-
-        bar.addSeparator()
         self._normalize = QCheckBox("Normalize per instance")
         self._normalize.setToolTip(normalize_tip)
         self._normalize.toggled.connect(self._replot)
         bar.addWidget(self._normalize)
-        self._shading_actions = [bar.addWidget(QLabel(" Shade by "))]
+        self._shading_label = QLabel(" Shade by ")
+        self._shading_actions = [bar.addWidget(self._shading_label)]
         self._shading = QComboBox()
         self._shading.addItems(list(SHADINGS))
         self._shading.setToolTip(SHADING_TIP)
@@ -824,6 +633,7 @@ class SeriesPage(QWidget):
         self._controls.show_bins(self.domain == "distribution")
         self._parameter_separator.setVisible(self.domain != "time")
         self._sync_alignment_control()
+        self._sync_shading_control()
 
     def _sync_overall_control(self) -> None:
         """Grey *Overall* in the time domain, and leave it if the domain moves there.
@@ -845,18 +655,20 @@ class SeriesPage(QWidget):
             self._layout_box.blockSignals(False)
 
     def _sync_alignment_control(self) -> None:
-        """Grey *Align at* wherever the anchor has nothing left to change.
+        """Grey *Align at* off the time axis, where the anchor has nothing left to change.
 
-        Off the time axis no plot is drawn against the hours from the onset,
-        so the anchor reaches a distribution or a spectrum only through the
-        stretch the hour boxes cut around it; with both of them at *all* the
-        whole recording is transformed whichever moment it is aligned on. The
-        box comes back as soon as a window is asked for, or the time series
-        is.
+        No plot there is drawn against the hours from the onset, and the whole
+        recording is transformed whichever moment it is aligned on.
         """
-        moot = self.domain != "time" and self._before.value() == 0 and self._after.value() == 0
+        moot = self.domain != "time"
         self._align.setEnabled(not moot)
         self._align.setToolTip(ALIGN_MOOT_TIP if moot else ALIGN_TIP)
+
+    def _sync_shading_control(self) -> None:
+        """Grey *Shade by* off the time axis: only a time series has label periods to shade."""
+        on_time = self.domain == "time"
+        self._shading_label.setEnabled(on_time)
+        self._shading.setEnabled(on_time)
 
     def _on_layout_changed(self, *args) -> None:
         self._sync_layout_controls()
@@ -865,11 +677,6 @@ class SeriesPage(QWidget):
     def _on_domain_changed(self, *args) -> None:
         self._sync_layout_controls()
         self._replot(keep_range=False)
-
-    def _on_window_changed(self, *args) -> None:
-        """The hours around the onset changed: the anchor may have become worth choosing again."""
-        self._sync_alignment_control()
-        self._replot()
 
     def _on_alignment_changed(self, *args) -> None:
         self._replot(keep_range=False)
@@ -1037,9 +844,9 @@ class SeriesPage(QWidget):
     # -- one series, one feature
 
     def _xy(
-        self, series: Series, feature: str, normalize: bool, before: float, after: float, bounds
+        self, series: Series, feature: str, normalize: bool, bounds
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None] | None:
-        """The hours, the readings and the kinds of sample of one series for one feature, inside the window.
+        """The hours, the readings and the kinds of sample of one series for one feature.
 
         The kinds (``interpolation.sample_kinds``: measured, interpolated,
         held, missing) are found on the raw readings, before any scaling, and
@@ -1065,27 +872,22 @@ class SeriesPage(QWidget):
             y = zscore(np.where((y >= bounds[0]) & (y <= bounds[1]), y, np.nan))
             if not (~np.isnan(y)).any():
                 return None
-        mask = window_mask(series.hours, before, after)
-        x, y = series.hours[mask], y[mask]
-        if kinds is not None:
-            kinds = kinds[mask]
+        x = series.hours
         return (x, y, kinds) if len(x) else None
 
     def _window_values(
-        self, series: Series, feature: str, normalize: bool, before: float, after: float, bounds
+        self, series: Series, feature: str, normalize: bool, bounds
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray | None] | None:
-        """The readings of one series inside the window, with the hours, label kind and sample kind of each.
+        """The readings of one series, with the hours, label kind and sample kind of each.
 
         What the distribution and the spectrum are computed from: the same
-        stretch the time series draws, in the same order, so that "2 h after
-        the onset" means the same in every domain.
+        samples the time series draws, in the same order.
         """
-        got = self._xy(series, feature, normalize, before, after, bounds)
+        got = self._xy(series, feature, normalize, bounds)
         if got is None:
             return None
         x, y, kinds = got
-        mask = window_mask(series.hours, before, after)
-        labels = column_as_float(series.frame, "class")[mask]
+        labels = column_as_float(series.frame, "class")
         return x, y, self._kind_codes(labels), kinds
 
     def _kind_codes(self, labels: np.ndarray) -> np.ndarray:
@@ -1335,7 +1137,6 @@ class SeriesPage(QWidget):
         if self.domain != "time":
             return self._lay_out_overlay_off_time(sections)
         normalize = self._normalize.isChecked()
-        before, after = self._before.value(), self._after.value()
         master = None
         for row, section in enumerate(sections):
             feature = section.feature
@@ -1357,7 +1158,7 @@ class SeriesPage(QWidget):
             bounds = self.bounds_of(feature)
             for i in self._drawn_members(section):
                 series = self._series[i]
-                got = self._xy(series, feature, normalize, before, after, bounds)
+                got = self._xy(series, feature, normalize, bounds)
                 if got is None:
                     continue
                 x, y, kinds = got
@@ -1379,7 +1180,6 @@ class SeriesPage(QWidget):
         if self.domain != "time":
             return self._lay_out_grid_off_time(sections)
         normalize = self._normalize.isChecked()
-        before, after = self._before.value(), self._after.value()
         columns = self._columns.value()
         per_instance = self.per_instance_axis
         master = None
@@ -1391,7 +1191,7 @@ class SeriesPage(QWidget):
             prepared: list[tuple[int, np.ndarray, np.ndarray, np.ndarray | None]] = []
             lows, highs = [], []
             for i in members:
-                got = self._xy(self._series[i], feature, normalize, before, after, bounds)
+                got = self._xy(self._series[i], feature, normalize, bounds)
                 if got is None:
                     continue
                 x, y, kinds = got
@@ -1469,7 +1269,6 @@ class SeriesPage(QWidget):
     def _prepared_off_time(self, sections: list[Section]):
         """Per section, what every drawn member gives in the domain chosen: values or a spectrum."""
         normalize = self._normalize.isChecked()
-        before, after = self._before.value(), self._after.value()
         genuine = self._controls.params().genuine
         prepared: dict[object, list] = {}
         self._section_counts = {}
@@ -1480,9 +1279,7 @@ class SeriesPage(QWidget):
             rows = []
             counts = self._section_counts.setdefault(section.key, [])
             for i in self._drawn_members(section):
-                got = self._window_values(
-                    self._series[i], feature, normalize, before, after, bounds
-                )
+                got = self._window_values(self._series[i], feature, normalize, bounds)
                 if got is None:
                     continue
                 x, values, codes, kinds = got
@@ -1794,9 +1591,9 @@ class SeriesPage(QWidget):
     ) -> str:
         """The heading above one section's grid: what it groups, what it holds, and what its axes mean.
 
-        ``counts`` are ``sample_counts`` of every instance drawn, over the
-        window of hours chosen: the heading gives their sum, and how many of
-        those samples the historian actually archived.
+        ``counts`` are ``sample_counts`` of every instance drawn: the heading
+        gives their sum, and how many of those samples the historian actually
+        archived.
         """
         colors = theme.current()
         unit = "z-score" if normalize else self.info.shown_unit(section.feature)
@@ -1844,16 +1641,10 @@ class SeriesPage(QWidget):
         if self.small_multiples and len(xs) >= 4:
             # One instance recorded for days would leave every other plot of the
             # grid a sliver against its left edge, so the grid opens on the
-            # stretch most of the instances cover and leaves the rest to the
-            # zoom; the hours boxes set it outright.
+            # stretch most of the instances cover and leaves the rest to the zoom.
             lo, hi = float(np.quantile(starts, 0.1)), float(np.quantile(ends, 0.9))
         else:
             lo, hi = min(starts), max(ends)
-        before, after = self._before.value(), self._after.value()
-        if before > 0:
-            lo = max(lo, -before)
-        if after > 0:
-            hi = min(hi, after)
         if hi <= lo:
             hi = lo + 1.0
         vb.setXRange(lo, hi, padding=0.02)
