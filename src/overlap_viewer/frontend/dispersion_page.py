@@ -589,13 +589,17 @@ class DispersionPage(QWidget):
             self._dot_fills = fills
             for color in sorted(set(fills.tolist())):
                 picked = np.flatnonzero(fills == color)
+                # The alpha set on the color: Qt reads eight hex digits as #AARRGGBB,
+                # so appending it to #rrggbb shifted every channel along by one.
+                fill = QColor(color)
+                fill.setAlpha(DOT_ALPHA)
                 item = pg.ScatterPlotItem(
                     x=pair.x[self._dots[picked]],
                     y=pair.y[self._dots[picked]],
                     size=DOT_PX,
                     pxMode=True,
                     pen=None,
-                    brush=pg.mkBrush(QColor(color[:7] + f"{DOT_ALPHA:02x}")),
+                    brush=pg.mkBrush(fill),
                 )
                 item.setZValue(10)
                 plot.addItem(item)
