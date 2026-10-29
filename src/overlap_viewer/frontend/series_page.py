@@ -656,18 +656,6 @@ class SeriesPage(QWidget):
 
         return sorted(entries, key=figure)
 
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances ticked, for the file list a Toolkit loader takes."""
-        return [
-            (int(entry["fault"]), str(entry["file"]))
-            for entry in self._checked_instances()
-            if entry.get("file")
-        ]
-
-    def _checked_instances(self) -> list[dict]:
-        """The entries of the instance list that are ticked; a page supplies its own."""
-        return []
-
     def map_tooltip_lines(self, entry: dict) -> str:
         """What the map knows about one instance, for the tooltip of its list item."""
         rank, score = self.map_figures(entry["fault"], entry.get("file", ""))

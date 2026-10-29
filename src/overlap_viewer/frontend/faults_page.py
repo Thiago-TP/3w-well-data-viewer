@@ -599,10 +599,6 @@ class FaultsPage(SeriesPage):
     def pool_headline(self, members: list[int]) -> str:
         return f"{self.info.fault_name(self.fault)} | {super().pool_headline(members)}"
 
-    def shown_source(self) -> str:
-        """Where a file list from this page came from, for its provenance."""
-        return f"the Faults page | {self.info.fault_name(self.fault)} | the instances ticked"
-
     def summary(self) -> str:
         """One line for the status bar: the fault, its instances and wells, how many are drawn."""
         fault = self.fault

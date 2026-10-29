@@ -2172,19 +2172,6 @@ USAGE = {
     ],
     "3W Toolkit": [
         (
-            "<b>'Export file list…'</b>, in the main toolbar, writes the instances the current page "
-            "has on show (the wells filtered on the Timelines, the rows of the Availability page, "
-            "the instances ticked on the Faults and Features pages, the points of the Instances "
-            "map, a joined bar as its instances) as the JSON of a Toolkit "
-            '<code>ParquetDatasetConfig</code> with <code>split="list"</code>, each file a path '
-            "relative to the dataset root. It loads with "
-            "<code>ParquetDatasetConfig(**json.load(open(path)))</code>; its provenance (the "
-            "dataset, the page and the choice it was taken from, when) is written beside it as "
-            "<code>&lt;name&gt;.provenance.json</code>. <code>scripts/export_file_list.py</code> "
-            "writes the same from the command line, by fault class and well, and "
-            "<code>examples/</code> holds one it produced, with its provenance."
-        ),
-        (
             "'Toolkit's CleanSignals', on the Availability page, and 'Bar color: Sensors the "
             "Toolkit's CleanSignals keeps', on the Timelines, apply the Toolkit's cleaning rule to "
             "the instances on show; see <i>Data availability</i>."

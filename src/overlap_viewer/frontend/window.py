@@ -33,7 +33,6 @@ from overlap_viewer.backend.dataset import (
     WellData,
     split_wells,
 )
-from overlap_viewer.backend.export import write_file_list
 from overlap_viewer.backend.model_outputs import ModelOutputs
 from overlap_viewer.frontend import styling
 from overlap_viewer.frontend.availability_page import AvailabilityPage
@@ -261,15 +260,6 @@ class MainWindow(QMainWindow):
         rescan.setToolTip("Read every instance again, ignoring the cached catalogue")
         rescan.triggered.connect(self._rescan)
         bar.addAction(rescan)
-        export = QAction("Export file list…", self)
-        export.setToolTip(
-            "Write the instances the current page has on show (the wells filtered, the instances "
-            "ticked, the bars of a joined view) as the JSON of a 3W Toolkit ParquetDatasetConfig "
-            "with split='list', which the Toolkit loads with "
-            "ParquetDatasetConfig(**json.load(open(path))); its provenance is written beside it."
-        )
-        export.triggered.connect(self._export_file_list)
-        bar.addAction(export)
         load_model = QAction("Load model outputs…", self)
         load_model.setToolTip(
             "Open a folder of model outputs (model.json beside one <class>/<instance>.parquet per "
@@ -461,36 +451,6 @@ class MainWindow(QMainWindow):
     def _open_on_feature(self, data: WellData, index: int, sensor) -> None:
         """Open one bar with ``sensor`` drawn, or on the window's own default without one."""
         self.open_instances(data, index, [sensor] if sensor else ())
-
-    def _export_file_list(self) -> None:
-        """Write the instances the current page has on show as a Toolkit file list, where the user says."""
-        page = self._tabs.currentWidget()
-        files = page.shown_files() if hasattr(page, "shown_files") else []
-        if not files:
-            QMessageBox.information(
-                self,
-                "Export file list",
-                "The current page has no instances on show to export.",
-            )
-            return
-        name = type(page).__name__.removesuffix("Page").lower()
-        path, _filter = QFileDialog.getSaveFileName(
-            self,
-            "Export the instances on show as a 3W Toolkit file list",
-            f"file_list_{name}.json",
-            "JSON (*.json)",
-        )
-        if not path:
-            return
-        try:
-            note = write_file_list(Path(path), self.info, files, page.shown_source())
-        except OSError as error:
-            QMessageBox.critical(self, "Export failed", f"{type(error).__name__}: {error}")
-            return
-        self._status.setText(
-            f"{len(set(files))} files written to {path}, their provenance to {note.name} | load "
-            "with ParquetDatasetConfig(**json.load(open(path)))"
-        )
 
     def _rescan(self) -> None:
         try:

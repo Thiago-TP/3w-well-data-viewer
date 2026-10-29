@@ -1571,23 +1571,3 @@ class TimelinesPage(QWidget):
 
     def _on_click(self, plot: WellTimelinePlot, index: int) -> None:
         self.open_requested.emit(plot.data, index)
-
-    # -- what leaves the page
-
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances of the wells on show, for the file list a Toolkit loader takes."""
-        files = []
-        for well in self._selected_wells():
-            rows = well.origin.rows
-            files += [
-                (int(rows["fault_class"].iloc[i]), str(rows["file"].iloc[i]))
-                for i in range(len(rows))
-            ]
-        return files
-
-    def shown_source(self) -> str:
-        """Where the file list came from, for its provenance."""
-        parts = [f"the Timelines page | {self._filter.currentText()}"]
-        if self._fault_filter is not None:
-            parts.append(f"wells that recorded {self.info.fault_name(self._fault_filter)}")
-        return " | ".join(parts)

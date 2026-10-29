@@ -1704,19 +1704,3 @@ class WindowsPage(QWidget):
                 item.getViewBox().autoRange()
         if self._feature_plot is not None:
             self._draw_features()
-
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances behind the windows on show, for the file list a Toolkit loader takes."""
-        if self._windows is None:
-            return []
-        positions = sorted(set(self._windows.instance[self._shown].tolist()))
-        return [(self._refs[p].fault, self._refs[p].file) for p in positions]
-
-    def shown_source(self) -> str:
-        """Where the file list came from, for its provenance."""
-        filters = [self._fault.currentText(), self._label.currentText()]
-        return (
-            f"the Windows page | {well_label(self.well)} | {self.sensor} | windows of "
-            f"{self.size} samples | {self._instance.currentText()} | "
-            + " | ".join(text.split(" (")[0] for text in filters)
-        )

@@ -697,12 +697,6 @@ class FeaturesPage(SeriesPage):
         """Pooled, a class becomes one curve: telling the classes apart is what the page is for."""
         return series.fault
 
-    def shown_source(self) -> str:
-        """Where a file list from this page came from, for its provenance."""
-        classes = ", ".join(str(c) for c in self.selected_classes())
-        well = self._well.currentText()
-        return f"the Features page | {self.feature} | classes {classes} | {well} | the instances ticked"
-
     def pool_headline(self, members: list[int]) -> str:
         fault = self._series[members[0]].fault
         return (

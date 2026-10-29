@@ -958,25 +958,5 @@ class MapPage(QWidget):
     def reset_views(self) -> None:
         self._plot_widget.getPlotItem().getViewBox().autoRange(padding=0.08)
 
-    # -- what leaves the page
-
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances behind the points on the map, for the file list a Toolkit loader takes."""
-        files = []
-        for point in self._points:
-            origin = point.data.origin.rows
-            for member in point.data.members[point.index]:
-                files.append(
-                    (int(origin["fault_class"].iloc[member]), str(origin["file"].iloc[member]))
-                )
-        return files
-
-    def shown_source(self) -> str:
-        """Where a file list from this page came from, for its provenance."""
-        what = em.REPRESENTATION_NAMES[self.representation]
-        if self.representation == "dtw":
-            what += f" | {self._sensor.currentText()} | {self._class.currentText()}"
-        return f"the Instances map | {what}" + (" | joined bars" if self.joined else "")
-
 
 __all__ = ["COLORINGS", "MapPage", "MapResults", "cluster_color", "tint"]

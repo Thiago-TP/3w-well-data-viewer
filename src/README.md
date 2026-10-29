@@ -29,7 +29,6 @@ src/overlap_viewer/
 │   ├── timemap.py        gap-compressed (or calendar) time axis in hours
 │   ├── availability.py   the three states of a sensor in a bar, the measured/filled split of the live share, groups folded into shares of samples or of bars, the pair map of a scope
 │   ├── extras.py         the optional dependency groups: what each enables, whether it is installed, how it is installed
-│   ├── export.py         the Toolkit file list: a ParquetDatasetConfig of the instances on show, with its provenance
 │   ├── model_outputs.py  the model-output format: model.json beside per-instance parquet files, its loader, the agreement with the labels
 │   ├── theme.py          every color of the light and of the dark mode
 │   ├── palette.py        fault hues tinted by reach, legend entries
@@ -257,18 +256,6 @@ time, so the core app always starts.
 - `available(name)`: `missing(name) is None`.
 
 The test suite checks `EXTRAS` agrees with `pyproject.toml`'s optional-dependency groups.
-
-### `export.py`
-
-Writes the 3W Toolkit's `ParquetDatasetConfig` file-list JSON format (`split="list"`) for whatever
-instances a page currently shows, plus a sibling provenance JSON.
-
-- `relative_file(fault_class, file)`: an instance's path relative to the dataset root, as the
-  Toolkit lists events.
-- `file_list_config(info, files)`: the `ParquetDatasetConfig`-shaped dict for a set of instances.
-- `provenance(info, source, n_files)`: a dict describing where a file list came from.
-- `write_file_list(path, info, files, source)`: writes the config JSON plus its
-  `<name>.provenance.json`.
 
 ### `model_outputs.py`
 
@@ -713,8 +700,8 @@ cleaning, map or model figures), with hover-to-highlight-overlaps and click-to-o
   `clicked(index)`; method `set_coloring(fills, marks)`.
 - `TimelinesPage(QWidget)`: the page; signals `status`, `summary_changed`, `open_requested(WellData,
   index)`. Coloring is dispatched from `_coloring_of(data)` across every mode (fault, availability,
-  measurements, descriptor, cleaning, map, model). Methods `set_catalogue`, `shown_files()`,
-  `shown_source()`, `reset_views()`. The wells are drawn plain, joined or stitched
+  measurements, descriptor, cleaning, map, model). Methods `set_catalogue`,
+  `reset_views()`. The wells are drawn plain, joined or stitched
   (`_shown_wells`); the stitch box ticks and locks the join, and gives it back as it found it.
   A stitched well's plot lays its recordings back to back (`TimeMap` with no gap), whatever
   *Compress silences* says, and the colorings keyed by bar (descriptor, cleaning, map) leave its
@@ -731,7 +718,7 @@ correlations.
   sensor, joined)`. The toolbar offers *Matrix* (availability/pairs/correlations), *Rows*, *Over*,
   *Sensors*, *Cells*, *Available from*, *Join*, plus per-matrix controls (coefficient,
   IQR × for the Toolkit rule). `_ensure_data()` dispatches which passes the current matrix needs;
-  `_refresh()` redraws whichever matrix is selected. `summary()`, `shown_files()`, `shown_source()`.
+  `_refresh()` redraws whichever matrix is selected. `summary()`.
 
 ### `series_page.py`
 
@@ -806,7 +793,7 @@ measurements-only filtering, label-period filters, and hover/click on individual
   `_redraw()` draws the density image (a log-scaled 2D histogram) and, per color group, a
   `ScatterPlotItem` of the dot cloud (subsampled to `MAX_DOTS`). `_light_instance(instance)`
   brings every drawn dot of one instance forward and fades the groups while a dot of it is
-  hovered. `describe(index)`, `shown_files()`.
+  hovered. `describe(index)`.
 
 ### `windows_page.py`
 
@@ -879,7 +866,7 @@ column per figure of `descriptors.SUMMARY`.
 ### `window.py`
 
 The main application window: hosts the seven pages as tabs, owns what they all share (theme control,
-rescan, help, status bar, the passes, model-output loading, file-list export) and opens
+rescan, help, status bar, the passes, model-output loading) and opens
 `InstanceWindow`s on request.
 
 - `MainWindow(QMainWindow)`: builds all seven pages sharing one `Passes` and `FrameCache`, and wires
@@ -890,5 +877,4 @@ rescan, help, status bar, the passes, model-output loading, file-list export) an
   pyqtgraph bakes colors in at build time, so a theme change cannot be repainted in place, and
   laying every page out at once was most of a nine-second switch. `open_instances(data, index,
   features)` constructs and tracks an `InstanceWindow`, on the sensors a page asked for when it
-  asked for any (`_open_on_feature` for one). `_export_file_list()` writes the current page's
-  `shown_files()` via `backend.export.write_file_list`.
+  asked for any (`_open_on_feature` for one).

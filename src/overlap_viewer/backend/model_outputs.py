@@ -3,8 +3,10 @@
 The viewer displays what a model said; it does not train one. For a model's
 verdicts to be drawn onto the data, every verdict has to say which instance
 and which instant it is about, which is exactly what the 3W Toolkit's
-assessment export leaves out (``backend.export``). So the viewer defines the
-format itself, and it is the smallest one that says both.
+assessment export leaves out: its ``predictions_<timestamp>.csv`` holds one
+row per window scored, in the order the windows were fed, with no instance
+and no instant in it. So the viewer defines the format itself, and it is the
+smallest one that says both.
 
 A set of outputs is a **folder**::
 

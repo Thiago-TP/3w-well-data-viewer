@@ -803,31 +803,6 @@ class DispersionPage(QWidget):
         ]
         return " | ".join(parts)
 
-    # -- what leaves the page
-
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances behind the cloud on show, for the file list a Toolkit loader takes."""
-        if self._availability is None:
-            return []
-        kind, key, joined = self._scope_key()
-        files = []
-        for data in self._view_wells(joined):
-            origin = data.origin.rows
-            for index in range(data.n_instances):
-                if not self._in_scope(data, index, kind, key):
-                    continue
-                for member in data.members[index]:
-                    files.append(
-                        (int(origin["fault_class"].iloc[member]), str(origin["file"].iloc[member]))
-                    )
-        return files
-
-    def shown_source(self) -> str:
-        """Where the file list came from, for its provenance."""
-        return f"the Dispersions page | {self.x} × {self.y} | over {self._scope_name()}" + (
-            " | joined bars" if self.joined else ""
-        )
-
     def wait_cursor(self):
         """The wait cursor while the plot is rebuilt, for callers that redraw a large cloud."""
         QApplication.setOverrideCursor(QCursor(Qt.CursorShape.WaitCursor))

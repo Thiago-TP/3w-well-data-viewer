@@ -174,7 +174,7 @@ functions are documented in detail in the [source `README`](src/README.md).
 │   ├── assets/               screenshots, taken again by scripts/screenshots.py, the platform schematics the help shows
 │   └── papers/               the 3W data articles, the thesis and the graduation project the help draws on
 ├── examples/                 one explained example of every file the viewer reads or writes, with its provenance
-├── scripts/                  what produces the examples and the figures, outside the GUI: export_file_list.py, pca_control_chart.py, screenshots.py
+├── scripts/                  what produces the examples and the figures, outside the GUI: pca_control_chart.py, screenshots.py
 ├── tests/                    the test suite, one module per subpackage or analysis, sharing a synthetic 3W layout
 └── src/overlap_viewer/
     ├── app.py                command line and start-up
@@ -185,8 +185,8 @@ functions are documented in detail in the [source `README`](src/README.md).
 
 ## Integration with 3W Toolkit
 
-The viewer meets the [3W Toolkit](https://github.com/petrobras/3W) in two places, by rule and by
-file.
+The viewer applies one rule of the [3W Toolkit](https://github.com/petrobras/3W), and cannot read
+what the Toolkit's model assessment writes.
 
 **By rule.** The Toolkit's preprocessing step `CleanSignals` decides, per instance and per sensor,
 whether a signal is to be believed: fitted on the dataset, it puts bounds at the quartiles of the
@@ -205,16 +205,6 @@ header of every block of an instance window names the sensors the rule would dis
 the rule has been fitted anywhere. One difference is kept on purpose: the profiles describe the
 plausible readings, so a sensor whose readings are instrument garbage is not discarded here by a
 mean of 10⁴²; it wears the amber mark instead, which says more.
-
-**By file.** *Export file list…*, in the main toolbar, writes the instances the current page has on
-show (the wells filtered on the Timelines, the rows of the Availability page, the instances ticked
-on the Faults and Features pages, the points of the Instances map, a joined bar as its instances)
-as the JSON of a Toolkit `ParquetDatasetConfig` with `split="list"`, each file a path relative to
-the dataset root, which the Toolkit loads with `ParquetDatasetConfig(**json.load(open(path)))`;
-its provenance is written beside it. [`scripts/export_file_list.py`](scripts/export_file_list.py)
-writes the same from the command line, by fault class and by well, and
-[`examples/`](examples/README.md) holds one it produced, the severe-slugging instances of
-WELL-00014, with its provenance.
 
 **What cannot come back.** The Toolkit's `ModelAssessment` exports `predictions_<timestamp>.csv`
 with the columns `true_values`, `predictions`, `model_name`, `task_type` and `timestamp`: one row

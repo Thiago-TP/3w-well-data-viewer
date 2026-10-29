@@ -1566,31 +1566,6 @@ class AvailabilityPage(QWidget):
             f"{int(part['n_samples'].sum()):,} samples | {part['hours'].sum():,.0f} h recorded{tail}"
         )
 
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances behind the bars on show, for the file list a Toolkit loader takes."""
-        availability = self.availability
-        if availability is None:
-            return []
-        bars = availability.bars
-        taken = np.arange(len(bars)) if self._mask is None else np.flatnonzero(self._mask)
-        files = []
-        for i in taken:
-            row = bars.iloc[int(i)]
-            data = self._well_by_number[int(row["well"])]
-            origin = data.origin.rows
-            for member in row["members"]:
-                files.append(
-                    (int(origin["fault_class"].iloc[member]), str(origin["file"].iloc[member]))
-                )
-        return files
-
-    def shown_source(self) -> str:
-        """Where the file list came from, for its provenance."""
-        what = self._rows[-1].label if self._rows else self.mode
-        return f"the Availability page | rows: {self.mode} | {what}" + (
-            " | joined bars" if self.joined else ""
-        )
-
     def _describe_pair(self, row: int, column: int) -> str:
         """One line about a cell, a row or a column of the pair map."""
         table, info = self._pair_table, self.info
