@@ -35,7 +35,7 @@ under a flat line for *frozen*, the line saying what the color alone would not; 
 for *absent*. With *Measured vs filled* on, the live span of a cell ends in a paler blue for the
 samples the historian filled in, the solid part being the measurements. The timelines take the
 same colors when they are tinted by a sensor, the blue on a ramp from faint to full with the share
-of samples live, or with the share of the live samples that were measured. Amber, used nowhere else, marks a reading
+of samples live. Amber, used nowhere else, marks a reading
 outside the plausible range, wherever it appears: the corner of a cell or a bar, the samples of a
 trace, the caption and the header of an instance plot, the checkbox of a feature. It also marks
 pressures read out of order along their line: the bottom-right corner of a cell or a bar, and

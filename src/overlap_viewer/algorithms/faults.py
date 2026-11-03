@@ -128,21 +128,6 @@ def zscore(values: np.ndarray) -> np.ndarray:
     return scaled
 
 
-def window_mask(hours: np.ndarray, before: float, after: float) -> np.ndarray:
-    """Which samples fall within ``before`` hours before the origin and ``after`` hours after it.
-
-    A bound of zero or less means no bound on that side, so ``(0, 0)`` keeps
-    every sample.
-    """
-    hours = np.asarray(hours, dtype=float)
-    mask = np.ones(hours.shape, dtype=bool)
-    if before > 0:
-        mask &= hours >= -before
-    if after > 0:
-        mask &= hours <= after
-    return mask
-
-
 def plausible_extent(values: np.ndarray, bounds: tuple[float, float]) -> tuple[float, float]:
     """The smallest and largest reading inside the plausible ``bounds``, for an axis to span.
 

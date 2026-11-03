@@ -107,11 +107,12 @@ def test_the_profile_pass_reads_every_instance_once_and_every_bar_as_the_recordi
     assert np.isnan(matrix[2]).all()
     assert profiles.row(("x", "nowhere"), "P-PDG") is None
     assert len(profiles.scope(joined=True)) == 4 * len(sensors)
-    # The descriptors a page colors or sorts by are columns of the table, twice
-    # over, and looked up by either key; the unknown is NaN.
+    # The descriptors the pages offer are columns of the table, twice over (the
+    # grid's and the measurements', ``_g``), and looked up by either key; the
+    # unknown is NaN.
     for choice in pr.DESCRIPTOR_CHOICES:
-        assert pr.descriptor_column(choice, False) in pr.PROFILE_COLUMNS
-        assert pr.descriptor_column(choice, True) in pr.PROFILE_COLUMNS
+        assert choice.column in pr.PROFILE_COLUMNS
+        assert f"{choice.column}_g" in pr.PROFILE_COLUMNS
     snr = pr.DESCRIPTOR_CHOICES[1]
     assert snr.column == "snr"
     assert profiles.descriptor(key, "P-PDG", "snr") == float(profiles.row(key, "P-PDG")["snr"])
@@ -161,7 +162,6 @@ def test_the_availability_splits_a_live_cell_into_measured_and_filled(
     # Without the profiles nothing is split; with them, every live reading is one or the other.
     plain = Availability.from_wells(wells, info)
     assert not plain.measured and not plain.grouped(range(plain.n_bars)).measured
-    assert np.isnan(plain.measured_of([0], sensors.index("P-PDG"))[0])
     measured = Availability.from_wells(wells, info, profiles=profiles)
     assert measured.measured
     pdg = sensors.index("P-PDG")
@@ -175,14 +175,20 @@ def test_the_availability_splits_a_live_cell_into_measured_and_filled(
 
     # Well 3's instances: one measurement in ten, one every 10 s of signal.
     rows = [measured.index_of(3, 0), measured.index_of(3, 1)]
-    share, spacing = measured.measured_of(rows, pdg)
-    assert share == pytest.approx(0.1, abs=0.002) and spacing == pytest.approx(10.0, abs=0.05)
+    genuine = measured.genuine[rows, pdg].sum()
+    assert genuine / (genuine + measured.filled[rows, pdg].sum()) == pytest.approx(0.1, abs=0.002)
+    assert measured.n_valid[rows, pdg].sum() / genuine == pytest.approx(10.0, abs=0.05)
     # Well 1's straight line is two measurements, so nearly all of it is filled.
-    share, _ = measured.measured_of([measured.index_of(1, 0)], pdg)
-    assert share == pytest.approx(2 / 7200, abs=1e-6)
-    # A frozen sensor has nothing to split, an enumerated one is all measurement.
-    assert np.isnan(measured.measured_of([measured.index_of(1, 0)], sensors.index("T-TPT"))[0])
-    assert measured.measured_of([measured.index_of(1, 0)], sensors.index("ESTADO-W1"))[0] == 1.0
+    first = measured.index_of(1, 0)
+    assert measured.genuine[first, pdg] == 2 and measured.n_valid[first, pdg] == 7200
+    # A frozen sensor is not live, so there is nothing to split; an enumerated one
+    # is all measurement.
+    assert measured.state[first, sensors.index("T-TPT")] != LIVE
+    w1 = sensors.index("ESTADO-W1")
+    assert (
+        measured.filled[first, w1] == 0
+        and measured.genuine[first, w1] == measured.n_valid[first, w1]
+    )
 
     # Folded by well: the filled share of a cell is the pale end of its live share.
     table = measured.grouped([int(w) for w in measured.bars["well"]], [1, 2, 3])
@@ -211,8 +217,7 @@ def test_the_availability_splits_a_live_cell_into_measured_and_filled(
     assert joined.measured and joined.joined
     bar = joined.index_of(3, 0)
     assert joined.genuine[bar, pdg] == 540 and joined.n_valid[bar, pdg] == 5400
-    share, spacing = joined.measured_of([bar], pdg)
-    assert share == pytest.approx(0.1, abs=0.002) and spacing == pytest.approx(10.0, abs=0.05)
+    assert joined.filled[bar, pdg] == 5400 - 540
 
 
 def test_the_profile_pass_marks_the_pressures_read_out_of_order(tmp_path: Path, monkeypatch):

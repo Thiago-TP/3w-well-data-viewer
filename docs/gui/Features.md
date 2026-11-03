@@ -4,8 +4,10 @@ gives every fault class a section, so that what a gauge reads under a hydrate ca
 what the same gauge reads under severe slugging and under normal operation. That is the
 feature-wise grouping of the catalogue: the timelines are the well-wise one and the faults page the
 fault-wise one. The two pages share their whole drawing machinery: the same two layouts, the same
-three domains, the same window of hours around an onset, the same transforms and the same hover.
+three domains, the same transforms and the same hover.
 
+- **Options**, at the left of the toolbar, shows and hides how the classes are drawn, both rows
+  from **Align at** on; **Feature**, **Well** and the toggles of the side panels stay in view.
 - **Feature** picks the sensor; the count beside a name is how many real instances recorded it, and
   one no instance recorded is greyed out. The page opens on the sensor the most instances record a
   *moving* reading of, which keeps a valve state out of the way of the default: nearly every

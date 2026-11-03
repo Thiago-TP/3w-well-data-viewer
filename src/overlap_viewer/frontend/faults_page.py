@@ -8,8 +8,8 @@ starts where the event begins in each instance, so that the shapes line up
 whatever the clock said.
 
 One fault is chosen and each **feature** gets a section; the drawing itself (
-the three arrangements, the three domains, the window of hours around the
-onset, the normalization, the transforms, the hover) is
+the three arrangements, the three domains, the normalization, the transforms,
+the hover) is
 ``series_page.SeriesPage``, which the features page is the other half of.
 
 The instances of a fault are listed on the right with the moment each can be
@@ -30,8 +30,6 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
-    QToolBar,
     QVBoxLayout,
     QWidget,
 )
@@ -55,6 +53,7 @@ from overlap_viewer.backend.dataset import DatasetInfo, WellData, well_label
 from overlap_viewer.backend.labels import segments_from_json
 from overlap_viewer.frontend.instance_window import PANEL_WIDTH
 from overlap_viewer.frontend.loading import FrameCache
+from overlap_viewer.frontend.options import bar_row, toolbar
 from overlap_viewer.frontend.placements import PlacementChecks
 from overlap_viewer.frontend.series_page import (
     LIST_WIDTH,
@@ -72,8 +71,8 @@ HINT = (
 )
 
 DOMAIN_TIP = (
-    "What every plot shows of the stretch the hours before and after the onset select. Time "
-    "series: the readings against the hours from the onset. Distribution: a histogram of the "
+    "What every plot shows of everything every instance recorded. Time series: the readings "
+    "against the hours from the onset. Distribution: a histogram of the "
     "readings, as a share of the instance's samples so that instances of different length "
     "compare, stacked by label period in the class colors in the grid, an area in the color of "
     "the well when overlaid, so that where two distributions sit on top of one another reads as "
@@ -107,8 +106,8 @@ class FaultsPage(SeriesPage):
 
     HINT = HINT
 
-    def __init__(self, info: DatasetInfo, frames: FrameCache, passes=None, parent=None):
-        super().__init__(info, passes, parent)
+    def __init__(self, info: DatasetInfo, frames: FrameCache, parent=None):
+        super().__init__(info, parent)
         self._frames = frames
         self._catalogue: pd.DataFrame | None = None
         self._wells: dict[int, WellData] = {}
@@ -135,28 +134,29 @@ class FaultsPage(SeriesPage):
 
     # -- construction
 
-    def _build_toolbar(self) -> QToolBar:
-        bar = QToolBar("Faults")
-        bar.setMovable(False)
-        bar.addWidget(QLabel(" Fault "))
+    def _build_toolbar(self) -> QWidget:
+        """The first row: what is drawn, then how behind *Options*, the side panels' toggles at the right."""
+        lead = toolbar("Faults")
+        lead.addAction(self.options)
+        lead.addSeparator()
+        lead.addWidget(QLabel(" Fault "))
         self._fault = QComboBox()
         self._fault.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self._fault.setToolTip("The fault whose real instances are drawn over one another")
         self._fault.currentIndexChanged.connect(self._on_fault_changed)
-        bar.addWidget(self._fault)
+        lead.addWidget(self._fault)
 
-        bar.addSeparator()
-        self.add_alignment_control(bar)
+        options = self.options.add(toolbar("Faults options"))
+        options.addSeparator()
+        self.add_alignment_control(options)
 
-        bar.addSeparator()
-        self.add_shared_controls(bar, DOMAIN_TIP, LAYOUT_TIP)
+        options.addSeparator()
+        self.add_shared_controls(options, DOMAIN_TIP, LAYOUT_TIP)
 
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        bar.addWidget(spacer)
+        panels = toolbar("Faults panels")
         self._note = QLabel()
-        bar.addWidget(self._note)
-        bar.addSeparator()
+        panels.addWidget(self._note)
+        panels.addSeparator()
         self._show_features = QAction("Features", self)
         self._show_features.setCheckable(True)
         self._show_features.setChecked(True)
@@ -164,7 +164,7 @@ class FaultsPage(SeriesPage):
             "Show or hide the list of features on the left, to give the plots its width"
         )
         self._show_features.toggled.connect(self._on_features_toggled)
-        bar.addAction(self._show_features)
+        panels.addAction(self._show_features)
         self._show_instances = QAction("Instances", self)
         self._show_instances.setCheckable(True)
         self._show_instances.setChecked(True)
@@ -172,8 +172,8 @@ class FaultsPage(SeriesPage):
             "Show or hide the list of instances on the right, to give the plots its width"
         )
         self._show_instances.toggled.connect(self._on_instances_toggled)
-        bar.addAction(self._show_instances)
-        return bar
+        panels.addAction(self._show_instances)
+        return bar_row(lead, options, trailing=panels)
 
     def _on_instances_toggled(self, shown: bool) -> None:
         self._instance_panel.setVisible(shown)
@@ -235,7 +235,7 @@ class FaultsPage(SeriesPage):
         layout.addWidget(self._instance_note)
         return panel
 
-    def on_map_results(self) -> None:
+    def on_model_results(self) -> None:
         if self.ready():
             self._rebuild_instances()
 
@@ -386,7 +386,6 @@ class FaultsPage(SeriesPage):
     def _rebuild_instances(self) -> None:
         """List the instances of the fault, the earliest ticked, those without an onset greyed out."""
         fault = self.fault
-        self._sync_sort_control()  # the descriptor orders name the first feature ticked
         previously = {
             (entry["well"], entry["position"])
             for entry, item in zip(self._instances, self._items)
@@ -441,7 +440,7 @@ class FaultsPage(SeriesPage):
             )
         if entry["implausible"]:
             text += "\n⚠ A sensor reads outside its plausible range in this instance."
-        return text + self.map_tooltip_lines(entry)
+        return text + self.model_tooltip_lines(entry)
 
     def _rebuild_features(self) -> None:
         """Offer every sensor, greying those no instance of the fault recorded, the seabed's ticked."""
@@ -487,16 +486,8 @@ class FaultsPage(SeriesPage):
     def selected_features(self) -> list[str]:
         return [name for name, check in self._checks.items() if check.isChecked()]
 
-    def sort_feature(self) -> str | None:
-        """The descriptor orders read the first feature ticked, the one the first section draws."""
-        return next(iter(self.selected_features()), None)
-
     def _on_feature_toggled(self, *args) -> None:
         self._placements.sync()
-        # The descriptor orders name, and read, the first feature ticked.
-        self._sync_sort_control()
-        if self.descriptor_sort() is not None and self.ready():
-            self._rebuild_instances()
         self._replot()
 
     def _set_all_features(self, checked: bool) -> None:
@@ -598,10 +589,6 @@ class FaultsPage(SeriesPage):
 
     def pool_headline(self, members: list[int]) -> str:
         return f"{self.info.fault_name(self.fault)} | {super().pool_headline(members)}"
-
-    def shown_source(self) -> str:
-        """Where a file list from this page came from, for its provenance."""
-        return f"the Faults page | {self.info.fault_name(self.fault)} | the instances ticked"
 
     def summary(self) -> str:
         """One line for the status bar: the fault, its instances and wells, how many are drawn."""

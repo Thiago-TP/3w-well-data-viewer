@@ -11,7 +11,7 @@ pairplot diagonal a pipeline would start from.
 
 Everything between the choice and the picture is
 ``series_page.SeriesPage``: the same two layouts, the same three domains, the
-same window of hours around an onset, the same transforms and the same hover.
+same transforms and the same hover.
 
 **Color.** A class is drawn in its own hue when the layout draws the classes
 over one another and the line is the only key there is. In the grid it is not:
@@ -37,8 +37,6 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
-    QToolBar,
     QVBoxLayout,
     QWidget,
 )
@@ -57,6 +55,7 @@ from overlap_viewer.backend.labels import segments_from_json
 from overlap_viewer.backend.palette import fault_color
 from overlap_viewer.frontend.instance_window import PANEL_WIDTH
 from overlap_viewer.frontend.loading import FrameCache
+from overlap_viewer.frontend.options import bar_row, toolbar
 from overlap_viewer.frontend.series_page import (
     LIST_WIDTH,
     InstanceList,
@@ -87,8 +86,8 @@ WELL_TIP = (
     "instruments, rather than across wells that run at different levels."
 )
 DOMAIN_TIP = (
-    "What every plot shows of the stretch the hours before and after the onset select. Time "
-    "series: the readings against the hours from the onset. Distribution: a histogram of the "
+    "What every plot shows of everything every instance recorded. Time series: the readings "
+    "against the hours from the onset. Distribution: a histogram of the "
     "readings, as a share of the instance's samples so that instances of different length "
     "compare, stacked by label period in the class colors in the grid, an area in the color of "
     "its class when overlaid, so that where two classes sit on top of one another reads as a "
@@ -123,8 +122,8 @@ class FeaturesPage(SeriesPage):
 
     HINT = HINT
 
-    def __init__(self, info: DatasetInfo, frames: FrameCache, passes=None, parent=None):
-        super().__init__(info, passes, parent)
+    def __init__(self, info: DatasetInfo, frames: FrameCache, parent=None):
+        super().__init__(info, parent)
         self._frames = frames
         self._catalogue: pd.DataFrame | None = None
         self._wells: dict[int, WellData] = {}
@@ -149,34 +148,35 @@ class FeaturesPage(SeriesPage):
 
     # -- construction
 
-    def _build_toolbar(self) -> QToolBar:
-        bar = QToolBar("Features")
-        bar.setMovable(False)
-        bar.addWidget(QLabel(" Feature "))
+    def _build_toolbar(self) -> QWidget:
+        """The first row: what is drawn, then how behind *Options*, the side panels' toggles at the right."""
+        lead = toolbar("Features")
+        lead.addAction(self.options)
+        lead.addSeparator()
+        lead.addWidget(QLabel(" Feature "))
         self._feature = QComboBox()
         self._feature.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self._feature.setToolTip(FEATURE_TIP)
         self._feature.currentIndexChanged.connect(self._on_feature_changed)
-        bar.addWidget(self._feature)
+        lead.addWidget(self._feature)
 
-        bar.addWidget(QLabel(" Well "))
+        lead.addWidget(QLabel(" Well "))
         self._well = QComboBox()
         self._well.setToolTip(WELL_TIP)
         self._well.currentIndexChanged.connect(self._on_well_changed)
-        bar.addWidget(self._well)
+        lead.addWidget(self._well)
 
-        bar.addSeparator()
-        self.add_alignment_control(bar)
+        options = self.options.add(toolbar("Features options"))
+        options.addSeparator()
+        self.add_alignment_control(options)
 
-        bar.addSeparator()
-        self.add_shared_controls(bar, DOMAIN_TIP, LAYOUT_TIP)
+        options.addSeparator()
+        self.add_shared_controls(options, DOMAIN_TIP, LAYOUT_TIP)
 
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        bar.addWidget(spacer)
+        panels = toolbar("Features panels")
         self._note = QLabel()
-        bar.addWidget(self._note)
-        bar.addSeparator()
+        panels.addWidget(self._note)
+        panels.addSeparator()
         self._show_classes = QAction("Classes", self)
         self._show_classes.setCheckable(True)
         self._show_classes.setChecked(True)
@@ -184,7 +184,7 @@ class FeaturesPage(SeriesPage):
             "Show or hide the list of fault classes on the left, to give the plots its width"
         )
         self._show_classes.toggled.connect(lambda on: self._class_panel.setVisible(on))
-        bar.addAction(self._show_classes)
+        panels.addAction(self._show_classes)
         self._show_instances = QAction("Instances", self)
         self._show_instances.setCheckable(True)
         self._show_instances.setChecked(True)
@@ -192,8 +192,8 @@ class FeaturesPage(SeriesPage):
             "Show or hide the list of instances on the right, to give the plots its width"
         )
         self._show_instances.toggled.connect(lambda on: self._instance_panel.setVisible(on))
-        bar.addAction(self._show_instances)
-        return bar
+        panels.addAction(self._show_instances)
+        return bar_row(lead, options, trailing=panels)
 
     def _build_class_panel(self) -> QWidget:
         panel = QWidget()
@@ -247,7 +247,7 @@ class FeaturesPage(SeriesPage):
         layout.addWidget(self._instance_note)
         return panel
 
-    def on_map_results(self) -> None:
+    def on_model_results(self) -> None:
         if self.ready():
             self._rebuild_instances(fresh=False)
 
@@ -317,7 +317,6 @@ class FeaturesPage(SeriesPage):
         self._feature.setCurrentIndex(max(index, 0))
         self._feature.blockSignals(False)
 
-        self._sync_sort_control()  # the descriptor orders name the feature chosen
         self._rebuild_classes()
         self._rebuild_instances(fresh=True)
         self._replot(keep_range=False)
@@ -364,14 +363,9 @@ class FeaturesPage(SeriesPage):
     def ready(self) -> bool:
         return self._availability is not None and self.feature is not None
 
-    def sort_feature(self) -> str | None:
-        """The descriptor orders read the feature on show."""
-        return self.feature
-
     def _on_feature_changed(self, *args) -> None:
         if not self.ready():
             return
-        self._sync_sort_control()  # the descriptor orders name the feature
         self._rebuild_classes()
         self._rebuild_instances(fresh=True)
         self._replot(keep_range=False)
@@ -563,7 +557,7 @@ class FeaturesPage(SeriesPage):
             )
         if entry["implausible"]:
             text += f"\n⚠ {self.feature} reads outside its plausible range in this instance."
-        return text + self.map_tooltip_lines(entry)
+        return text + self.model_tooltip_lines(entry)
 
     def _on_item_changed(self, item) -> None:
         if not self._building:
@@ -696,12 +690,6 @@ class FeaturesPage(SeriesPage):
     def pool_key(self, series: Series):
         """Pooled, a class becomes one curve: telling the classes apart is what the page is for."""
         return series.fault
-
-    def shown_source(self) -> str:
-        """Where a file list from this page came from, for its provenance."""
-        classes = ", ".join(str(c) for c in self.selected_classes())
-        well = self._well.currentText()
-        return f"the Features page | {self.feature} | classes {classes} | {well} | the instances ticked"
 
     def pool_headline(self, members: list[int]) -> str:
         fault = self._series[members[0]].fault

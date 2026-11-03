@@ -48,6 +48,7 @@ from overlap_viewer.frontend.items import (
     STATE_MARK,
     draw_marks,
 )
+from overlap_viewer.frontend.legend import FlowLayout
 from overlap_viewer.frontend.styling import TOOLTIP_FOREVER_MS, bounded_tooltip
 
 CELL_MIN_W, CELL_MAX_W = (
@@ -312,37 +313,38 @@ class StateKey(QWidget):
 
 
 class ColorKey(QWidget):
-    """A key of plain colors: one swatch and one text per entry, for a matrix of single fills."""
+    """A key of plain colors: one swatch and one text per entry, wrapping onto more rows when narrow.
+
+    It wraps rather than holding one row, so that a key of a dozen wells or ten
+    fault classes stays in view on a window narrower than all of it at once.
+    """
 
     def __init__(self, entries: Sequence[tuple[str, str]] = (), parent=None):
         super().__init__(parent)
-        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self._layout = QHBoxLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(14)
+        self._layout = FlowLayout(self, horizontal=14, uniform=False)
         self._chips: list[tuple[QLabel, str]] = []
         self.set_entries(entries)
 
     def set_entries(self, entries: Sequence[tuple[str, str]]) -> None:
         """Replace the entries: ``(color, text)`` pairs, a color being ``#rrggbb``."""
         while self._layout.count():
-            item = self._layout.takeAt(0)
-            if item.layout() is not None:
-                while item.layout().count():
-                    inner = item.layout().takeAt(0)
-                    if inner.widget() is not None:
-                        inner.widget().deleteLater()
+            entry = self._layout.takeAt(0).widget()
+            # Off the key at once: ``deleteLater`` alone leaves it drawn until the
+            # event loop next runs, which an offscreen script never lets it do.
+            entry.setParent(None)
+            entry.deleteLater()
         self._chips = []
         for color, text in entries:
+            entry = QWidget()
+            row = QHBoxLayout(entry)
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setSpacing(5)
             chip = QLabel()
-            label = QLabel(text)
-            entry = QHBoxLayout()
-            entry.setContentsMargins(0, 0, 0, 0)
-            entry.setSpacing(5)
-            entry.addWidget(chip)
-            entry.addWidget(label)
-            self._layout.addLayout(entry)
+            row.addWidget(chip)
+            row.addWidget(QLabel(text))
+            self._layout.add_widget(entry)
             self._chips.append((chip, color))
+        self.updateGeometry()
         self.apply_theme()
 
     def apply_theme(self) -> None:
@@ -384,7 +386,6 @@ class HeatmapWidget(QWidget):
         self._filled: np.ndarray | None = None
         self._struck: np.ndarray | None = None
         self._muted_columns: set[int] = set()
-        self._fills: list[list[str | None]] | None = None  # single-color cells, when set
         self._tooltip: Callable[[int, int], str] | None = None
         self._hover = (-1, -1)
         self._left = 0  # x at which the cells start; the row labels sit before it
@@ -417,26 +418,6 @@ class HeatmapWidget(QWidget):
         self._filled = None if filled is None else np.asarray(filled, dtype=float).reshape(shape)
         self._struck = None if struck is None else np.asarray(struck, dtype=bool).reshape(shape)
         self._muted_columns = set(muted_columns)
-        self._fills = None
-        self._hover = (-1, -1)
-        self._measure()
-        self.update()
-
-    def set_fills(self, rows, columns, fills, muted_columns=()) -> None:
-        """Show ``rows`` by ``columns`` as cells of one color each: ``fills[i][j]`` is ``#rrggbb`` or ``None`` for the ground.
-
-        What a matrix of coefficients is drawn as, where a cell is a value
-        and not a split of shares.
-        """
-        self._rows = list(rows)
-        self._columns = list(columns)
-        shape = (len(self._rows), len(self._columns))
-        self._shares = np.zeros((*shape, 3))
-        self._marks = np.zeros(shape, dtype=int)
-        self._filled = None
-        self._struck = None
-        self._muted_columns = set(muted_columns)
-        self._fills = [list(row) for row in fills]
         self._hover = (-1, -1)
         self._measure()
         self.update()
@@ -569,11 +550,6 @@ class HeatmapWidget(QWidget):
                 rect = self.cell_rect(i, j).adjusted(
                     CELL_INSET, CELL_INSET, -CELL_INSET, -CELL_INSET
                 )
-                if self._fills is not None:
-                    fill = self._fills[i][j]
-                    p.setPen(Qt.PenStyle.NoPen)
-                    p.fillRect(rect, QColor(fill if fill else colors.block_fill))
-                    continue
                 paint_cell(
                     p,
                     rect,
