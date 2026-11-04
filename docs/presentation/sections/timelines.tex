@@ -15,14 +15,9 @@
 \begin{frame}{Overlapping samples}
   \framesubtitle{\tlquestion}
   \begin{columns}[T]
-    \begin{column}{0.24\textwidth}\wsstat{\tlWellsOverlapping}{of \tlWells{} wells have overlapping instances}\end{column}
-    \begin{column}{0.24\textwidth}\wsstat{\tlInstancesOverlapping}{of \tlInstances{} instances overlap another of their well}\end{column}
-    \begin{column}{0.24\textwidth}\wsstat{\tlCollisions}{label collisions in the \tlPairs{} overlapping pairs}\end{column}
-  \end{columns}
-  \vskip 5mm
-  \begin{columns}[T]
     \begin{column}{0.47\textwidth}
-      {\scriptsize\color{ws3wbrown} Instances of the wells with overlaps (the other \tlWellsApart{} have none)\par}
+      {\scriptsize\color{ws3wbrown} \tlWellsOverlapping (42.5\%) wells have overlaps, 
+      totalling \tlInstancesOverlapping (88.11\%) instances\par}
       \vskip 1mm
       \input{figures/timelines/overlaps.tikz}
     \end{column}
@@ -37,10 +32,12 @@
         \item Duplicated stretches pull \textbf{clusters} tighter, inflating scores.
       \end{itemize}
       Thankfully, 3W 2.0.0 has no label collisions, making joins principled and avoiding leakage.
-      
-      \alert{Clustering must still be carefully calculated!}
     \end{column}
   \end{columns}
+  \centering
+  \vfill
+  \alert{Clustering must still be carefully calculated!}
+  \vfill
 \end{frame}
 
 % ---------------------------------------------------------------------------
