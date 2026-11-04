@@ -65,9 +65,10 @@ been read (a header never starts the pass).
 - A **red triangle in the top-left corner** marks an instance in which a valve contradicts the well
   status, the status bar naming the statuses and the valves, likewise once the profile pass has
   run.
-- **Retract the key** by clicking its title (or `Ctrl+L`) to give the grid the room. Retracted it
-  still answers hovering: the entries of the instance under the pointer, and of the instances it
-  overlaps, pop into the title row.
+- **The key opens retracted** to its title row, giving the grid the room; click its title (or
+  `Ctrl+L`) to show it whole, and again to retract it. Retracted it still answers hovering: the
+  entries of the instance under the pointer, and of the instances it overlaps, pop into the title
+  row.
 - **Drag** to pan, **Ctrl + wheel** to zoom (the plain wheel scrolls the grid), **right-click** for
   pyqtgraph's menu (view all, export).
 - The page's toolbar sets the number of columns, filters the grid to the wells that have overlaps,

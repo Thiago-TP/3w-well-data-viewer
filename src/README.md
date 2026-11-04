@@ -659,8 +659,10 @@ that title bar on hover.
 - `FlowLayout(QLayout)`: a left-to-right wrapping layout Qt does not ship, with a uniform-pitch mode
   so rows line up.
 - `LegendSwatch(QFrame)`: one clickable color+label entry; signal `clicked(fault_class)`.
-- `LegendBar(QWidget)`: the whole key; signal `fault_clicked(fault_class)`; methods
-  `set_entries(entries, fault_names)`, `highlight(keys)`, `set_selected_fault(fault_class)`.
+- `LegendBar(QWidget)`: the whole key, retracted from the start with `collapsed=True` (as the
+  Timelines page builds it); signal `fault_clicked(fault_class)`; methods
+  `set_entries(entries, fault_names)`, `highlight(keys)`, `set_selected_fault(fault_class)`,
+  `set_collapsed(collapsed)`.
 
 ### `options.py`
 

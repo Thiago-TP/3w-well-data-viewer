@@ -6,7 +6,7 @@ fault developed inside that window: full strength once the steady fault state is
 when only the transient state is, lightest when the window never leaves normal operation (43 of the
 instances filed under *Hydrate in Service Line* never do). Normal instances (folder 0) stay full
 strength. The legend above the grid keys every color actually drawn, one swatch per fault and
-reach.
+reach; it opens retracted to its title row, and a click on the title shows it whole.
 
 ![The color key of the timelines, one swatch per fault and reach](../assets/color_key.png)
 

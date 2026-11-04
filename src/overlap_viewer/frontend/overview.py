@@ -687,7 +687,9 @@ class TimelinesPage(QWidget):
         self._state_key = StateKey(("ramp", "frozen", "absent", "implausible", "order", "state"))
         self._state_key.hide()
         body_layout.addWidget(self._state_key, 0, Qt.AlignmentFlag.AlignLeft)
-        self._legend = LegendBar()
+        # Retracted to start with: eighteen entries take the height of a well's
+        # plot, and the retracted key still names the colors under the pointer.
+        self._legend = LegendBar(collapsed=True)
         self._legend.fault_clicked.connect(self.toggle_fault_filter)
         body_layout.addWidget(self._legend)
         self._scroll = QScrollArea()

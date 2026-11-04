@@ -132,6 +132,9 @@ def main(argv=None) -> int:
     # the docs beside each figure describe them.
     for each in window.pages:
         each.options.setChecked(True)
+    # The Timelines' color key opens retracted too; the overview and the color
+    # key figures show it whole, since Timelines.md and ColorCode.md describe it.
+    window.timelines._legend.set_collapsed(False)
 
     def page(widget, name, size=PAGE, wait=1.5):
         if not shooter.wants(name):
