@@ -1,0 +1,94 @@
+%% Timelines page: how are the instances of one well distributed in time?
+%%
+%% Every figure quoted here is a macro of figures/timelines/numbers.tex; the
+%% charts are figures/timelines/*.tikz, each reading a CSV table beside it, and
+%% the tabulars are tables/timelines/*.tex. The numbers, the CSV tables and the
+%% two crops of the viewer are written by scripts/timelines.py (see README.md).
+%% Three frames: the overlaps, what a joined history is labeled as, and the
+%% histories whose labels do not add up; the appendix shows those histories.
+
+\input{figures/timelines/numbers}
+
+\newcommand{\tlquestion}{\wspage{Timelines page} \raisebox{.75pt}{$\blacktriangleright$}~How are the instances of one well distributed in time?}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Overlapping samples}
+  \framesubtitle{\tlquestion}
+  \begin{columns}[T]
+    \begin{column}{0.24\textwidth}\wsstat{\tlWellsOverlapping}{of \tlWells{} wells have overlapping instances}\end{column}
+    \begin{column}{0.24\textwidth}\wsstat{\tlInstancesOverlapping}{of \tlInstances{} instances overlap another of their well}\end{column}
+    \begin{column}{0.24\textwidth}\wsstat{\tlCollisions}{label collisions in the \tlPairs{} overlapping pairs}\end{column}
+  \end{columns}
+  \vskip 5mm
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      {\scriptsize\color{ws3wbrown} Instances of the wells with overlaps (the other \tlWellsApart{} have none)\par}
+      \vskip 1mm
+      \input{figures/timelines/overlaps.tikz}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \includegraphics[width=\linewidth]{figures/timelines/well4_overlaps.png}
+      {\scriptsize\color{ws3wbrown} Instances overlapping in WELL-00004.\par}
+      \vskip 1.5mm
+      \footnotesize
+      Worries:
+      \begin{itemize}
+        \item Overlapping samples may land in \textbf{train and test}, causing leakage.
+        \item Duplicated stretches pull \textbf{clusters} tighter, inflating scores.
+      \end{itemize}
+      Thankfully, 3W 2.0.0 has no label collisions, making joins principled and avoiding leakage.
+      
+      \alert{Clustering must still be carefully calculated!}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What a joined history is labeled as}
+  \framesubtitle{\tlquestion}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \wsstat{\tlUnlabeledBefore\,\% \raisebox{1.5pt}{$\triangleright$} \tlUnlabeledAfter\,\%}{
+        of unlabels after join
+      }
+      \footnotesize
+      After the join, most unlabeled stretches appear trivial and might be recoverable.
+      \vskip 2mm
+      \setlength{\tabcolsep}{2pt}
+      \centering
+      \input{tables/timelines/gaps}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      {\scriptsize\color{ws3wbrown} Each fault folder's recorded time, by label, its files apart and joined\par}
+      \vskip 1mm
+      \input{figures/timelines/labels.tikz}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Histories whose labels do not add up}
+  \framesubtitle{\tlquestion}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \includegraphics[width=\linewidth]{figures/timelines/well4_restrictions.png}
+      {\scriptsize\color{ws3wbrown} WELL-00004's joined Quick Restriction in PCK instances.}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \footnotesize
+      % The cases are figures/timelines/returns.csv, one row per return to normal.
+      \begin{itemize}
+        \item Joined histories go back to normal \textbf{\tlReturns{} times} in
+          \tlReturnsWells{} wells, \textbf{every time at a file boundary}.
+        \item \textbf{WELL-00004}, left: three quick restrictions in 75\,min, each back to
+          normal 5 to 15\,s after its steady state.
+        \item \textbf{WELL-00006}: Abrupt Increase of BSW, steady, then normal 30\,min later in
+          a Scaling in PCK file. A water cut does not undo itself in half an hour:
+          \emph{normal} reads as \emph{before this file's event}.
+        \item The others: Flow Instability (WELL-00001, 00004), Rapid Productivity Loss (00016,
+          00020), Scaling in PCK (00024), Hydrate in Service Line (00042).
+          \hyperlink{changes}{\beamergotobutton{Appendix}}
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}

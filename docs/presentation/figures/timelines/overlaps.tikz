@@ -1,0 +1,23 @@
+% The instances of the wells whose instances overlap: each well's instances in
+% grey, the overlapping ones in blue over them; the tag sits at the end of the
+% grey bar, which a stack would not draw for the wells whose instances all
+% overlap. The table is written by scripts/timelines.py.
+\begin{tikzpicture}
+  \begin{axis}[
+      xbar, bar shift=0pt, bar width=1.8mm, scale only axis, width=48mm, height=37mm,
+      y dir=reverse, ytick=data, yticklabels from table={figures/timelines/overlaps.csv}{label},
+      enlarge y limits={abs=1.6mm}, xmin=0, xmax=380, xtick={0,100,200,300},
+      axis x line*=bottom, axis y line*=left, y axis line style={draw=none},
+      tick label style={font=\tiny, text=ws3wbrown}, ytick style={draw=none},
+      legend style={font=\tiny, draw=none, fill=none, at={(1,0.02)}, anchor=south east},
+      legend cell align=left, area legend, reverse legend,
+    ]
+    \addplot [fill=ws3wgrey!70, draw=none,
+              nodes near coords, point meta=explicit symbolic,
+              every node near coord/.style={font=\tiny, text=ws3wnavy, anchor=west}]
+      table [x=instances, y expr=\coordindex, meta=tag] {figures/timelines/overlaps.csv};
+    \addplot [fill=ws3wblue, draw=none]
+      table [x=overlapping, y expr=\coordindex] {figures/timelines/overlaps.csv};
+    \legend{instances, overlapping another}
+  \end{axis}
+\end{tikzpicture}

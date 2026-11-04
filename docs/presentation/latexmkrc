@@ -6,9 +6,9 @@
 # (the deck then uses Fira Sans, see beamerthemews3w.sty).
 
 $pdf_mode = 4;    # LuaLaTeX: the theme picks Trebuchet MS, the template's font, when installed
-$lualatex = 'lualatex -interaction=nonstopmode -file-line-error -synctex=1 %O %S';
-$pdflatex = 'pdflatex -interaction=nonstopmode -file-line-error -synctex=1 %O %S';
-$xelatex  = 'xelatex -interaction=nonstopmode -file-line-error -synctex=1 %O %S';
+$lualatex = 'lualatex -interaction=nonstopmode -file-line-error -synctex=0 %O %S';
+$pdflatex = 'pdflatex -interaction=nonstopmode -file-line-error -synctex=0 %O %S';
+$xelatex  = 'xelatex -interaction=nonstopmode -file-line-error -synctex=0 %O %S';
 
 @default_files = ('presentation.tex');
 
