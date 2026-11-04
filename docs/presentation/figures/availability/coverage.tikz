@@ -1,0 +1,107 @@
+% Every variable's samples over the real instances of 3W, ranked as the
+% Availability page ranks them by coverage: live (readings that move), frozen
+% (one value from end to end) and missing, opaque, in the page's own colors,
+% the live share written at the end of the bar. Drawn as overlaid bars from
+% zero to each cumulative share, the longest first, as figures/timelines/
+% labels.tikz is.
+%
+% Over them, see-through, the problem readings: out of order (a pressure the PL
+% or SL check contradicts), against state (a valve the valve checks
+% contradict) and implausible (outside the plausible range). They are live or
+% frozen readings too, so each is laid at the end of the part that holds it,
+% the live or the frozen one; they never overlap each other. Amber and red are
+% the viewer's own; out of order takes the brown of the arrows of checks.tikz.
+% On the bars and in the key they are hatched too, each kind at its own angle,
+% being no part of their own. The table is written by scripts/availability.py.
+\definecolor{avlive}{HTML}{4F6D8F}         % the viewer's "live", light theme
+\definecolor{avfrozen}{HTML}{C2C2C2}       % the viewer's "frozen"
+\definecolor{avimplausible}{HTML}{D4871A}  % the viewer's warning amber
+\definecolor{avstate}{HTML}{C62828}        % the viewer's "conflict": a label its valves contradict
+\colorlet{avorder}{ws3wbrown}
+% A problem reading, in color {#1} hatched at angle {#2}: see-through, with
+% lines of a deeper shade, each kind at its own angle (out of order 0°, against
+% state 135°, implausible 45°) so that two side by side stay apart. Set
+% outside the axis, which would wrap a TikZ key in a style of one argument.
+\tikzset{av hatch/.style 2 args={draw=none, fill=#1, fill opacity=.7,
+                                 postaction={draw=none, pattern={Lines[angle=#2, distance=1.4pt, line width=.35pt]},
+                                             pattern color=#1!60!black}}}
+% The scatter plots below draw their marker code only, no mark.
+\pgfdeclareplotmark{av none}{}
+\begin{tikzpicture}
+  \begin{axis}[
+      xbar, bar shift=0pt, bar width=1.3mm, scale only axis, width=36mm, height=50mm,
+      y dir=reverse, ytick=data, yticklabels from table={figures/availability/coverage.csv}{sensor},
+      enlarge y limits={abs=1.1mm}, xmin=0, xmax=100, xtick={0,50,100},
+      xticklabel={\pgfmathprintnumber{\tick}\,\%},
+      axis x line*=bottom, axis y line*=left, y axis line style={draw=none},
+      tick label style={font=\tiny, text=ws3wbrown}, ytick style={draw=none},
+      legend style={font=\tiny, draw=none, fill=none, at={(0.5,1.0)}, anchor=south,
+                    nodes={inner sep=.8pt}, legend columns=3,
+                    /tikz/every odd column/.append style={column sep=.5mm},
+                    /tikz/every even column/.append style={column sep=2mm}},
+      legend cell align=left, clip=false,
+      % The key is set by hand below, so every plot is left out of it.
+      every axis plot/.append style={forget plot},
+      % A swatch the height of a bar, in the colors set around it: filled, and
+      % outlined for missing, whose bar is outlined too.
+      legend image code/.code={\fill (0mm,-.65mm) rectangle (2.6mm,.65mm);},
+      % A problem reading over a bar, in color {#1} hatched at {#2}, its share
+      % the column {#3}: a rectangle as tall as the bar, drawn back from the
+      % point where it ends by its own length (a bar cannot start anywhere
+      % but at zero), as the marker of a scatter plot.
+      av problem/.style n args={3}{only marks, scatter, mark=av none,
+          visualization depends on={\thisrow{#3} \as \avlength},
+          scatter/@pre marker code/.code={%
+            \pgfkeys{/pgf/fpu=true, /pgf/fpu/output format=fixed}%
+            \pgfplotstransformdirectionx{\avlength}\let\avwidth=\pgfmathresult
+            \pgfkeys{/pgf/fpu=false}%
+            \path [av hatch={#1}{#2}] (-\avwidth pt,-.65mm) rectangle (0pt,.65mm);},
+          scatter/@post marker code/.code={}},
+      % ... read from the table: its share {#1}, ending at {#2}; a row without
+      % any is dropped, not drawn as a sliver no wider than a hair.
+      table/av segment/.style 2 args={x expr={\thisrow{#1} > 0 ? (#2) : nan}, y expr=\coordindex},
+      % ... and its swatch in the key.
+      av problem key/.style 2 args={draw=none, legend image code/.code={
+          \path [av hatch={#1}{#2}] (0mm,-.65mm) rectangle (2.6mm,.65mm);}},
+    ]
+    % The parts: missing (the whole bar), frozen, live.
+    \addplot [fill=white, draw=ws3wgrey, line width=.2pt,
+              nodes near coords, point meta=explicit symbolic,
+              every node near coord/.style={font=\tiny, text=ws3wnavy, anchor=west, inner sep=1pt}]
+      table [x expr=100, y expr=\coordindex, meta=tag] {figures/availability/coverage.csv};
+    \addplot [fill=avfrozen, draw=none]
+      table [x expr=\thisrow{live_share}+\thisrow{frozen_share}, y expr=\coordindex]
+      {figures/availability/coverage.csv};
+    \addplot [fill=avlive, draw=none]
+      table [x=live_share, y expr=\coordindex] {figures/availability/coverage.csv};
+    % The problem readings, at the end of the part that holds them: implausible
+    % last, against state before it, out of order before that. The live part
+    % ends at the live share, the frozen one at the live and frozen shares.
+    % (The {} of a style of several arguments must touch: a space between them
+    % would leave the last braced, which the expression parser cannot read.)
+    \def\avendlive{\thisrow{live_share}}
+    \def\avendfrozen{\thisrow{live_share}+\thisrow{frozen_share}}
+    \pgfplotsinvokeforeach{live, frozen}{
+      \addplot [av problem={avimplausible}{45}{implausible_in_#1_share}]
+        table [av segment={implausible_in_#1_share}{\csname avend#1\endcsname}]
+        {figures/availability/coverage.csv};
+      \addplot [av problem={avstate}{135}{against_state_in_#1_share}]
+        table [av segment={against_state_in_#1_share}{\csname avend#1\endcsname
+                           -\thisrow{implausible_in_#1_share}}]
+        {figures/availability/coverage.csv};
+      \addplot [av problem={avorder}{0}{out_of_order_in_#1_share}]
+        table [av segment={out_of_order_in_#1_share}{\csname avend#1\endcsname
+                           -\thisrow{implausible_in_#1_share}-\thisrow{against_state_in_#1_share}}]
+        {figures/availability/coverage.csv};
+    }
+    % The key: the parts on the first row, the problem readings on the second.
+    \addlegendimage{fill=avlive, draw=none}\addlegendentry{live}
+    \addlegendimage{fill=avfrozen, draw=none}\addlegendentry{frozen}
+    \addlegendimage{fill=white, draw=ws3wgrey, line width=.2pt,
+                    legend image code/.code={\filldraw (0mm,-.65mm) rectangle (2.6mm,.65mm);}}
+    \addlegendentry{missing}
+    \addlegendimage{av problem key={avorder}{0}}\addlegendentry{out of order}
+    \addlegendimage{av problem key={avstate}{135}}\addlegendentry{against state}
+    \addlegendimage{av problem key={avimplausible}{45}}\addlegendentry{implausible}
+  \end{axis}
+\end{tikzpicture}

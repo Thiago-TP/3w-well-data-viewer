@@ -1,0 +1,28 @@
+% The pressure-order check of the viewer (backend/config.py): along each line
+% the pressure an arrow leaves must read above the one it points to; a gate
+% named on an arrow must be open for the pair to be compared. Neighbours of a
+% missing pressure are compared with each other.
+\begin{tikzpicture}[
+    font=\tiny, node distance=2.5mm and 4mm,
+    gauge/.style={draw=ws3wblue, fill=ws3wblue!8, rounded corners=1pt, inner sep=1.5pt,
+                  minimum height=4mm, text=ws3wnavy},
+    line name/.style={font=\footnotesize\bfseries, text=ws3wnavy, inner sep=0pt},
+    higher/.style={-{Stealth[length=1.6mm]}, draw=ws3wbrown, line width=.5pt},
+    gate/.style={font=\tiny\itshape, text=ws3wbrown, inner sep=1pt},
+  ]
+  \node (production) [line name] {PL check};
+  \node (pdg) [gauge, right=of production.east, anchor=west] {P-PDG};
+  \node (tpt) [gauge, right=of pdg] {P-TPT};
+  \node (mon) [gauge, right=of tpt] {P-MON-CKP};
+  \node (jus) [gauge, right=11mm of mon] {P-JUS-CKP};
+  \draw [higher] (pdg) -- (tpt);
+  \draw [higher] (tpt) -- (mon);
+  \draw [higher] (mon) -- node [gate, above] {PCK open} (jus);
+
+  \node (service) [line name, below=.5 of production] {SL check};
+  \node (mongl) [gauge, right=of service.east, anchor=west] {P-MON-CKGL};
+  \node (jusgl) [gauge, right=11mm of mongl] {P-JUS-CKGL};
+  \node (anular) [gauge, right=12mm of jusgl] {P-ANULAR};
+  \draw [higher] (mongl) -- node [gate, above] {CKGL open} (jusgl);
+  \draw [higher] (anular) -- node [gate, above] {M2, W2 open} (jusgl);
+\end{tikzpicture}

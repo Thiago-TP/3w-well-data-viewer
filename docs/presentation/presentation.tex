@@ -14,6 +14,7 @@
 
 \usepackage{array}
 \usepackage{booktabs}
+\usepackage{multirow}
 \usepackage{pgfplots}
 \usepackage{pgfplotstable}
 \pgfplotsset{
@@ -21,7 +22,7 @@
   table/col sep=comma,                     % the scripts write CSV
   /pgf/number format/assume math mode=true,  % tick labels in the text font, not the math one
 }
-\usetikzlibrary{patterns}
+\usetikzlibrary{patterns,patterns.meta,arrows.meta}
 \hypersetup{colorlinks=true, urlcolor=ws3wblue, linkcolor=ws3wnavy}
 
 \title{3W Well Data Viewer}
@@ -35,8 +36,8 @@
 \wstitleframe
 
 \input{sections/timelines}
+\input{sections/availability}
 % Next, each once the one before is reviewed:
-% \input{sections/availability}
 % \input{sections/faults}         % the Faults and Features pages together
 % \input{sections/dispersions}
 % \input{sections/windows}

@@ -1,11 +1,15 @@
-%% Appendix: the label changes across an unlabeled stretch.
+%% Appendix: what the sections count but have no time to show.
 %%
+%% Timelines: the label changes across an unlabeled stretch.
 %% The Timelines section counts the unlabeled stretches a joined history keeps
 %% between two different labels (\tlGapChangeCount on 3W 2.0.0) and the returns
 %% to normal among them; here they are listed, then shown one by one in the
 %% instance window, around the change. The table, the crops and their captions
 %% come from tables/appendix/changes.csv and figures/appendix/, written by
 %% scripts/appendix.py.
+%%
+%% Availability: every variable's samples and instances, live, frozen and
+%% missing, as counts and shares, from figures/availability/coverage.csv.
 
 \pgfplotstableread{tables/appendix/changes.csv}\apchanges
 
@@ -38,7 +42,7 @@
 \begin{frame}[label=changes]{Appendix: label changes across an unlabeled stretch}
   \framesubtitle{\tlquestion}
   \footnotesize
-  The \tlGapChangeCount{} unlabeled stretches of a joined history between two different labels,
+  The \tlGapChangeCount{} unlabeled stretches of a joined history between two different labels.
   \vskip 2mm
   \centering\scriptsize
   \setlength{\tabcolsep}{4pt}
@@ -46,18 +50,29 @@
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Appendix: label changes 1 to 4}
+\begin{frame}{Appendix: label changes 1 to 4 (of 16)}
   \apgrid{1}{2}{3}{4}
 \end{frame}
 
-\begin{frame}{Appendix: label changes 5 to 8}
+\begin{frame}{Appendix: label changes 5 to 8 (of 16)}
   \apgrid{5}{6}{7}{8}
 \end{frame}
 
-\begin{frame}{Appendix: label changes 9 to 12}
+\begin{frame}{Appendix: label changes 9 to 12 (of 16)}
   \apgrid{9}{10}{11}{12}
 \end{frame}
 
-\begin{frame}{Appendix: label changes 13 to 16}
+\begin{frame}{Appendix: label changes 13 to 16 (of 16)}
   \apgrid{13}{14}{15}{16}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+% The Availability section: every variable's samples split six ways, its
+% instances and its farthest reading, the numbers behind the coverage chart
+% (figures/availability/coverage.csv).
+\begin{frame}[label=coverage]{Appendix: what each variable recorded}
+  \framesubtitle{\avquestion}
+  \centering\tiny
+  \setlength{\tabcolsep}{2.4pt}
+  \input{tables/appendix/coverage}
 \end{frame}
