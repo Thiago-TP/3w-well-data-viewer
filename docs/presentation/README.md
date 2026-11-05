@@ -9,7 +9,7 @@ the viewer, each the page's research question and what looking at 3W through it 
 | File                           | What it is                                                                                                            |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | `presentation.tex`             | the deck: the title frame, one `\input` per section, the closing frame, then the appendix                             |
-| `sections/`                    | one file per section: `timelines.tex`, `availability.tex` and `appendix.tex` so far                                                       |
+| `sections/`                    | one file per section: `timelines.tex`, `availability.tex`, `faults.tex` and `appendix.tex` so far                                         |
 | `figures/`                     | what the sections draw, one folder per section: the charts (`.tikz`), the numbers they quote, the CSV tables behind the charts, crops of the viewer |
 | `tables/`                      | the tables the sections set, one folder per section: the tabulars (`.tex`) and, where a table is long, the CSV it reads |
 | `scripts/`                     | what writes the numbers, CSV tables and crops, one script per section, from the 3W dataset and the viewer's own code |
@@ -67,6 +67,7 @@ uv run python docs/presentation/scripts/timelines.py                  # numbers,
 uv run python docs/presentation/scripts/timelines.py --no-shots       # numbers and tables only
 uv run python docs/presentation/scripts/timelines.py --raw-dir PATH   # another copy of 3W
 uv run python docs/presentation/scripts/availability.py               # the Availability section (no crops)
+uv run python docs/presentation/scripts/faults.py                     # the Faults and Features section, likewise
 uv run python docs/presentation/scripts/appendix.py                   # the appendix, likewise
 ```
 
@@ -82,6 +83,7 @@ without the dataset; the scripts are for when the dataset, or the viewer, change
 | -------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `timelines.py` | into `figures/timelines/`: `numbers.tex`; `overlaps.csv` (instances per well); `labels-pre-join.csv` and `labels-post-join.csv` (each folder's time by label, its files apart and joined); `gaps.csv` (what stays unlabeled once joined); `returns.csv` (every return to normal along a joined history); `well4_overlaps.png` and `well4_restrictions.png` (the Timelines page and an instance window on WELL-00004) |
 | `availability.py` | into `figures/availability/`: `numbers.tex`; `coverage.csv` (every variable's samples live, frozen and missing, the readings among them that are implausible, out of order or against the state, the instances of each and the reading farthest outside the plausible range, which the chart draws and the appendix sets). No crops. It reads the profile pass from the viewer's cache, and stops if the pass has not been run: tick *Measured vs filled* on the Availability page once |
+| `faults.py` | into `tables/faults/`: `signatures.csv` (per fault class, its instances and wells, and per signature variable the move the paper or thesis expects, how many instances make it of those that can show it, and how many lack the variable); `hydrate.csv` (the well state under each label of every real Hydrate in Production Line); into `figures/faults/`: `numbers.tex`; `scaling.png` (the Faults page on Scaling in PCK, one instance per well); `well19.png` and `well25.png` (the instance window of a hydrate of each well on P-TPT); `simulated.csv` and `simulated-bands.csv` (a simulated hydrate, which the viewer does not read, for `simulated.tikz` to draw in the instance window's style). It reads the signature variables of about 500 instances, about a minute |
 | `appendix.py`  | into `tables/appendix/`: `changes.csv` (every label change across an unlabeled stretch of a joined history, with the sensor shown); into `figures/appendix/`: `change-<n>.png` (each change in the instance window) |
 
 ## Instructions communicated via email (portuguese)

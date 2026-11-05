@@ -183,7 +183,7 @@ def coverage_facts(catalogue, profiles, info: DatasetInfo) -> list[dict]:
         }
         # What the chart writes at the end of the bar.
         recorded = counts["missing"] < total
-        row["tag"] = f"{row['live_share']:.1f}" if recorded else "never recorded"
+        row["tag"] = f"{row['live_share']:.1f}" if recorded else "\\alert{never recorded}"
         table.append(row)
     # As the page ranks by coverage: the largest live share first, then what is
     # at least recorded, so that a frozen sensor ranks above a missing one.
@@ -235,7 +235,7 @@ def extreme_readings(catalogue, info: DatasetInfo, coverage: list[dict]) -> None
 def write_numbers(
     path: Path, info: DatasetInfo, catalogue, coverage: list[dict], facts: dict
 ) -> None:
-    never = [row["sensor"] for row in coverage if row["tag"] == "never recorded"]
+    never = [row["sensor"] for row in coverage if row["tag"] == "\\alert{never recorded}"]
     valves = [row for row in coverage if row["valve"]]
     pdg = next(row for row in coverage if row["sensor"] == "P-PDG")
     facts = {

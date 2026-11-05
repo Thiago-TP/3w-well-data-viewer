@@ -1,0 +1,11 @@
+fault,instances,wells,source,aber_ckp,p_mon_ckp,t_jus_ckp,p_tpt,t_tpt,p_pdg
+Normal Operation,594,9,,,,,,,
+Abrupt Increase of BSW,4,3,thesis,,\fadown 3/3 \famiss{1},\faup 3/3 \famiss{1},\fadown 4/4,\faup 4/4,
+Spurious Closure of DHSV,22,7,paper,,\fadown 6/7 \famiss{15},,\fadown 21/21 \famiss{1},\fadown 22/22,\faup 15/16 \famiss{6}
+Severe Slugging,32,2,paper,,\faswing,\faswing,\faswing 27/32,,\faswing 4/31 \famiss{1}
+Flow Instability,343,7,thesis,,\faswing \famiss{112},\faswing \famiss{195},\faswing \famiss{85},,\faswing \famiss{309}
+Rapid Productivity Loss,11,3,thesis,,\fadown 11/11,\fadown 10/11,\fadown 6/10 \famiss{1},\fadown 10/11,
+Quick Restriction in PCK,6,2,paper,\fadown 0/1 \famiss{5},\faup 1/3 \famiss{3},,\faup 4/6,,\faup \fanil \famiss{6}
+Scaling in PCK,36,6,thesis,,\faup 36/36,\fadown 27/32 \famiss{4},\faup 29/31 \famiss{5},\fadown 7/32 \famiss{4},
+Hydrate in Production Line,14,9,paper,,\fadown 9/14,,\faup 7/8 \famiss{5},\fadown 6/7 \famiss{7},\faup 9/9 \famiss{5}
+Hydrate in Service Line,57,15,none,,\fanone,,\fanone \famiss{32},\fanone \famiss{27},\fanone \famiss{28}

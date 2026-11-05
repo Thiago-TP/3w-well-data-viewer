@@ -10,12 +10,15 @@
 %%
 %% Availability: every variable's samples and instances, live, frozen and
 %% missing, as counts and shares, from figures/availability/coverage.csv.
+%%
+%% Faults and Features: the well state under the labels of every real Hydrate
+%% in Production Line, from tables/faults/hydrate.csv.
 
 \pgfplotstableread{tables/appendix/changes.csv}\apchanges
 
 % \apchange{n}: the crop of change n (from 1) over its caption, half the
 % width of the frame; the caption is read off the table.
-\NewDocumentCommand{\apchange}{m}{%
+\newcommand{\apchange}[1]{%
   \pgfmathtruncatemacro{\aprow}{#1-1}%
   \pgfplotstablegetelem{\aprow}{label}\of\apchanges\let\aplabel\pgfplotsretval
   \pgfplotstablegetelem{\aprow}{at}\of\apchanges\let\apat\pgfplotsretval
@@ -32,7 +35,7 @@
 }
 
 % \apgrid{a}{b}{c}{d}: four changes, two by two.
-\NewDocumentCommand{\apgrid}{m m m m}{%
+\newcommand{\apgrid}[4]{%
   \apchange{#1}\hfill\apchange{#2}\par
   \vskip 3mm
   \apchange{#3}\hfill\apchange{#4}%
@@ -51,28 +54,36 @@
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Appendix: label changes 1 to 4 (of 16)}
+  \framesubtitle{\tlquestion}
   \apgrid{1}{2}{3}{4}
 \end{frame}
 
 \begin{frame}{Appendix: label changes 5 to 8 (of 16)}
+  \framesubtitle{\tlquestion}
   \apgrid{5}{6}{7}{8}
 \end{frame}
 
 \begin{frame}{Appendix: label changes 9 to 12 (of 16)}
+  \framesubtitle{\tlquestion}
   \apgrid{9}{10}{11}{12}
 \end{frame}
 
 \begin{frame}{Appendix: label changes 13 to 16 (of 16)}
+  \framesubtitle{\tlquestion}
   \apgrid{13}{14}{15}{16}
 \end{frame}
 
 % ---------------------------------------------------------------------------
-% The Availability section: every variable's samples split six ways, its
-% instances and its farthest reading, the numbers behind the coverage chart
-% (figures/availability/coverage.csv).
 \begin{frame}[label=coverage]{Appendix: what each variable recorded}
   \framesubtitle{\avquestion}
   \centering\tiny
   \setlength{\tabcolsep}{2.4pt}
   \input{tables/appendix/coverage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}[label=hydrate labels]{Appendix: hydrate instances transients and steadies}
+  \framesubtitle{\faquestion}
+  \centering\footnotesize
+  \input{tables/faults/hydrate}
 \end{frame}

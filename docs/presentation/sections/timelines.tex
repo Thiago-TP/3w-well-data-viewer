@@ -14,6 +14,7 @@
 % ---------------------------------------------------------------------------
 \begin{frame}{Overlapping samples}
   \framesubtitle{\tlquestion}
+  \vfill
   \begin{columns}[T]
     \begin{column}{0.47\textwidth}
       {\scriptsize\color{ws3wbrown} \tlWellsOverlapping (42.5\%) wells have overlaps, 
@@ -22,8 +23,8 @@
       \input{figures/timelines/overlaps.tikz}
     \end{column}
     \begin{column}{0.49\textwidth}
+      {\scriptsize\color{ws3wbrown} Example: instances overlapping in WELL-00004.\par}
       \includegraphics[width=\linewidth]{figures/timelines/well4_overlaps.png}
-      {\scriptsize\color{ws3wbrown} Instances overlapping in WELL-00004.\par}
       \vskip 1.5mm
       \footnotesize
       Worries:
@@ -34,8 +35,8 @@
       Thankfully, 3W 2.0.0 has no label collisions, making joins principled and avoiding leakage.
     \end{column}
   \end{columns}
-  \centering
   \vfill
+  \centering
   \alert{Clustering must still be carefully calculated!}
   \vfill
 \end{frame}
@@ -43,7 +44,7 @@
 % ---------------------------------------------------------------------------
 \begin{frame}{What a joined history is labeled as}
   \framesubtitle{\tlquestion}
-  \begin{columns}[T]
+  \begin{columns}[c]
     \begin{column}{0.47\textwidth}
       \wsstat{\tlUnlabeledBefore\,\% \raisebox{1.5pt}{$\triangleright$} \tlUnlabeledAfter\,\%}{
         of unlabels after join
@@ -68,19 +69,23 @@
   \framesubtitle{\tlquestion}
   \begin{columns}[T]
     \begin{column}{0.52\textwidth}
-      \includegraphics[width=\linewidth]{figures/timelines/well4_restrictions.png}
       {\scriptsize\color{ws3wbrown} WELL-00004's joined Quick Restriction in PCK instances.}
+      \includegraphics[width=\linewidth]{figures/timelines/well4_restrictions.png}
     \end{column}
+    %
     \begin{column}{0.45\textwidth}
       \footnotesize
       % The cases are figures/timelines/returns.csv, one row per return to normal.
       \begin{itemize}
         \item Joined histories go back to normal \textbf{\tlReturns{} times} in
           \tlReturnsWells{} wells, \textbf{every time at a file boundary}.
+      \vskip 4mm
         \item \textbf{WELL-00004}, left: three quick restrictions in 75\,min, each back to
           normal 5 to 15\,s after its steady state.
+      \vskip 4mm
         \item \textbf{WELL-00006}: Abrupt Increase of BSW, steady, then normal 30\,min later in
           a Scaling in PCK file.
+      \vskip 4mm
         \item The others: Flow Instability (WELL-00001, 00004), Rapid Productivity Loss (00016,
           00020), Scaling in PCK (00024), Hydrate in Service Line (00042).
           \hyperlink{changes}{\beamergotobutton{Appendix}}

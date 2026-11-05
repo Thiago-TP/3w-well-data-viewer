@@ -1,0 +1,32 @@
+% Per real instance of Hydrate in Production Line, the well state that holds
+% most of its transient and of its steady label, with the hours each lasts and
+% the share of them that state holds; then the simulated instances, open from
+% end to end. A label an instance never reaches is set as an alert. The CSV
+% beside this file is written by scripts/faults.py.
+\pgfplotstabletypeset[
+  columns={well, start, transient_hours, transient_state, transient_share,
+           steady_hours, steady_state, steady_share},
+  % Well and From span both header rows, centered in their cells (see
+  % tables/appendix/coverage.tex): their names are set in the row above.
+  columns/well/.style={string type, column name={}, column type={l}},
+  columns/start/.style={string type, column name={}, column type={l}},
+  columns/transient_hours/.style={string type, column name={h}, column type={r}},
+  columns/transient_state/.style={string type, column name={state}, column type={l},
+                                  string replace={never}{\alert{never}}},
+  columns/transient_share/.style={string type, column name={\%}, column type={r}},
+  columns/steady_hours/.style={string type, column name={h}, column type={r}},
+  columns/steady_state/.style={string type, column name={state}, column type={l},
+                               string replace={never}{\alert{never}}},
+  columns/steady_share/.style={string type, column name={\%}, column type={r}},
+  every head row/.style={
+    before row={\toprule
+                \multicolumn{1}{c}{\multirow{2}{*}[-1mm]{Well}}
+                & \multicolumn{1}{c}{\multirow{2}{*}[-1mm]{From}}
+                & \multicolumn{3}{c}{Transient} & \multicolumn{3}{c}{Steady} \\
+                \cmidrule(lr){3-5}\cmidrule(lr){6-8}},
+    after row=\midrule},
+  every last row/.style={after row={
+    \midrule
+    \multicolumn{2}{l}{\faHydrateSimulated{} simulated} & & Open & \faHydrateSimulatedOpen & & Open & \faHydrateSimulatedOpen \\
+    \bottomrule}},
+]{tables/faults/hydrate.csv}

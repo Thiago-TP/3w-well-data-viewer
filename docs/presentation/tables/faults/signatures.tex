@@ -1,0 +1,31 @@
+% Per fault class, its real instances and wells, where its signature comes
+% from, and per signature variable the move the sources expect, how many
+% instances make it of those that can show it, and how many instances lack the
+% variable. The columns follow the placements of the viewer, topside to
+% subsurface. A row is the Faults page's question, a column the Features
+% page's. The cells are written by scripts/faults.py into the CSV beside this
+% file; their macros are set in sections/faults.tex.
+\pgfplotstabletypeset[
+  columns={fault, instances, wells, source, aber_ckp, p_mon_ckp, t_jus_ckp, p_tpt, t_tpt, p_pdg},
+  fa cell/.style={string type, column type={l}},
+  columns/fault/.style={string type, column name={Fault}, column type={l}},
+  columns/instances/.style={column name={Inst.}, column type={r}, fixed, precision=0, 1000 sep={,}},
+  columns/wells/.style={column name={Wells}, column type={r}},
+  columns/source/.style={string type, column name={From}, column type={l},
+                         postproc cell content/.append style={/pgfplots/table/@cell content/.add={\color{ws3wbrown}}{}}},
+  columns/aber_ckp/.style={fa cell, column name={ABER-CKP}},
+  columns/p_mon_ckp/.style={fa cell, column name={P-MON-CKP}},
+  columns/t_jus_ckp/.style={fa cell, column name={T-JUS-CKP}},
+  columns/p_tpt/.style={fa cell, column name={P-TPT}},
+  columns/t_tpt/.style={fa cell, column name={T-TPT}},
+  columns/p_pdg/.style={fa cell, column name={P-PDG}},
+  every head row/.style={
+    before row={\toprule
+                \multicolumn{1}{c}{\multirow{2}{*}[-1mm]{Fault}}
+                & \multicolumn{3}{c}{} & \multicolumn{3}{c}{Topside}
+                & \multicolumn{2}{c}{Seabed} & \multicolumn{1}{c}{Subsurface} \\
+                \cmidrule(lr){5-7}\cmidrule(lr){8-9}\cmidrule(lr){10-10}},
+    after row=\midrule},
+  columns/fault/.append style={column name={}},
+  every last row/.style={after row=\bottomrule},
+]{tables/faults/signatures.csv}
