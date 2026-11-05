@@ -42,7 +42,7 @@ from overlap_viewer.backend.dataset import (
     merge_instances,
     well_label,
 )
-from overlap_viewer.backend.palette import fault_color, tint
+from overlap_viewer.backend.palette import fault_color, tint, well_colors
 from overlap_viewer.frontend import styling
 from overlap_viewer.frontend.heatmap import ColorKey
 from overlap_viewer.frontend.items import AnchoredText, ScrollFriendlyViewBox, restyle_axes
@@ -499,11 +499,8 @@ class DispersionPage(QWidget):
         self._density = None
 
     def _well_colors(self) -> dict[int, str]:
-        palette = theme.current().wells
-        return {
-            well.well: palette[k % len(palette)]
-            for k, well in enumerate(sorted(self._wells, key=lambda w: w.well))
-        }
+        """One color per well of the whole catalogue, the same on every page."""
+        return well_colors(well.well for well in self._wells)
 
     def _period_colors(self) -> dict[int, str]:
         """Normal operation's green, an amber while the fault installs itself, a fault's red once

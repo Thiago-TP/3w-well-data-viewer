@@ -20,12 +20,15 @@ three domains, the same transforms and the same hover.
   open with nothing in its section), and the grid spends its cap per class for the same reason.
 - **Layout** means something particular here. *Small multiples* give every instance a plot of its
   own in a grid under a heading per class (with the samples it draws and how many were measured);
-  because the heading already names the class, the trace
-  takes the neutral color and the class hues are left to the shading of the label periods behind it
-  and to the stacks of a histogram, which a line of the same hue would vanish into. **Overlaid**
-  puts every class on one set of axes, each instance in its class's color: the view the page
-  exists for, and the natural one for histograms and spectra, where the question is whether the
-  classes sit at different values or peak at different periods.
+  because the heading already names the class, and the class hues are the shading of the label
+  periods behind it and the stacks of a histogram, which a line of the same hue would vanish into,
+  the trace takes the color of its **well**, the one every page gives it (the Faults, Dispersions
+  and Instances pages too), and the list on the right keys it. **Overlaid** puts every class on
+  one set of axes: the view the page exists for, and the natural one for histograms and spectra,
+  where the question is whether the classes sit at different values or peak at different periods.
+  There, **Color by** chooses what a line's color says: its *Class* (the default, keyed by the
+  list on the left) or its *Well* (keyed by the list on the right), to follow what one well reads
+  under each class. Pooled into one curve per class, a curve takes its class's color.
 - **Click** a plot, or an instance's name in the list, to open its instance window, as on the
   Faults page: from a plot on the sensor on show, from the list on its default features.
 

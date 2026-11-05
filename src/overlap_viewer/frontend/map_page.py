@@ -49,7 +49,7 @@ from overlap_viewer.algorithms import embedding as em
 from overlap_viewer.backend import theme
 from overlap_viewer.backend.dataset import DatasetInfo, WellData, instance_title, well_label
 from overlap_viewer.backend.extras import missing
-from overlap_viewer.backend.palette import fault_color, tint
+from overlap_viewer.backend.palette import fault_color, tint, well_colors
 from overlap_viewer.backend.profiles import DESCRIPTOR_MODES, Profiles
 from overlap_viewer.frontend.heatmap import ramp_color
 from overlap_viewer.frontend.items import ScrollFriendlyViewBox, restyle_axes
@@ -691,11 +691,8 @@ class MapPage(QWidget):
     # -- drawing
 
     def _well_colors(self) -> dict[int, str]:
-        palette = theme.current().wells
-        return {
-            well.well: palette[k % len(palette)]
-            for k, well in enumerate(sorted(self._wells, key=lambda w: w.well))
-        }
+        """One color per well of the whole catalogue, the same on every page."""
+        return well_colors(well.well for well in self._wells)
 
     def _point_colors(self) -> tuple[list[str], list]:
         """The fill of every point under the coloring chosen, and the pen of each."""

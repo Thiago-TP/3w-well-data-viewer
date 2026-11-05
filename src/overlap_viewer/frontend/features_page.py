@@ -13,13 +13,16 @@ Everything between the choice and the picture is
 ``series_page.SeriesPage``: the same two layouts, the same three domains, the
 same transforms and the same hover.
 
-**Color.** A class is drawn in its own hue when the layout draws the classes
-over one another and the line is the only key there is. In the grid it is not:
-every small plot sits under a heading that names its class, so the line takes
-the neutral trace color of the theme and leaves the hues to the shading of the
-label periods behind it and to the stacks of a histogram, which carry that
-class's hue at full strength, and which a line of the same hue would vanish
-into.
+**Color.** In the grid every small plot sits under a heading that names its
+class, and the class hues are the shading of the label periods behind it and
+the stacks of a histogram, which a line of the same hue would vanish into; so
+the line takes the color of its **well**, as on the faults page, which is what
+the heading does not say and what the readings of a sensor depend on most.
+Overlaid, the classes are drawn over one another and the line is the only key
+there is: *Color by* chooses whether it keys the class (the default, the
+question the page exists for) or the well. Pooled into one curve per class,
+the curve takes its class's hue. The wells' colors are the ones every page
+gives them (``palette.well_colors``).
 
 **Align at** defaults to the start of the recording here, the one anchor every
 class has: normal operation has no transient and no steady fault state, so
@@ -52,7 +55,7 @@ from overlap_viewer.backend.availability import ABSENT, LIVE, Availability
 from overlap_viewer.backend.config import MAX_SMALL_MULTIPLES, REACH_LABELS
 from overlap_viewer.backend.dataset import DatasetInfo, WellData, well_label
 from overlap_viewer.backend.labels import segments_from_json
-from overlap_viewer.backend.palette import fault_color
+from overlap_viewer.backend.palette import fault_color, well_colors
 from overlap_viewer.frontend.instance_window import PANEL_WIDTH
 from overlap_viewer.frontend.loading import FrameCache
 from overlap_viewer.frontend.options import bar_row, toolbar
@@ -65,8 +68,9 @@ from overlap_viewer.frontend.series_page import (
 )
 
 HINT = (
-    "One sensor: a section per fault class in the grid, every class over the others in one plot "
-    "when overlaid, in the colors the list on the left keys | hover a trace to name its instance "
+    "One sensor: a section per fault class in the grid, each line in its well's color, every "
+    "class over the others in one plot when overlaid, in the colors of the classes or of the "
+    "wells, as Color by says | hover a trace to name its instance "
     "and read it, click it to open its instance window on this sensor | tick the classes on the "
     "left and the instances on the right, click an instance's name to open it | Ctrl + wheel to "
     "zoom, the wheel scrolls | F1 for help"
@@ -90,20 +94,30 @@ DOMAIN_TIP = (
     "against the hours from the onset. Distribution: a histogram of the "
     "readings, as a share of the instance's samples so that instances of different length "
     "compare, stacked by label period in the class colors in the grid, an area in the color of "
-    "its class when overlaid, so that where two classes sit on top of one another reads as a "
-    "deeper shade, with a triangle over the fullest bin of each. Spectrum: the power spectral "
+    "its class (or of its well, as Color by says) when overlaid, so that where two classes sit on "
+    "top of one another reads as a deeper shade, with a triangle over the fullest bin of each. "
+    "Spectrum: the power spectral "
     "density against the period, both logarithmic, the mean and the trend removed first."
 )
 LAYOUT_TIP = (
     "Small multiples give every instance a plot of its own, in a grid under a heading per fault "
-    "class, so that the shapes of one class can be read one against the next and against the "
-    "class below. Overlaid draws every class on one set of axes, each instance in the color of "
-    "its class, which is what makes the classes comparable rather than merely adjacent, and the "
+    "class, each line in the color of its well, so that the shapes of one class can be read one "
+    "against the next and against the class below. Overlaid draws every class on one set of "
+    "axes, each instance in the color of its class (or of its well, as Color by says), which is "
+    "what makes the classes comparable rather than merely adjacent, and the "
     "natural view for histograms and spectra, where the question is whether the classes sit at "
     "different values or peak at different periods. Overall goes one further and pools each "
     "class into a single curve, so the plot becomes one distribution, or one spectrum, per fault "
     "class over every instance of it, the feature-level view this page was built for. It is "
     "offered off the time axis only, instances cut from different months having no common clock."
+)
+COLOR_BY = ("Class", "Well")
+COLOR_TIP = (
+    "What the color of a line says when the classes are overlaid. Class: every instance in its "
+    "class's color, keyed by the list on the left, so that the classes are told apart. Well: "
+    "every instance in its well's color, keyed by the list on the right, the colors every page "
+    "gives the wells, so that what one well reads under each class can be followed. The grid "
+    "always colors by well, its headings naming the classes; a pooled curve takes its class's."
 )
 NORMALIZE_TIP = (
     "Scale every series to its own level: each reading as standard deviations from the mean of "
@@ -133,6 +147,9 @@ class FeaturesPage(SeriesPage):
         self._class_checks: dict[int, QCheckBox] = {}
         self._recorded: dict[str, int] = {}
         self._building = False
+        # Whether the chips of the instance list were last painted by well (True)
+        # or by class (False); None before the first list (see ``_refresh_chips``).
+        self._chips_by_well: bool | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -172,6 +189,16 @@ class FeaturesPage(SeriesPage):
 
         options.addSeparator()
         self.add_shared_controls(options, DOMAIN_TIP, LAYOUT_TIP)
+        # Only overlaid is there a choice: the grid colors by well, a pooled
+        # curve by class (see COLOR_TIP); the layout's sync shows it.
+        self._color_by = QComboBox()
+        self._color_by.addItems(list(COLOR_BY))
+        self._color_by.setToolTip(COLOR_TIP)
+        self._color_by.currentIndexChanged.connect(self._on_color_by_changed)
+        self._overlaid_only = [
+            options.addWidget(QLabel(" Color by ")),
+            options.addWidget(self._color_by),
+        ]
 
         panels = toolbar("Features panels")
         self._note = QLabel()
@@ -266,6 +293,54 @@ class FeaturesPage(SeriesPage):
     def apply_theme(self) -> None:
         """Take the colors of the theme now in force; ``set_catalogue`` redraws the plots after it."""
         self._restyle()
+
+    def _sync_layout_controls(self) -> None:
+        """The shared controls, then *Color by*, which only the overlaid layout has a use for."""
+        super()._sync_layout_controls()
+        overlaid = not self.small_multiples and not self.overall
+        for action in self._overlaid_only:
+            action.setVisible(overlaid)
+
+    @property
+    def colors_by_well(self) -> bool:
+        """Whether a line takes its well's color: always in the grid, never pooled, else as chosen."""
+        if self.small_multiples:
+            return True
+        if self.overall:
+            return False
+        return self._color_by.currentText() == "Well"
+
+    def set_color_by(self, name: str) -> None:
+        """Color the overlaid lines by class or by well, as the box would."""
+        if name not in COLOR_BY:
+            raise ValueError(f"unknown coloring {name!r}; expected one of {COLOR_BY}")
+        self._color_by.setCurrentIndex(COLOR_BY.index(name))
+
+    def _line_color(self, entry: dict, wells: dict[int, str]) -> str:
+        """The color of one instance's line, and of its chip in the list."""
+        return wells[entry["well"]] if self.colors_by_well else fault_color(entry["fault"])
+
+    def _refresh_chips(self) -> None:
+        """Paint every chip of the instance list in its line's color, once the coloring changes.
+
+        The list keys the lines whenever they are colored by well, as the
+        class list keys them when they are colored by class.
+        """
+        by_well = self.colors_by_well
+        if by_well == self._chips_by_well:
+            return
+        # A new icon is an item changed, which replots: marked as painted
+        # first, and the list held as it is while being rebuilt.
+        self._chips_by_well = by_well
+        wells = well_colors(self._wells)
+        building, self._building = self._building, True
+        for entry, item in zip(self._instances, self._items):
+            item.setIcon(self.chip(self._line_color(entry, wells)))
+        self._building = building
+
+    def _on_color_by_changed(self, *args) -> None:
+        if self.ready():
+            self._replot(keep_views=True)
 
     # -- data
 
@@ -510,9 +585,10 @@ class FeaturesPage(SeriesPage):
         self._list.clear()
         self._items = []
         per_class: dict[int, int] = {}
+        wells = well_colors(self._wells)
         for entry in self._instances:
             item = QListWidgetItem(self._item_text(entry))
-            item.setIcon(self.chip(fault_color(entry["fault"])))
+            item.setIcon(self.chip(self._line_color(entry, wells)))
             item.setToolTip(self._item_tooltip(entry))
             aligned = entry["onset"] is not None
             flags = Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsSelectable
@@ -534,6 +610,7 @@ class FeaturesPage(SeriesPage):
             self._list.addItem(item)
             self._items.append(item)
         self._building = False
+        self._chips_by_well = self.colors_by_well
         self._refresh_instance_note()
 
     def _item_text(self, entry: dict) -> str:
@@ -613,6 +690,8 @@ class FeaturesPage(SeriesPage):
 
     def before_replot(self) -> None:
         self._refresh_instance_note()
+        # The layout or the coloring may have changed what the lines key.
+        self._refresh_chips()
 
     def _per_section_limit(self) -> int:
         """How many instances of one class a grid draws, so that every class gets a share of it.
@@ -632,13 +711,13 @@ class FeaturesPage(SeriesPage):
 
     def load_series(self) -> list[Series]:
         # In the grid every plot holds one instance under a heading naming its
-        # class, so the line carries nothing the heading does not and takes the
-        # neutral trace color; the class hues are left to the shading behind it
-        # and to the stacks of a histogram, which carry that class's hue at
-        # full strength and which a line of the same hue would vanish into.
-        # Overlaid, every class is in one plot and the line is the only key
-        # there is, so it takes its class's hue.
-        neutral = theme.current().trace if self.small_multiples else None
+        # class, and the class hues are the shading behind it and the stacks of
+        # a histogram, which a line of the same hue would vanish into: the line
+        # takes its well's color, which the heading does not give. Overlaid,
+        # every class is in one plot and the line is the only key there is, of
+        # the class or of the well as *Color by* says; pooled, a curve stands
+        # for a class (``colors_by_well``).
+        wells = well_colors(self._wells)
         series = []
         for entry in self._checked_instances():
             data = self._wells[entry["well"]]
@@ -652,7 +731,7 @@ class FeaturesPage(SeriesPage):
                     frame,
                     entry["onset"],
                     hours,
-                    neutral or fault_color(entry["fault"]),
+                    self._line_color(entry, wells),
                     int(entry["fault"]),
                     entry.get("runs", []),
                     self.model_runs_for(entry["fault"], entry.get("file", "")),

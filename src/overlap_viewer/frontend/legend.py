@@ -397,8 +397,6 @@ class LegendBar(QWidget):
         self._more.setText(f"+{missing} more" if missing > 0 else "")
         self._more.setVisible(missing > 0)
         self._hint.setText(
-            f"{len(self._entries)} colors; hover a bar, or click to open"
-            if self._collapsed and not popping
-            else ""
+            "hover a bar or click to open" if self._collapsed and not popping else ""
         )
         self._hint.setVisible(self._collapsed and not popping)

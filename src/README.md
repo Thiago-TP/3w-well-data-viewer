@@ -301,6 +301,9 @@ fault-bar fill/background tinting by reach, legend entries, text-contrast and bl
 - `fault_color(fault_class)` / `bar_color(fault_class, reach)` / `background_color(fault_class,
   reach)`: a fault's hue, an instance bar's fill, and a time-series stretch's background.
 - `state_color(state)`: color of a well operational-status code.
+- `well_colors(wells)`: one color per well, in well order, cycling the theme's well palette; given
+  every well of the catalogue, so that a well has the same color on every page that colors by well
+  (Faults, Features, Dispersions, Instances).
 - `text_color(background)`: black or white, whichever reads better on `background`.
 - `LegendEntry` (frozen dataclass) and `legend_entries(present, fault_names)`: one entry per
   distinct `(fault_class, reach)` combination present, sorted by class then decreasing tint.
@@ -749,7 +752,8 @@ section, colored by well, aligned on a chosen onset. Subclasses `SeriesPage`.
 
 - `FaultsPage(SeriesPage)`: toolbar: Fault, Alignment, the shared domain/layout controls, Features/
   Instances visibility toggles. `_instances_of(fault)` lists every real instance of the fault with its
-  onset; `_well_colors()` gives one stable color per well across faults; `_rebuild_features()` offers
+  onset; `_well_colors()` gives one stable color per well across faults and pages
+  (`palette.well_colors`); `_rebuild_features()` offers
   every sensor, ticking `config.DEFAULT_FEATURES` by default, with the placement boxes over them. Implements `load_series()`
   (per-instance frames aligned to hours-from-onset) and `sections()` (one per ticked feature).
 
@@ -764,7 +768,10 @@ across classes (optionally narrowed to one well). Subclasses `SeriesPage`; the m
   record a *moving* reading of, so the page never opens on a flat valve state. `_rebuild_classes()`
   and `_rebuild_instances()` build the class/instance lists, ticking the earliest few of each class by
   default. `sections()` is one section per class in the grid, or one section spanning all classes
-  (colored by fault hue) when overlaid.
+  when overlaid. `colors_by_well` says what a line's color keys: its well in the grid (the heading
+  names the class), its class pooled, and overlaid whichever the *Color by* box says (Class by
+  default, Well); `_refresh_chips()` paints the instance list's chips to match, so that the list keys
+  the lines whenever they are colored by well.
 
 ### `map_page.py`
 
