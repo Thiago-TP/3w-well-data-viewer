@@ -467,7 +467,7 @@ one fault class, for the Instances map's DTW representation. Requires the `dtw` 
 
 ### `dispersion.py`
 
-Backs the two-sensor scatter/density view: reads an even subsample of every instance's rows (all analog sensors, label period, measurement genuineness) into one `Cloud` so changing the sensor pair, coloring or filters afterward is free.
+Backs the two-sensor scatter/density view: reads an even subsample of every instance's rows (all analog sensors, label period, measurement genuineness) into one `Cloud` so changing the sensor pair, coloring or filters afterward is free. Every instance gives about as many rows (`BUDGET // n_instances`, all of a shorter one), so the cloud, its density and `Pair.pearson()` weigh the instances alike rather than the samples: an approximation of the scope's coefficient over every sample, which the page's help and tooltip state (a `DispersionPass` built with a budget larger than the scope reads every row).
 
 - `InstanceRef` (frozen dataclass): identifies the instance/bar a cloud row came from.
 - `period_codes(class_values, offset)`: maps `class` values to period codes

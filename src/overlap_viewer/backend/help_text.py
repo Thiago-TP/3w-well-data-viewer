@@ -1381,7 +1381,16 @@ DISPERSION_NOTES = [
             "instant. At most 150,000 of the rows are drawn as dots, evenly; the density counts "
             "them all. The caption "
             "says how many dots of how many samples of how many instances are on show, one in how "
-            "many, and the top-left corner of the plot the Pearson coefficient over those very samples."
+            "many, and the top-left corner of the plot the Pearson coefficient over those very "
+            "samples.<br><br>"
+            "That coefficient is an approximation. The subsample takes about as many rows of every "
+            "instance, however long the instance is, so a long recording is thinned more than a "
+            "short one, and the cloud, its density and its coefficient weigh the instances alike "
+            "rather than the samples. Where the instances of a scope differ in length and in the "
+            "relation they show, the coefficient on the page strays from the coefficient over "
+            "every sample: over the transients of Hydrate in Production Line, P-MON-CKP × P-PDG "
+            "reads +0.71 on the page and +0.87 over every sample. Read it as a summary of the "
+            "cloud on show, not as the scope's own figure."
         ),
     ),
 ]

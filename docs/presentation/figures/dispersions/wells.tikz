@@ -1,0 +1,82 @@
+% Every well's Pearson coefficient of its class's pair, a dot per well in the
+% color the viewer's pages give it, one row per fault class and two panels per
+% label period, on every sample (all) and on the measurements alone
+% (measured), beside the coefficient of the class's samples pooled (the bar).
+% A well needs \dpMinSamples samples of a period for a dot; a coefficient on
+% fewer than \dpFew measurements is set apart, a hollow dot or an orange bar,
+% as the tables set it apart with \alert. The CSV tables beside this file are
+% written by scripts/dispersions.py: wells.csv (a row per dot: its class's
+% row, its panel, r, the well's color, whether few) and pooled.csv (a row per
+% bar). Panel 2k is period k on every sample, 2k+1 the same measured.
+\begin{tikzpicture}
+  \pgfplotsset{
+    dp panel/.style={
+      scale only axis, width=16mm, height=38mm, anchor=south west,
+      xmin=-1.15, xmax=1.15, ymin=-0.6, ymax=8.6, y dir=reverse,
+      xtick={-1,0,1}, xticklabels={\textminus1,0,+1}, ytick={0,...,8}, yticklabels={},
+      tick label style={font=\tiny, text=ws3wbrown}, tick style={draw=none},
+      title style={font=\tiny, text=ws3wbrown, yshift=-1.5mm},
+      % The y axis kept for the names of the classes, its line hidden.
+      axis x line*=bottom, axis y line*=left, x axis line style={draw=ws3wgrey},
+      y axis line style={draw=none},
+      ymajorgrids, grid style={draw=ws3wgrey!50, line width=.2pt},
+      clip=false,
+    },
+    % One well: a dot in its color, read off the table (scripts/faults.py and
+    % this script take the colors from palette.well_colors), hollow when few.
+    dp dots/.style={
+      only marks, scatter, mark=*, mark size=1.15pt,
+      visualization depends on={value \thisrow{color} \as \dpcolor},
+      visualization depends on={value \thisrow{few} \as \dpfewdot},
+      scatter/@pre marker code/.code={%
+        \definecolor{dpwell}{HTML}{\dpcolor}%
+        \ifnum\dpfewdot=1
+          \tikzset{dp mark/.style={fill=white, draw=dpwell, line width=.45pt}}%
+        \else
+          \tikzset{dp mark/.style={fill=dpwell, draw=white, line width=.15pt}}%
+        \fi
+        \scope[dp mark]},
+      scatter/@post marker code/.code={\endscope},
+    },
+    % The class's samples pooled: a bar across the row, orange when few.
+    dp pooled/.style={
+      only marks, scatter, mark=|, mark size=3.2pt,
+      visualization depends on={value \thisrow{few} \as \dpfewbar},
+      scatter/@pre marker code/.code={%
+        \ifnum\dpfewbar=1
+          \tikzset{dp mark/.style={draw=ws3worange, line width=.9pt}}%
+        \else
+          \tikzset{dp mark/.style={draw=ws3wnavy, line width=.9pt}}%
+        \fi
+        \scope[dp mark]},
+      scatter/@post marker code/.code={\endscope},
+    },
+  }
+  % What every panel draws: the zero line, the wells, the pooled bar.
+  \newcommand{\dppanel}[1]{%
+    \draw [ws3wbrown!40] (axis cs:0,-0.6) -- (axis cs:0,8.6);
+    \addplot [dp dots] table [x=r, y=row, restrict expr to domain={\thisrow{panel}}{#1:#1}]
+      {figures/dispersions/wells.csv};
+    \addplot [dp pooled] table [x=pooled, y=row, restrict expr to domain={\thisrow{panel}}{#1:#1}]
+      {figures/dispersions/pooled.csv};
+  }
+  % The six panels, side by side, 2.5 mm apart within a period and 6 mm
+  % between periods; the first names the classes.
+  \begin{axis}[dp panel, name=p0, at={(0,0)}, title={all},
+               yticklabels from table={tables/dispersions/pairs.csv}{name},
+               y tick label style={font=\tiny, text=ws3wnavy}]
+    \dppanel{0}
+  \end{axis}
+  \pgfplotsinvokeforeach{1,...,5}{
+    \begin{axis}[dp panel, name=p#1, at={({#1*18.5mm + floor(#1/2)*3.5mm}, 0)},
+                 title={\ifodd#1 measured\else all\fi}]
+      \dppanel{#1}
+    \end{axis}
+  }
+  % The periods over their two panels, a rule beneath as in the tables.
+  \foreach \k/\l/\period in {0/1/Normal operation, 2/3/Transient, 4/5/Steady state} {
+    \draw [ws3wbrown!60, line width=.3pt] ([yshift=4mm]p\k.north west)
+      -- node [above, font=\tiny\bfseries, text=ws3wnavy, inner sep=1.5pt] {\period}
+      ([yshift=4mm]p\l.north east);
+  }
+\end{tikzpicture}

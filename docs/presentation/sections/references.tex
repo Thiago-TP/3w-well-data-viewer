@@ -1,0 +1,30 @@
+%% References: the works the slides cite, the 3W 2.0.0 paper and Vargas's
+%% thesis, whose signatures of the faults (src/overlap_viewer/backend/config.py:
+%% FAULT_SIGNATURES, BEST_EFFORT_SIGNATURES) the Faults and Dispersions
+%% sections read. Two entries, set here without a .bib file; \cite{vargas2026}
+%% and \cite{vargas2019} resolve on the second pass, which latexmk runs anyway.
+
+\begin{frame}{References}
+  \setbeamertemplate{bibliography item}{\insertbiblabel}
+
+  \small
+
+  \vskip 7mm
+
+  \begin{thebibliography}{9}
+    \bibitem{vargas2026}
+      R.~E.~V. Vargas, A.~J. de~Melo~J\'unior, C.~B. de~Campos~Lima et~al.
+      \newblock \textbf{3W Dataset 2.0.0: a realistic and public dataset with rare undesirable real events in oil wells}.
+      \newblock \emph{Scientific Data} 13, 949 (2026).
+      \newblock \href{https://doi.org/10.1038/s41597-026-07225-z}{doi:10.1038/s41597-026-07225-z}
+
+  \vskip 7mm
+
+    \bibitem{vargas2019}
+      R.~E.~V. Vargas.
+      \newblock \textbf{Base de dados e benchmarks para prognóstico de anomalias em sistemas de
+        elevação de petróleo}.
+      \newblock Doctoral thesis, Universidade Federal do Espírito Santo, Vitória (2019).
+      \newblock \url{http://repositorio.ufes.br/handle/10/13455}
+  \end{thebibliography}
+\end{frame}

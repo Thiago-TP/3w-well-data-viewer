@@ -100,8 +100,16 @@ PERIODS_TIP = (
 )
 DENSITY_TIP = (
     "Shade the plane behind the dots by how many samples fall in each cell of a grid, darker for "
-    "more, on a logarithmic scale; the dots are an even subsample of the samples, the density "
-    "counts them all."
+    "more, on a logarithmic scale; the dots are an even subsample of the rows the page keeps of "
+    "the scope, the density counts them all."
+)
+PEARSON_TIP = (
+    "Pearson's coefficient over the samples on show: the rows the page keeps of the scope, in the "
+    "label periods ticked. It keeps about as many rows of every instance, however long the "
+    "instance is, so the coefficient weighs the instances alike rather than the samples: an "
+    "approximation of the coefficient over every sample, which can stray from it when the "
+    "instances differ in length (over the transients of Hydrate in Production Line, "
+    "P-MON-CKP × P-PDG reads +0.71 here and +0.87 over every sample)."
 )
 
 
@@ -668,6 +676,7 @@ class DispersionPage(QWidget):
             frac=(0.0, 1.0),
             anchor=(-0.03, -0.25),
         )
+        self._pearson.setToolTip(PEARSON_TIP)
         self._pearson.attach(self._plot_widget.getPlotItem())
 
     def _summary_text(self, pair: di.Pair) -> str:

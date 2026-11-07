@@ -1,0 +1,38 @@
+%% Dispersions page: how do sensors correlate across faults?
+%%
+%% Every figure quoted here is a macro of figures/dispersions/numbers.tex; the
+%% chart is figures/dispersions/wells.tikz, reading the CSV tables beside it;
+%% the tabulars of the appendix, tables/dispersions/pairs.tex and
+%% tables/appendix/wells.tex, read theirs. All are written by
+%% scripts/dispersions.py (see README.md), from the files of 3W. One frame:
+%% each fault's pair of sensors, well by well and pooled, over its three label
+%% periods, on every sample and on the measurements alone; the appendix sets
+%% the same as tables, every fault's then every well's.
+
+\input{figures/dispersions/numbers}
+
+\newcommand{\dpquestion}{\wspage{Dispersions page} \raisebox{.75pt}{$\blacktriangleright$}~How do sensors correlate across faults?}
+
+% The cells of the coefficient tables: no coefficient; how many samples a
+% coefficient on the measurements alone rests on (\dpn; \dpcount bare, for a
+% count set apart); a coefficient and count resting on fewer than \dpFew, set
+% apart; and a sensor of a pair that not every instance records live.
+\newcommand{\dpnil}{--}
+\newcommand{\dpcount}[1]{(\pgfmathprintnumber[fixed, precision=0, 1000 sep={,}]{#1})}
+\newcommand{\dpn}[1]{{\color{ws3wbrown}\dpcount{#1}}}
+\newcommand{\dpfew}[1]{\alert{#1}}
+\newcommand{\dpsig}{\textsuperscript{\textdagger}}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Comparing wells}
+  \framesubtitle{\dpquestion}
+  \centering
+  {\scriptsize\color{ws3wbrown} Each fault's pair \hyperlink{pairs}{\beamergotobutton{Appendix}}: a dot per well in its color on the
+  viewer's pages, hollow on fewer than \dpFew{} measurements; a bar for the fault's samples
+  pooled, \alert{orange} on fewer than \dpFew{} measurements\par}
+  \vskip 1mm
+  \input{figures/dispersions/wells.tikz}\par
+  \vskip 3mm
+  \alert{Pooled, a coefficient measures the gaps between wells.}
+  
+\end{frame}

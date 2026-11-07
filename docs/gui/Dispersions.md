@@ -33,6 +33,12 @@ the measurements alone
   between them: over the severe-slugging instances P-TPT × T-TPT reads +0.40 on every sample and
   +0.95 on the 5 % at which both were measured. The caption gives the counts, one in how many; the
   Pearson coefficient over the samples on show sits in the top-left corner of the plot.
+- **The coefficient is an approximation.** The subsample takes about as many rows of every
+  instance, however long the instance is, so the cloud, its density and the coefficient in the
+  corner weigh the instances alike rather than the samples. Where the instances of a scope differ
+  in length and in the relation they show, the coefficient strays from the one over every sample:
+  over the transients of Hydrate in Production Line, P-MON-CKP × P-PDG reads +0.71 on the page and
+  +0.87 over every sample. The box's tooltip and the help say the same.
 - **Hover** a dot for its instance, its instant, its label period, its two readings and whether
   each was measured or filled in. Every other dot of that instance is brought forward and the rest
   of the cloud fades, so one recording's trajectory through the plane can be followed with the

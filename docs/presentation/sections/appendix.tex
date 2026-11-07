@@ -13,6 +13,10 @@
 %%
 %% Faults and Features: the well state under the labels of every real Hydrate
 %% in Production Line, from tables/faults/hydrate.csv.
+%%
+%% Dispersions: every fault's coefficients of its pair, pooled, by label
+%% period, on every sample and measured, from tables/dispersions/pairs.csv;
+%% then every well's, from tables/appendix/wells.csv.
 
 \pgfplotstableread{tables/appendix/changes.csv}\apchanges
 
@@ -86,4 +90,59 @@
   \framesubtitle{\faquestion}
   \centering\footnotesize
   \input{tables/faults/hydrate}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+% The Dispersions section: every fault's coefficients, pooled; then every
+% well's, faults 1 to 5 (19 rows), 6 to 8 (17) and 9 (15), the first two
+% frames closing their tables themselves, the table's last row the third's.
+\begin{frame}[label=pairs]{Appendix: every fault's coefficients}
+  \framesubtitle{\dpquestion}
+  \centering
+  {%
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \def\arraystretch{1.5}
+    \input{tables/dispersions/pairs}
+    \vskip 1mm
+    \begin{description}
+      \item [Pair] of best covering variables available in all instances of a fault
+      \item [\dpsig{}] instances of a fault don't share a pair and defaulted to the best covered of its
+        signature~\cite{vargas2026, vargas2019}
+      \item [all] Pearson's coefficient over every plausible sample of the period, pooled over
+        the fault's instances
+      \item [measured] over the samples at which both were measured, their count in brackets,
+        \dpfew{set apart} below \dpFew
+    \end{description}
+  }
+\end{frame}
+
+\begin{frame}{Appendix: every well's coefficients (1 of 3)}
+  \framesubtitle{\dpquestion}
+  \centering\tiny
+  \def\arraystretch{1.4}
+  \setlength{\tabcolsep}{3pt}
+  \pgfplotstableset{dp rows/.style={skip rows between index={19}{1000},
+                                    every row no 18/.style={after row=\bottomrule}}}
+  \input{tables/appendix/wells}
+\end{frame}
+
+\begin{frame}{Appendix: every well's coefficients (2 of 3)}
+  \framesubtitle{\dpquestion}
+  \centering\tiny
+  \def\arraystretch{1.5}
+  \setlength{\tabcolsep}{3pt}
+  \pgfplotstableset{dp rows/.style={skip rows between index={0}{19},
+                                    skip rows between index={36}{1000},
+                                    every row no 35/.style={after row=\bottomrule}}}
+  \input{tables/appendix/wells}
+\end{frame}
+
+\begin{frame}{Appendix: every well's coefficients (3 of 3)}
+  \framesubtitle{\dpquestion}
+  \centering\tiny
+  \def\arraystretch{1.5}
+  \setlength{\tabcolsep}{3pt}
+  \pgfplotstableset{dp rows/.style={skip rows between index={0}{36}}}
+  \input{tables/appendix/wells}
 \end{frame}
