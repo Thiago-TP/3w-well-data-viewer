@@ -14,13 +14,20 @@ of the process; everything is an analysis of the catalogue, recomputed on every 
   the quantiles, the autocorrelation time, the signal-to-noise ratio, the Gaussianity slope and how
   it was measured (the profile pass commented in the note on sampling in the root README.md),
   one standardized column each; a sensor enters only if it is live in at least half of the points
-  (six on 3W 2.0.0), and a cell an instance lacks takes the column's median, the note under the
+  (five on 3W 2.0.0; T-JUS-CKP falls just short, live in 559 of the 1,119 instances once the
+  unlabeled samples are left out), and a cell an instance lacks takes the column's median, the note under the
   map saying how much was made up that way. *Shape only* leaves the levels out, so that the level
   of a well does not place its instances. *DTW of a sensor, within a class* is the 3W Toolkit's
   own comparison of instances, the dynamic time warping distance between the series of one sensor,
   each z-scored and averaged into 400 blocks first (a matter of cost, not the resampling of every
   instance to one length), under a window of a tenth of the length. A point clicked under it opens
   its instance window on that sensor alone.
+- Every representation reads an instance's **labeled samples** alone. The windows of a well that
+  overlap in time share samples, and on 3W 2.0.0 almost every shared instant is labeled in exactly
+  one of them and left unlabeled in the others; read whole, two overlapping windows would both
+  carry those readings and sit closer together than the recordings they were cut from, tightening
+  the clusters. Leaving the unlabeled samples out counts each shared instant once, in the window
+  whose experts labeled it; the note under the map says *labeled samples only*.
 - **on** chooses what the descriptors were taken over: *Interpolated*, the whole 1 Hz grid, most of
   whose samples the historian drew between the readings it archived, which is what a pipeline
   reads; or *Measurements*, the readings alone, which is what the process did. Interpolated, the

@@ -301,7 +301,8 @@ T-JUS-CKP is 36,000 on the grid and 1.5 on its measurements, and its autocorrela
 minutes to halve on the grid against 73 s on the measurements. The pass that finds this
 ([`backend/profiles.py`](src/overlap_viewer/backend/profiles.py)) reads every file in full once,
 about 100 s for the whole dataset, and keeps the result in the cache; it profiles every sensor of
-every instance and of every bar of the joined view as the merged recording it is, and computes the
+every instance (whole, and on its labeled samples alone, for the Instances map) and of every bar of
+the joined view as the merged recording it is, and computes the
 descriptors of each ([`algorithms/descriptors.py`](src/overlap_viewer/algorithms/descriptors.py):
 moments, quantiles, autocorrelation time, signal-to-noise ratio, Gaussianity, Melo's own set) both
 on the grid and on the measurements alone, so that wherever a figure taken on the grid is shown

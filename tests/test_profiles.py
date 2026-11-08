@@ -62,6 +62,7 @@ def test_the_profile_pass_reads_every_instance_once_and_every_bar_as_the_recordi
     assert calls and calls[-1] == (7, 7)  # every instance gone through, once
     assert list(table.columns) == pr.PROFILE_COLUMNS
     assert (table[table["scope"] == "instance"].shape[0]) == 7 * len(sensors)
+    assert (table[table["scope"] == "labeled"].shape[0]) == 7 * len(sensors)
     # Well 1's three windows join into one bar, well 2's two stay apart, well 3's two join.
     bars = table[table["scope"] == "bar"]
     assert sorted(set(zip(bars["well"], bars["bar"]))) == [(1, 0), (2, 0), (2, 1), (3, 0)]
@@ -107,6 +108,29 @@ def test_the_profile_pass_reads_every_instance_once_and_every_bar_as_the_recordi
     assert np.isnan(matrix[2]).all()
     assert profiles.row(("x", "nowhere"), "P-PDG") is None
     assert len(profiles.scope(joined=True)) == 4 * len(sensors)
+    # Every instance again on its labeled samples alone: the hydrate instance
+    # of well 2 leaves its 600 unlabeled leading seconds out (its pressure is
+    # missing there anyway), an instance labeled throughout reads as it stands.
+    hydrate = (9, f"WELL-00002_{hours(0):%Y%m%d%H%M%S}.parquet")
+    assert profiles.row(hydrate, "T-TPT")["n_total"] == 3600
+    labeled = profiles.matrix([hydrate, plain], False, "n_total", ["T-TPT"], labeled=True)
+    assert labeled[:, 0].tolist() == [3000, 7200]
+    assert profiles.matrix([hydrate], False, "n_valid", ["P-PDG"], labeled=True)[0, 0] == 1440
+    assert np.array_equal(
+        profiles.matrix([plain], False, "mean", labeled=True),
+        profiles.matrix([plain], False, "mean"),
+        equal_nan=True,
+    )
+    # The map reads that scope, and its note says so.
+    from overlap_viewer.algorithms import embedding as em
+
+    rep = em.feature_matrix(profiles, [hydrate, plain, key], False, info, labeled=True)
+    assert rep.note.endswith("labeled samples only")
+    # The bars have no labeled scope of their own: ``labeled`` leaves them be.
+    assert np.array_equal(
+        profiles.matrix([(3, 0)], True, "n_total", labeled=True),
+        profiles.matrix([(3, 0)], True, "n_total"),
+    )
     # The descriptors the pages offer are columns of the table, twice over (the
     # grid's and the measurements', ``_g``), and looked up by either key; the
     # unknown is NaN.
@@ -141,7 +165,7 @@ def test_the_profile_pass_reads_every_instance_once_and_every_bar_as_the_recordi
     calls.clear()
     fewer = pr.load_profiles(info, wells, sensors[:2], progress=progress)
     assert calls and fewer.sensors == sensors[:2]
-    assert len(fewer.table) == (7 + 4) * 2
+    assert len(fewer.table) == (7 + 4 + 7) * 2
 
 
 def test_the_availability_splits_a_live_cell_into_measured_and_filled(

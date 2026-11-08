@@ -159,7 +159,11 @@ time, SNR, Gaussianity, from `algorithms.descriptors`), computed twice, on the f
 the measurements alone. It also checks the order of the pressures along each line
 (`algorithms.consistency`), recording per sensor the samples out of order and the pressures it
 contradicts, and the well state against the valve states, recording per valve the samples that
-contradict the state and the states (`PROFILE_VERSION` 4). Cached as one long parquet table next to the catalogue.
+contradict the state and the states. Every instance is profiled a second time on its labeled samples
+alone (the `labeled` scope, keyed like an instance), which is what the Instances map reads: on 3W
+2.0.0 almost every sample two overlapping windows share is labeled in exactly one of them, so leaving
+the unlabeled samples out counts each shared instant once (`PROFILE_VERSION` 5). Cached as one long
+parquet table next to the catalogue.
 
 - `DescriptorChoice` (frozen dataclass): one of the five descriptors the Windows page offers as a
   statistic (autocorrelation time, SNR, Gaussianity slope, skewness, kurtosis), its grid column
@@ -167,11 +171,12 @@ contradict the state and the states (`PROFILE_VERSION` 4). Cached as one long pa
 - `profile_series(values, bounds, enumerated, step_s)`: profiles one sensor's array: strips
   implausible readings, classifies sample kinds, computes sampling and descriptors twice.
 - `profile_frame(frame, sensors, info)`: one profile row per sensor of one frame.
-- `scan_profiles(wells, sensors, info, progress=None)`: the full pass, over every instance and every
-  joined bar.
+- `labeled_part(frame)`: the samples of an instance whose `class` is known.
+- `scan_profiles(wells, sensors, info, progress=None)`: the full pass, over every instance (whole and
+  on its labeled samples) and every joined bar.
 - `Profiles` (dataclass): the loaded table, with lookup indexes; methods `row(key, sensor, joined)`,
   `descriptor(key, sensor, column, joined)`, `sampling(key, sensor, joined)`, `matrix(keys, joined,
-  column, sensors=None)`, `order_partners(key, sensor, joined)`, `state_conflicts(key, sensor,
+  column, sensors=None, labeled=False)`, `order_partners(key, sensor, joined)`, `state_conflicts(key, sensor,
   joined)`, `scope(joined)`.
 - `load_profiles(info, wells, sensors, use_cache=True, progress=None, cache_only=False)`: the
   cache-aware entry point, validated by listing digest, sensor set and `PROFILE_VERSION`; with
@@ -440,8 +445,9 @@ ground truth, computes **typicality** (distance to the class medoid) and runs a 
 (one-class SVM trained on normal instances).
 
 - `Representation` (dataclass): `keys, X, columns, distances, imputed, sensors`; property `metric`.
-- `feature_matrix(profiles, keys, joined, info, shape_only, measured, min_coverage)`: builds the
-  standardized descriptor representation.
+- `feature_matrix(profiles, keys, joined, info, shape_only, measured, min_coverage, labeled)`: builds
+  the standardized descriptor representation; `labeled` reads the instances on their labeled samples
+  alone, as the map does.
 - `pca(X, n_components=2)` / `classical_mds(D, n_components=2)`: the two numpy-only embeddings.
 - `embed(rep, method)`: dispatches to PCA/MDS, t-SNE (`analysis` extra) or UMAP (`umap` extra).
 - `embedding_available(method)`: `None` if it can run, else a message naming the missing extra.
