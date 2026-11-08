@@ -3,7 +3,7 @@
 Usage
 -----
     overlap-viewer [--raw-dir PATH] [--no-cache] [--gap-hours H] [--columns N]
-                   [--theme MODE]
+                   [--theme MODE] [--verbose | --no-verbose]
 
 The dataset root is taken from ``--raw-dir``, else from the
 ``OVERLAP_VIEWER_RAW_DATA_DIR`` environment variable, else from the usual relative
@@ -98,6 +98,13 @@ def parse_args(argv=None) -> argparse.Namespace:
         default=None,
         help="color mode of the windows and the plots (default: the last one chosen)",
     )
+    parser.add_argument(
+        "--verbose",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="show the hints, subtitles and notes that explain each page (default: the last "
+        "choice of the Verbose button)",
+    )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return parser.parse_args(argv)
 
@@ -139,6 +146,7 @@ def build_window(args: argparse.Namespace, launch: bool = False) -> MainWindow |
             gap_hours=args.gap_hours,
             columns=args.columns,
             theme_mode=mode,
+            verbose=styling.saved_verbose() if args.verbose is None else args.verbose,
             progress=bar.step if bar else None,
         )
         if bar is not None:

@@ -48,7 +48,15 @@ def main_window(raw_dir: Path):
     app.setOrganizationName(styling.SETTINGS[0])
     app.setApplicationName(styling.SETTINGS[1])
     app.setStyle("Fusion")
-    window = build_window(parse_args(["--raw-dir", str(raw_dir), "--theme", "light"]))
+    # Arial, as the crops were first taken in (the offscreen platform's own
+    # fallback is wider, and the bars' labels then drop their seconds).
+    font = app.font()
+    font.setFamily("Arial")
+    app.setFont(font)
+    # Not verbose: a slide shows what the viewer draws, and says the rest itself.
+    window = build_window(
+        parse_args(["--raw-dir", str(raw_dir), "--theme", "light", "--no-verbose"])
+    )
     if window is None:
         raise SystemExit("could not build the viewer's window")
     window.resize(1600, 900)

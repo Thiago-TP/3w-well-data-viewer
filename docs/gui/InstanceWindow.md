@@ -23,8 +23,17 @@ trace). A band at the top marks the stretches recorded by two or more of the bar
   stays green inside a recording that goes on to develop a fault. Stacked slices also become
   unreadably thin long before seventy of them; one block does not.
 - **Options**, first in the toolbar, shows and hides **Theme**, **Join overlapping instances** and
-  the Views row; the actions, **Features** and **Statistics** stay in view. A window opens with them
-  hidden.
+  the Views row; the actions, **Features**, **Statistics** and **Verbose** stay in view. A window
+  opens with them hidden.
+- **Verbose**, at the right of the toolbar, shows or hides the text that explains rather than shows:
+  the hint in the status bar, the second line of the heading, the details beside each instance's
+  name (the Toolkit's verdict, the times, the level, the samples per label period, the
+  measurements), the figures written inside the plots and the note under the features. Off, each
+  instance keeps its name, its colors and the name of its fault, and a warning keeps its name
+  (*⚠ outside the plausible range*, *⚠ pressures out of order*, *⚠ state against valves*) without
+  its details, which still stand inside the plot of the sensor they concern. A window opens as the
+  main window's **Verbose** is and follows it when it changes; this button changes this window
+  alone.
 - **Join overlapping instances** is also a checkbox in this window's own toolbar, and **the group a
   window opens on is all it is ever about**: the box merges exactly the instances on screen, so it
   answers what this group alone amounts to rather than what the whole well does. Two of them that

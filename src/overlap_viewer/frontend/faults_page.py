@@ -256,6 +256,9 @@ class FaultsPage(SeriesPage):
         """Take the colors of the theme now in force; ``set_catalogue`` redraws the plots after it."""
         self._restyle()
 
+    def verbose_widgets(self) -> list[QWidget]:
+        return [self._feature_note, self._instance_note]
+
     # -- data
 
     def set_catalogue(self, catalogue: pd.DataFrame, wells: list[WellData]) -> None:

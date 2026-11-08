@@ -33,6 +33,15 @@ Every page, and every instance window, opens on what it shows: the controls of h
 behind an **Options** button at the left of its toolbar, and only what picks the data on show (a
 fault, a sensor, a well, a scope) stays in view until it is clicked.
 
+The **Verbose** button, beside the theme in the main toolbar, shows or hides the text that explains
+rather than shows: the hint in the status bar, the subtitles that spell out what a figure is (the
+summary beside each well's name, the title of the availability matrix, the counts in a section's
+heading, the line under a plot), the notes under the side panels and the figures written inside the
+plots. The keys, the counts of what is drawn, the warnings and the reading under the pointer stay
+either way. Off, a page is quieter for a first look; the choice is remembered. Every instance window
+opens as the main window is and follows it when it changes, and has a **Verbose** button of its own
+that changes that window alone.
+
 Furthermore, an *instance window* is available for visualizing the signals and labeling of an instance (see [the color code](docs/gui/ColorCode.md)).
 This window can be accessed whenever user clicks on a representation of an instance (horizontal bar in the Timelines page, points in cluster maps, etc.), and is [documented in detail](docs/gui/InstanceWindow.md).
 Last but not least, `F1` anywhere (or clicking on `Help`) opens the Help modal, which explains what is on screen.
@@ -114,6 +123,7 @@ equivalent entry points.
 | `--columns N`    | 1                   | plots per row of the timelines (1 to 4)                                         |
 | `--gap-hours H`  | 12                  | a silence at least this long splits a well's recording into two bursts          |
 | `--theme MODE`   | the last one chosen | `light`, `dark`, or `system` to follow the desktop                        |
+| `--verbose`, `--no-verbose` | the last one chosen | show or hide the hints, subtitles and notes that explain each page (the **Verbose** button) |
 | `--no-cache`     | off                 | read every instance again instead of using the cached catalogue                 |
 
 The first launch reads the time span and labels of every real instance, and what every sensor

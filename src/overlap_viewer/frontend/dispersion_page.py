@@ -274,6 +274,10 @@ class DispersionPage(QWidget):
         restyle_axes(self._plot_widget.getPlotItem())
         self._note.setStyleSheet(f"color: {colors.muted}; font-size: 8pt;")
 
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide the line under the plot that says what was read and how."""
+        self._note.setVisible(bool(verbose))
+
     def apply_theme(self) -> None:
         self._restyle()
         self._key.apply_theme()

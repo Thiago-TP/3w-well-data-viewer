@@ -10,6 +10,13 @@ The bars are hidden whole, never their controls one by one: a page's own rules
 for which of its controls are on show (a box only the pair map uses, one only
 the DTW representation) keep working underneath, and come back as they were
 when the options do.
+
+The *Verbose* button is the other half of a quiet first look: with it off, the
+pages and the instance windows leave out the text that explains rather than
+shows (the hint of the status bar, the subtitles that spell out what a figure
+is, the notes under the panels, the figures written inside the plots), and keep
+what a reader acts on: the keys, the counts of what is drawn, the warnings and
+whatever the pointer is over.
 """
 
 from PySide6.QtCore import Qt
@@ -20,6 +27,24 @@ OPTIONS_TIP = (
     "Show or hide the options of this page: how what it shows is drawn. What picks the data "
     "stays in view either way."
 )
+
+
+VERBOSE_TIP = (
+    "Show or hide the text that explains rather than shows: the hint in the status bar, the "
+    "subtitles that spell out what a figure is, the notes under the panels and the figures "
+    "written inside the plots. The keys, the counts of what is drawn, the warnings and what the "
+    "pointer is over stay either way."
+)
+
+
+class VerboseAction(QAction):
+    """A checkable *Verbose* action: checked, the explanations are on show."""
+
+    def __init__(self, parent, checked: bool = True, tip: str = VERBOSE_TIP):
+        super().__init__("Verbose", parent)
+        self.setCheckable(True)
+        self.setChecked(checked)
+        self.setToolTip(tip)
 
 
 class OptionsAction(QAction):

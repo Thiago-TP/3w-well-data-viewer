@@ -290,6 +290,9 @@ class FeaturesPage(SeriesPage):
         for note in (self._class_note, self._instance_note, self._note):
             note.setStyleSheet(f"color: {colors.muted}; font-size: 8pt;")
 
+    def verbose_widgets(self) -> list[QWidget]:
+        return [self._class_note, self._instance_note]
+
     def apply_theme(self) -> None:
         """Take the colors of the theme now in force; ``set_catalogue`` redraws the plots after it."""
         self._restyle()

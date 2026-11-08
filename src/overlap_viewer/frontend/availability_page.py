@@ -191,6 +191,10 @@ class AvailabilityPage(QWidget):
         heading_layout.addWidget(self._title, 1)
         heading_layout.addWidget(self._key, 0, Qt.AlignmentFlag.AlignTop)
         heading_layout.addWidget(self._pair_key, 0, Qt.AlignmentFlag.AlignTop)
+        # Takes the room the title leaves when it is hidden (``set_verbose``),
+        # so that the key keeps to the left rather than floating mid-row.
+        heading_layout.addStretch(0)
+        self._heading_layout = heading_layout
         layout.addWidget(heading)
 
         self._heatmap = HeatmapWidget()
@@ -406,6 +410,11 @@ class AvailabilityPage(QWidget):
         self._order.blockSignals(False)
 
     # -- appearance
+
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide the title that spells out what the matrix holds; its key stays."""
+        self._title.setVisible(bool(verbose))
+        self._heading_layout.setStretch(self._heading_layout.count() - 1, 0 if verbose else 1)
 
     def apply_theme(self) -> None:
         """Take the colors of the theme now in force: the keys, the title, the matrix."""
