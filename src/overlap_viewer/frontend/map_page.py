@@ -408,6 +408,11 @@ class MapPage(QWidget):
         self._audit_note.setStyleSheet(f"color: {colors.muted}; font-size: 8pt;")
         self._scores_label.setStyleSheet(f"color: {colors.muted};")
 
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide the note under the map and the one under the label audit."""
+        for note in (self._note, self._audit_note):
+            note.setVisible(bool(verbose))
+
     def apply_theme(self) -> None:
         """Take the colors of the theme now in force: the plot, the points, and the audit's headings.
 

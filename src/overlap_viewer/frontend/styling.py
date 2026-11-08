@@ -34,6 +34,7 @@ from overlap_viewer.backend.theme import Theme
 
 SETTINGS = ("3w-well-data-viewer", "3W Well Data Viewer")  # organization, application
 THEME_KEY = "appearance/theme"
+VERBOSE_KEY = "appearance/verbose"
 
 # Qt's own name for each mode. ``Unknown`` is not a failure: it is what tells Qt
 # to stop overriding the desktop and report the scheme the desktop asks for,
@@ -50,6 +51,18 @@ def saved_mode(default: str = "system") -> str:
 def save_mode(mode: str) -> None:
     """Remember ``mode`` for the next run."""
     QSettings(*SETTINGS).setValue(THEME_KEY, mode)
+
+
+def saved_verbose(default: bool = True) -> bool:
+    """Whether the last run showed the hints and the notes, or ``default`` if it said nothing."""
+    value = QSettings(*SETTINGS).value(VERBOSE_KEY, default)
+    # QSettings hands a boolean back as the string it wrote on some platforms.
+    return value if isinstance(value, bool) else str(value).lower() == "true"
+
+
+def save_verbose(verbose: bool) -> None:
+    """Remember the verbosity for the next run."""
+    QSettings(*SETTINGS).setValue(VERBOSE_KEY, bool(verbose))
 
 
 def resolve(mode: str) -> str:

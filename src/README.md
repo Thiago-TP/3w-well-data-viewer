@@ -683,6 +683,11 @@ toggles of the side panels stay in view.
   action of a toolbar that also holds what stays in view), hidden until the button is checked.
   Whole toolbars are hidden rather than their controls one by one, so a page's own rules for which
   of its controls are on show keep working underneath.
+- `VerboseAction(QAction)`: the checkable *Verbose* button of the main window and of every instance
+  window; checked, the hints, subtitles, notes and in-plot figures are on show. Every page answers
+  `set_verbose(verbose)` by hiding its notes (`SeriesPage.verbose_widgets()` names those of the
+  Faults and Features pages) or by writing its subtitles terse (the Timelines' well titles, the
+  series pages' section headings, kept in both forms so the switch is a change of text).
 - `toolbar(name)`: a fixed toolbar, the kind every row of a page is made of.
 - `bar_row(*bars, trailing=None)`: toolbars side by side as one row, `trailing` at its right end;
   a page splits its first row into what stays in view, what *Options* hides, and its panel
@@ -863,6 +868,9 @@ window.
   class/model bands, per-feature trace + optional histogram/spectrum row). `_refresh_stretch()`
   recomputes histograms/spectra for the on-screen time range as the user pans and zooms.
   `set_model_results(results)` adds the model band once outputs are loaded.
+  `set_verbose(verbose)` shows or hides the window's explanations (the hint, the heading's second
+  line, the details of each block's header, the figures inside the plots, the feature note) and
+  lays the stack out again; it opens with the main window's and follows its changes.
   `show_statistics()` opens the statistics table on the sensors ticked, fed by `_statistics_rows`
   (the readings of every block in their shown unit, the stretch on screen or the measurements
   alone when asked); `_on_range_settled()`, after every pan and zoom, recounts it when it describes
@@ -881,7 +889,7 @@ column per figure of `descriptors.SUMMARY`.
 ### `window.py`
 
 The main application window: hosts the seven pages as tabs, owns what they all share (theme control,
-rescan, help, status bar, the passes, model-output loading) and opens
+the *Verbose* button, rescan, help, status bar, the passes, model-output loading) and opens
 `InstanceWindow`s on request.
 
 - `MainWindow(QMainWindow)`: builds all seven pages sharing one `Passes` and `FrameCache`, and wires
@@ -890,6 +898,8 @@ rescan, help, status bar, the passes, model-output loading) and opens
   window. `set_theme_mode(mode)` persists the mode and lays the page on show out again, leaving
   the other pages stale until they are next shown (`set_catalogue(lazy=True)`, `_on_page_changed`):
   pyqtgraph bakes colors in at build time, so a theme change cannot be repainted in place, and
-  laying every page out at once was most of a nine-second switch. `open_instances(data, index,
+  laying every page out at once was most of a nine-second switch. `set_verbose(verbose)` persists
+  the choice, hands it to every page and every open instance window, and blanks the status bar's
+  hint (not what the pointer is over) when it is off. `open_instances(data, index,
   features)` constructs and tracks an `InstanceWindow`, on the sensors a page asked for when it
   asked for any (`_open_on_feature` for one).

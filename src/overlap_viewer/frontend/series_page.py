@@ -397,6 +397,11 @@ class SeriesPage(QWidget):
         self._hover = -1
         self._x_range: tuple[float, float] | None = None
         self._model_results = None  # the model outputs loaded, once they are
+        # Whether the headings and the notes explain; and every section heading
+        # with its full and its terse text, so that a change of verbosity is a
+        # change of text and not a new layout.
+        self.verbose = True
+        self._headings: list[tuple[HeaderLabel, str, str]] = []
         self._sort: QComboBox | None = None
         self._shading: QComboBox | None = None
         self._shading_label: QLabel | None = None
@@ -1089,6 +1094,7 @@ class SeriesPage(QWidget):
     def _lay_out(self) -> None:
         stack = self._stack
         stack.clear()
+        self._headings = []
         self._plots = []
         self._plot_features = []
         self._curves = {i: [] for i in range(len(self._series))}
@@ -1206,8 +1212,11 @@ class SeriesPage(QWidget):
 
             heading = HeaderLabel(justify="left")
             counts = [sample_counts(y, kinds) for _i, _x, y, kinds in prepared]
-            heading.setText(
-                self._section_html(section, normalize, len(prepared), len(members), counts)
+            self._set_heading(
+                heading,
+                section,
+                self._section_html(section, normalize, len(prepared), len(members), counts),
+                normalize,
             )
             heading.setFixedHeight(SECTION_PX)
             self._stack.addItem(heading, row=row, col=0, colspan=columns)
@@ -1456,14 +1465,17 @@ class SeriesPage(QWidget):
             rows = prepared[section.key]
             hist_bounds = self.hist_bounds(feature, normalize)
             heading = HeaderLabel(justify="left")
-            heading.setText(
+            self._set_heading(
+                heading,
+                section,
                 self._section_html(
                     section,
                     normalize,
                     len(rows),
                     len(self._drawn_members(section)),
                     self._section_counts.get(section.key, []),
-                )
+                ),
+                normalize,
             )
             heading.setFixedHeight(SECTION_PX)
             self._stack.addItem(heading, row=row, col=0, colspan=columns)
@@ -1583,6 +1595,32 @@ class SeriesPage(QWidget):
             height += n_rows * SMALL_PLOT_PX + SMALL_AXIS_PX + 8
         return height + 8
 
+    def _set_heading(
+        self, heading: HeaderLabel, section: Section, full: str, normalize: bool
+    ) -> None:
+        """Give a section its heading, full or terse as the page is verbose, and keep both."""
+        terse = self._section_head_html(section, normalize)
+        self._headings.append((heading, full, terse))
+        heading.setText(full if self.verbose else terse)
+
+    def verbose_widgets(self) -> list[QWidget]:
+        """The notes the page hides when it is not verbose; a subclass names its own."""
+        return []
+
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide the notes under the panels and the counts in the section headings."""
+        self.verbose = bool(verbose)
+        for widget in self.verbose_widgets():
+            widget.setVisible(self.verbose)
+        for heading, full, terse in self._headings:
+            heading.setText(full if self.verbose else terse)
+
+    def _section_head_html(self, section: Section, normalize: bool) -> str:
+        """The bold start of a section's heading: what it groups, in which unit."""
+        unit = "z-score" if normalize else self.info.shown_unit(section.feature)
+        head = f"{section.title}" + (f" [{unit}]" if unit else "")
+        return f'<span style="font-size:10pt; color:{theme.current().text};"><b>{head}</b></span>'
+
     def _section_html(
         self,
         section: Section,
@@ -1598,8 +1636,6 @@ class SeriesPage(QWidget):
         archived.
         """
         colors = theme.current()
-        unit = "z-score" if normalize else self.info.shown_unit(section.feature)
-        head = f"{section.title}" + (f" [{unit}]" if unit else "")
         what = {
             "time": "value axis",
             "distribution": "share axis",
@@ -1609,8 +1645,8 @@ class SeriesPage(QWidget):
         if self.domain == "spectrum":
             axis += ", the period along the bottom"
         return (
-            f'<span style="font-size:10pt; color:{colors.text};"><b>{head}</b></span>'
-            f'<span style="font-size:8pt; color:{colors.muted};">&nbsp;&nbsp;'
+            self._section_head_html(section, normalize)
+            + f'<span style="font-size:8pt; color:{colors.muted};">&nbsp;&nbsp;'
             f"{drawn} of {total} instances{self._counts_text(counts)} | {axis}"
             f"{self.section_note(section, drawn, total)}</span>"
         )

@@ -347,6 +347,7 @@ class WindowsPage(QWidget):
         self._caption = ElidedLabel("")
         self._caption.setContentsMargins(8, 0, 8, 0)
         layout.addWidget(self._caption)
+        self.verbose = True  # whether the caption and the detail's heading explain
 
         self._model = WindowsModel(self)
         self._table = QTableView()
@@ -559,6 +560,12 @@ class WindowsPage(QWidget):
         # given the new foreground themselves.
         restyle_axes(self._map.getPlotItem())
         self._caption.setStyleSheet(f"color: {colors.muted};")
+
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide the caption under the title and the heading of the instance in the detail."""
+        self.verbose = bool(verbose)
+        self._caption.setVisible(self.verbose)
+        self._draw_detail()
 
     def apply_theme(self) -> None:
         self._restyle()
@@ -1700,6 +1707,8 @@ class WindowsPage(QWidget):
             note += (
                 "<br>the hatched head repeats an earlier instance and is left out of the windows"
             )
+        if not self.verbose:
+            note = ""
         self._heading(self._detail, note, 0, 1)
         instance.setLabel("bottom", "hours since the instance's first sample")
         instance.getAxis("left").enableAutoSIPrefix(False)
