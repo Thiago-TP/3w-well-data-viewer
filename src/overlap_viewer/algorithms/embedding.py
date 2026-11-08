@@ -5,7 +5,9 @@ merged recording), never the window a pipeline cuts: 1,119 points, one per
 real instance of 3W 2.0.0, which is what a reader can hold in view and click
 on. An instance becomes a point through a **representation**:
 
-- its **descriptors** (``backend.profiles``): per sensor the moments, the
+- its **descriptors** (``backend.profiles``), taken on its labeled samples
+  alone, so that a stretch two overlapping windows share counts once, in the
+  window that labels it: per sensor the moments, the
   quantiles, the autocorrelation time, the signal-to-noise ratio, the
   Gaussianity slope, and how it was measured, either on the 1 Hz grid or on
   the measurements alone, which is the honest version wherever the
@@ -143,6 +145,7 @@ def feature_matrix(
     shape_only: bool = False,
     measured: bool = False,
     min_coverage: float = MIN_SENSOR_COVERAGE,
+    labeled: bool = False,
 ) -> Representation:
     """The descriptor representation of ``keys``: one standardized column per (sensor, descriptor).
 
@@ -150,15 +153,21 @@ def feature_matrix(
     ``min_coverage`` of the points; an enumerated variable contributes its
     mean alone, the share of the time the valve was open. ``measured`` reads
     the descriptors taken on the measurements rather than on the grid
-    (``backend.profiles``). Missing cells (the sensor absent or frozen in
+    (``backend.profiles``), and ``labeled`` those of the instances on their
+    labeled samples alone, which keeps the samples two overlapping windows
+    share from pulling them together. Missing cells (the sensor absent or frozen in
     that instance) take the column's median, and ``imputed`` remembers how
     much of each point was made up that way. Columns that never move are
     dropped; the rest are standardized.
     """
     keys = list(keys)
     sensors = list(profiles.sensors)
-    n_valid = profiles.matrix(keys, joined, "n_valid", sensors)
-    std = profiles.matrix(keys, joined, "std", sensors)
+
+    def column(field_name: str, names: Sequence[str]) -> np.ndarray:
+        return profiles.matrix(keys, joined, field_name, names, labeled=labeled)
+
+    n_valid = column("n_valid", sensors)
+    std = column("std", sensors)
     live = (np.nan_to_num(n_valid) > 0) & (np.nan_to_num(std) > 0)
     coverage = live.mean(axis=0) if len(keys) else np.zeros(len(sensors))
     taken = [j for j, name in enumerate(sensors) if coverage[j] >= min_coverage]
@@ -174,16 +183,16 @@ def feature_matrix(
             fields = SHAPE_FIELDS if shape_only else LEVEL_FIELDS + SHAPE_FIELDS
             sampling = SAMPLING_FIELDS
         for field_name in fields:
-            values = profiles.matrix(keys, joined, field_name + suffix, [name])[:, 0]
+            values = column(field_name + suffix, [name])[:, 0]
             values = np.where(live[:, j], values, np.nan)
             blocks.append(_transform(field_name, values))
             columns.append(f"{name} | {field_name}")
         for field_name in sampling:
             if field_name == "genuine_share":
-                genuine = profiles.matrix(keys, joined, "n_genuine", [name])[:, 0]
+                genuine = column("n_genuine", [name])[:, 0]
                 values = np.where(n_valid[:, j] > 0, genuine / np.maximum(n_valid[:, j], 1), np.nan)
             else:
-                values = profiles.matrix(keys, joined, "spacing_s", [name])[:, 0]
+                values = column("spacing_s", [name])[:, 0]
             values = np.where(live[:, j], values, np.nan)
             blocks.append(_transform(field_name, values))
             columns.append(f"{name} | {field_name}")
@@ -198,6 +207,7 @@ def feature_matrix(
     note = (
         f"{len(kept_sensors)} sensors live in at least {min_coverage:.0%} of the points | "
         f"{len(kept_columns)} columns | {imputed.mean():.0%} of the cells imputed"
+        + (" | labeled samples only" if labeled and not joined else "")
     )
     return Representation(keys, X, kept_columns, None, imputed, kept_sensors, note)
 

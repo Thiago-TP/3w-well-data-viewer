@@ -5,7 +5,10 @@ time. This one looks at all of them at once, from above: each instance is a
 point, placed on the plane by an embedding of its **representation**
 (``algorithms.embedding``): the descriptors of its sensors, taken on the 1 Hz
 grid or on the measurements alone; the same less the levels; or the DTW
-distance between the instances of one class on one sensor. The points are
+distance between the instances of one class on one sensor. Every one of them
+is taken on the labeled samples of an instance alone: the windows of a well
+that overlap share samples, labeled in one window and not in the other, and
+counting them twice would pull the two points together. The points are
 colored by fault class, by well, by the cluster a clustering puts them in, by
 how typical an instance of its class each is, or by the verdict of a one-class
 model of the normal instances; hovering one names it, clicking one opens its
@@ -50,7 +53,7 @@ from overlap_viewer.backend import theme
 from overlap_viewer.backend.dataset import DatasetInfo, WellData, instance_title, well_label
 from overlap_viewer.backend.extras import missing
 from overlap_viewer.backend.palette import fault_color, tint, well_colors
-from overlap_viewer.backend.profiles import DESCRIPTOR_MODES, Profiles
+from overlap_viewer.backend.profiles import DESCRIPTOR_MODES, Profiles, labeled_part
 from overlap_viewer.frontend.heatmap import ramp_color
 from overlap_viewer.frontend.items import ScrollFriendlyViewBox, restyle_axes
 from overlap_viewer.frontend.loading import progress_dialog
@@ -83,7 +86,9 @@ REPRESENTATION_TIP = (
     "What an instance becomes a point by. Descriptors: per sensor the moments, the quantiles, "
     "the autocorrelation time, the signal-to-noise ratio, the Gaussianity slope and how it was "
     "measured, standardized column by column; a sensor enters only if it is live in at least half "
-    "of the points, and a cell the instance lacks takes the column's median. Shape only: the same "
+    "of the points, and a cell the instance lacks takes the column's median. Every representation "
+    "reads the labeled samples of an instance alone, so that a stretch two overlapping instances "
+    "share counts once, in the instance that labels it. Shape only: the same "
     "less the levels, so that the level of a well does not place its instances. DTW: the dynamic "
     "time warping distance between the instances of one class on one sensor, the 3W Toolkit's "
     "own comparison of shapes, each series z-scored and averaged into 400 blocks first."
@@ -587,6 +592,7 @@ class MapPage(QWidget):
             self.info,
             shape_only=self.representation == "shape",
             measured=self.measured,
+            labeled=True,
         )
         return points, rep
 
@@ -610,11 +616,13 @@ class MapPage(QWidget):
 
             for k, point in enumerate(candidates, start=1):
                 paths = point.data.origin.rows["path"]
-                frame = merge_instances(
-                    [
-                        self._passes.frames.get(paths.iloc[m])
-                        for m in point.data.members[point.index]
-                    ]
+                frame = labeled_part(
+                    merge_instances(
+                        [
+                            self._passes.frames.get(paths.iloc[m])
+                            for m in point.data.members[point.index]
+                        ]
+                    )
                 )
                 if sensor in frame.columns:
                     blocks = decimate(frame[sensor].to_numpy(dtype=float))
@@ -635,7 +643,12 @@ class MapPage(QWidget):
         note = (
             f"DTW of {sensor} within {self.info.fault_name(int(fault))}: {len(kept)} instances, "
             f"each z-scored and averaged into {N_BLOCKS} blocks, window {WINDOW_SHARE:.0%}"
-            + (f" | {left_out} left out, the sensor flat or missing in them" if left_out else "")
+            + " | labeled samples only"
+            + (
+                f" | {left_out} left out, the sensor flat or missing in their labeled samples"
+                if left_out
+                else ""
+            )
         )
         return kept, em.distance_representation([p.key for p in kept], D, note)
 
