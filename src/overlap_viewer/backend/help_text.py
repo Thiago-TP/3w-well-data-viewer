@@ -993,8 +993,9 @@ AVAILABILITY_NOTES = [
             "can be empty however well covered each of its sensors is, and a pair with little "
             "coverage is one no model can train on and a correlation nobody should trust, the "
             "point of Rabelo's figure 2.10. The diagonal is each sensor's own coverage, the "
-            "<i>Over</i> box counts the pairs over every real instance or over those of one fault "
-            "class or one well, and <i>Count</i> asks either that both sensors be live in an "
+            "<i>Class</i> and <i>Well</i> boxes count the pairs over the instances of one fault "
+            "class, of one well, or of one class on one well (<i>All</i> in either lifting that "
+            "condition), and <i>Count</i> asks either that both sensors be live in an "
             "instance for it to count, or merely that both be recorded, frozen readings included, "
             "which is how Rabelo counts. Of the 351 pairs of 3W 2.0.0, 102 never carry a reading "
             "at the same instant. The footers cannot answer this one (a count of missing values "
@@ -1320,7 +1321,8 @@ MODEL_SOURCES = (
 
 DISPERSION_INTRO = (
     "The <b>Dispersions</b> page draws two sensors against each other, every sample of the "
-    "instances of a scope one dot (over every real instance, one fault class or one well), "
+    "instances of a scope one dot (over every real instance, one fault class, one well, or the "
+    "instances of one fault class on one well), "
     "with the density of the samples shaded behind the dots. "
     "It is the scatter plot of Melo's exploratory methodology made readable: a static scatter of "
     "a million points is a smear, and this one names the instance and the instant of every dot "
@@ -1367,10 +1369,15 @@ DISPERSION_NOTES = [
     (
         "Scopes, periods, colors",
         (
-            "<i>Over</i> is the scope, and it carries the caveat of every pooled view: two clouds "
-            "side by side may be two wells rather than one relation, since wells run at different "
-            "levels, so a well's own scope is the one that shows the process alone, and "
-            "<i>Color by: Well</i> is how to tell the two apart in a class's cloud. The "
+            "<i>Class</i> and <i>Well</i> are the scope, and they narrow it together: a fault "
+            "class, a well, or the instances of one class on one well, <i>All</i> in either box "
+            "lifting that condition. Each box counts the instances under the other's choice and "
+            "greys out what has none there, so that a scope with no instance cannot be chosen. "
+            "A pooled scope carries the caveat of every pooled view: two clouds side by side may "
+            "be two wells rather than one relation, since wells run at different levels, so a "
+            "well's own scope is the one that shows the process alone. <i>Color by: Well</i> "
+            "tells the wells apart in a class's cloud, and choosing one of them in <i>Well</i> "
+            "keeps its cloud alone, the class still chosen. The "
             "<i>label period</i> boxes (normal operation, transient, steady state, unlabeled) "
             "choose the samples by what the experts labeled the well as doing at that "
             "instant: a fault's steady state alone shows the relation under the fault, normal "

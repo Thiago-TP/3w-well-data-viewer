@@ -13,10 +13,16 @@ the measurements alone
 ![Dispersions page](../assets/dispersion.png)
 
 - **Options**, at the left of the toolbar, shows and hides **Color by**, **Measurements only** and
-  the row of the label periods and the density; **X**, **Y**, **Over** and the color key, on a row
+  the row of the label periods and the density; **X**, **Y**, **Class**, **Well** and the color key, on a row
   of its own that wraps when the window is narrow, stay in view.
-- **X**, **Y** are the two sensors (analog ones; readings outside the plausible range left out) and
-  **Over** the scope: every real instance, one fault class or one well. The first look at a scope reads its instances in full behind a progress
+- **X**, **Y** are the two sensors (analog ones; readings outside the plausible range left out), and
+  **Class** and **Well** the scope, which they narrow together: one fault class, one well, or the
+  instances of one class on one well, *All* in either box lifting that condition. Each box counts
+  the instances under the other's choice and greys out what has none there, so that a scope with no
+  instance cannot be chosen (*All* in the other box brings it back). A class's cloud colored by
+  well shows which well each cluster comes from; choosing that well in **Well** keeps it alone, the
+  class still chosen, and the view stays where it was: only a change of **X** or **Y** frames the
+  plot afresh (**Reset views** frames the dots on show). The first look at a scope reads its instances in full behind a progress
   dialog, every analog sensor at once, and keeps an even subsample of the rows for the session,
   400,000 in all (one row in a few for one well, one in fifty for the whole dataset, which takes
   about two minutes), so that everything else is instant; at most 150,000 of them are drawn as

@@ -83,7 +83,8 @@ class MainWindow(QMainWindow):
         "Every real instance of one fault, from every well, drawn over the others",
         "One sensor, a section per fault class: what it reads under each event",
         (
-            "Two sensors against each other over every instance, one class or one well: every "
+            "Two sensors against each other over every instance, one class, one well or one class "
+            "on one well: every "
             "sample a dot, the density behind, the measurements alone on request"
         ),
         (
