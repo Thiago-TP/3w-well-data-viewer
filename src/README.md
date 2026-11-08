@@ -54,6 +54,7 @@ src/overlap_viewer/
     ├── heatmap.py            the matrix widget of the availability page, its tooltips and the keys of the states
     ├── legend.py             the clickable color key and its flow layout
     ├── options.py            the Options button of a page or window: how it draws, behind one click
+    ├── scope_boxes.py        the Class and Well boxes that narrow a scope together (Dispersions, the pair map)
     ├── help.py               the help window
     ├── overview.py           the timelines page: the grid of well timelines
     ├── availability_page.py  the availability page: its two matrices (availability, sensor pairs) and what each says
@@ -693,6 +694,19 @@ toggles of the side panels stay in view.
   a page splits its first row into what stays in view, what *Options* hides, and its panel
   toggles, so that hiding the options leaves the rest where it was.
 
+### `scope_boxes.py`
+
+The scope of the Dispersions page and of the Availability page's pair map, as a *Class* and a *Well*
+box that narrow it together: every real instance, one class, one well, or one class on one well.
+
+- `ScopeBoxes(QObject)`: the two boxes, `class_box` and `well_box`, each with an *All* entry keyed
+  `ALL` (-1); signal `changed()`. `set_catalogue(catalogue)` lists the classes and wells, each box
+  counted under the other's choice with the empty entries disabled (a pair left empty by code or a
+  rescan keeps the class and lets the well go); `add_to(bar)` puts the boxes and their labels on a
+  toolbar and returns the actions; `fault`, `well`, `key()`, `name()` (the scope in words) and
+  `mask(bars)` (the rows of a frame with `fault_class` and `well` in scope, `None` for all) read
+  them; `set_scope(fault, well)` chooses in code.
+
 ### `help.py`
 
 The tabbed help/reference window (fault classes, variables, well status, data availability,
@@ -734,7 +748,7 @@ co-occurrence), grouped by fault class, well or instances of one, drawn via `Hea
 progress-dialog-gated passes for joined stats, pair counts and profiles.
 
 - `AvailabilityPage(QWidget)`: signals `status`, `summary_changed`, `open_requested(well, bar,
-  sensor, joined)`. The toolbar offers *Matrix* (availability/pairs), *Rows*, *Over*,
+  sensor, joined)`. The toolbar offers *Matrix* (availability/pairs), *Rows*, *Class* and *Well* (a `ScopeBoxes`, the pair map only),
   *Sensors*, *Cells*, *Join*, plus per-matrix controls (IQR × for the Toolkit rule). `_ensure_data()` dispatches which passes the current matrix needs;
   `_refresh()` redraws whichever matrix is selected. `summary()`.
 
@@ -803,13 +817,17 @@ clustering scores and a "label audit" list of instances a one-class model disagr
 ### `dispersion_page.py`
 
 The Dispersions page: draws two chosen sensors against each other as a point cloud over a scope
-(all/one class/one well), with density shading, coloring modes,
+(chosen by a *Class* and a *Well* box, each with an *All*: every instance, one class, one well, or
+one class on one well), with density shading, coloring modes,
 measurements-only filtering, label-period filters, and hover/click on individual samples.
 
 - `DispersionPage(QWidget)`: signals `status`, `summary_changed`,
   `open_requested(WellData, index, sensors)`, a clicked dot's bar with the plot's X and Y.
   `_load_cloud()` reads every analog sensor of every instance in scope via
-  `algorithms.dispersion.DispersionPass`, progress-dialog-gated and cached by scope.
+  `algorithms.dispersion.DispersionPass`, progress-dialog-gated and cached by scope, the pair
+  `(fault, well)` of its `ScopeBoxes`, `ALL` (-1) for either box's *All*; `set_scope(fault, well)`
+  chooses a scope in code, as a script would. The view is framed afresh when X or Y changes, never
+  when the scope does, so that narrowing a cloud keeps the zoom on show.
   `_redraw()` draws the density image (a log-scaled 2D histogram) and, per color group, a
   `ScatterPlotItem` of the dot cloud (subsampled to `MAX_DOTS`). `_light_instance(instance)`
   brings every drawn dot of one instance forward and fades the groups while a dot of it is

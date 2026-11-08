@@ -9,8 +9,8 @@ coefficient betrays and every scatter plot does. So the view draws the cloud thr
 sample as a dot, the density of the samples behind the dots, and the
 measurements alone, the readings the historian archived.
 
-A scope (every real instance, one fault class or one well, as instances or
-as the joined bars) is read once and kept for the session. Every instance contributes an even subsample of its rows, ``BUDGET``
+A scope (every real instance, one fault class, one well or one fault class on
+one well, as instances or as the joined bars) is read once and kept for the session. Every instance contributes an even subsample of its rows, ``BUDGET``
 rows in all, each row carrying every analog sensor, its label period, which
 of its readings were measured and when it was, so that changing the pair of
 sensors, the coloring, the label periods or the measurements filter costs
