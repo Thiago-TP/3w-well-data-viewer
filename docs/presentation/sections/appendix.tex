@@ -17,6 +17,10 @@
 %% Dispersions: every fault's coefficients of its pair, pooled, by label
 %% period, on every sample and measured, from tables/dispersions/pairs.csv;
 %% then every well's, from tables/appendix/wells.csv.
+%%
+%% Windows: every well's separations by every statistic at 512 samples, with
+%% its sensor and its windows, from tables/appendix/windows.csv, under a note
+%% on how the sensor is chosen and how little the window length matters.
 
 \pgfplotstableread{tables/appendix/changes.csv}\apchanges
 
@@ -144,4 +148,30 @@
   \setlength{\tabcolsep}{3pt}
   \pgfplotstableset{dp rows/.style={skip rows between index={0}{36}}}
   \input{tables/appendix/wells}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+% The Windows section: every well's separations at 512 samples, wells 1 to 21
+% (19 rows, under the note) and 22 to 42 (21); the first frame closes its
+% table itself.
+\begin{frame}[label=windows]{Appendix: every statistic, well by well (1 of 2)}
+  \framesubtitle{\wiquestion}
+  {\scriptsize\color{ws3wbrown} Each well's best covered analog sensor (most samples live; ties,
+  Tied, to the one separating best). A well's best separation at 512 samples in bold, its line
+  \alert{orange} on fewer than \wiFew{} windows of a kind; across window lengths it moves by
+  \wiSizeWellMax{} at most.\par}
+  \vskip .5mm
+  \centering\scriptsize
+  \setlength{\tabcolsep}{2pt}
+  \pgfplotstableset{wi rows/.style={skip rows between index={19}{1000},
+                                    every row no 18/.style={after row=\bottomrule}}}
+  \input{tables/appendix/windows}
+\end{frame}
+
+\begin{frame}{Appendix: every statistic, well by well (2 of 2)}
+  \framesubtitle{\wiquestion}
+  \centering\scriptsize
+  \setlength{\tabcolsep}{2pt}
+  \pgfplotstableset{wi rows/.style={skip rows between index={0}{19}}}
+  \input{tables/appendix/windows}
 \end{frame}

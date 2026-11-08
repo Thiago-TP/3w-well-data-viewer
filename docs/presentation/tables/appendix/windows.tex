@@ -1,0 +1,58 @@
+% Per well, its sensor (the analog one live in the most samples; Tied, how many
+% shared that coverage, the one whose best statistic separates most taken),
+% its normal and event windows of 512 samples, and every statistic's
+% separation of the two at that size, the best in bold (a dash where the well
+% has fewer than \wiMinWindows windows of a kind). The rows a frame shows are
+% the style wi rows, which the frame sets before the input. The cells are
+% written by scripts/windows.py into the CSV beside this file.
+%
+% The line of a well resting on fewer than \wiFew windows of a kind is set
+% apart, as the chart sets its dots apart: its row (one of \wiFewRows, from
+% figures/windows/numbers.tex, counted from 0 as the CSV holds them) colors
+% every cell of it.
+\foreach \wirow in \wiFewRows {\expandafter\gdef\csname wifewrow\wirow\endcsname{}}
+\pgfplotstabletypeset[
+  postproc cell content/.append code={%
+    \ifcsname wifewrow\pgfplotstablerow\endcsname
+      \pgfkeysalso{@cell content/.add={\usebeamercolor[fg]{alerted text}}{}}%
+    \fi},
+  columns={well, sensor, tied, normal, event,
+           mean, median, low, q25, q75, high, std,
+           skew, kurtosis, acf_half_s, snr, gauss_slope},
+  columns/well/.style={string type, column type={l}},
+  columns/sensor/.style={string type, column type={l}},
+  columns/tied/.style={column type={r}},
+  wi count/.style={column type={r}, fixed, precision=0, 1000 sep={,}},
+  columns/normal/.style={wi count},
+  columns/event/.style={wi count},
+  wi stat/.style={string type, column type={c}},
+  columns/mean/.style={wi stat},
+  columns/median/.style={wi stat},
+  columns/low/.style={wi stat},
+  columns/q25/.style={wi stat},
+  columns/q75/.style={wi stat},
+  columns/high/.style={wi stat},
+  columns/std/.style={wi stat},
+  columns/skew/.style={wi stat},
+  columns/kurtosis/.style={wi stat},
+  columns/acf_half_s/.style={wi stat},
+  columns/snr/.style={wi stat},
+  columns/gauss_slope/.style={wi stat},
+  % Both header rows set here, the generated one left out: Well, Sensor and
+  % Tied span both; the windows and the three groups of statistics name
+  % their columns in the second.
+  every head row/.style={
+    output empty row,
+    before row={\toprule
+                \multicolumn{1}{c}{\multirow{2}{*}[-1mm]{Well}}
+                & \multicolumn{1}{c}{\multirow{2}{*}[-1mm]{Sensor}}
+                & \multicolumn{1}{c}{\multirow{2}{*}[-1mm]{Tied}}
+                & \multicolumn{2}{c}{Windows} & \multicolumn{6}{c}{Level}
+                & \multicolumn{1}{c}{Spread} & \multicolumn{5}{c}{Shape} \\
+                \cmidrule(lr){4-5}\cmidrule(lr){6-11}\cmidrule(lr){12-12}\cmidrule(lr){13-17}
+                & & & normal & event & Mean & Median & Min & Q1 & Q3 & Max & Std
+                & Skew & Kurt & ACF & SNR & Gauss \\},
+    after row=\midrule},
+  every last row/.style={after row=\bottomrule},
+  wi rows,
+]{tables/appendix/windows.csv}
