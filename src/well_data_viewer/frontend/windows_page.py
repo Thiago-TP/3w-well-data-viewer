@@ -51,9 +51,10 @@ from PySide6.QtWidgets import (
 )
 
 from well_data_viewer.algorithms import windows as wi
+from well_data_viewer.algorithms.availability import ABSENT, LIVE, Availability
 from well_data_viewer.algorithms.descriptors import SUMMARY, format_figure
+from well_data_viewer.algorithms.profiles import DESCRIPTOR_CHOICES, GRID_CAVEAT
 from well_data_viewer.backend import theme
-from well_data_viewer.backend.availability import ABSENT, LIVE, Availability
 from well_data_viewer.backend.dataset import (
     DatasetInfo,
     WellData,
@@ -69,7 +70,6 @@ from well_data_viewer.backend.palette import (
     tint,
     unknown_background,
 )
-from well_data_viewer.backend.profiles import DESCRIPTOR_CHOICES, GRID_CAVEAT
 from well_data_viewer.backend.timemap import TimeMap
 from well_data_viewer.frontend import styling
 from well_data_viewer.frontend.items import (

@@ -59,6 +59,7 @@ import pandas as pd
 from availability import tex_unit
 from timelines import number, write_csv
 
+from well_data_viewer.algorithms.availability import ABSENT, FROZEN, sensor_state
 from well_data_viewer.algorithms.interpolation import (
     GENUINE,
     describe_sampling,
@@ -66,7 +67,6 @@ from well_data_viewer.algorithms.interpolation import (
     sampling_of,
 )
 from well_data_viewer.backend import theme
-from well_data_viewer.backend.availability import ABSENT, FROZEN, sensor_state
 from well_data_viewer.backend.config import (
     BEST_EFFORT_SIGNATURES,
     FAULT_SIGNATURES,

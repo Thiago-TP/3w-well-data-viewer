@@ -18,7 +18,7 @@ What is on the right is the **label audit**: the instances whose label
 disagrees with the one-class verdict (a fault instance that looks normal, a
 normal instance that looks anomalous), class by class, each a click away.
 
-The representation needs the profiles of the instances (``backend.profiles``),
+The representation needs the profiles of the instances (``algorithms.profiles``),
 read once behind a progress dialog and shared with the other pages. The
 embeddings beyond PCA, the clusterings, their scores and the novelty model
 need the ``analysis`` extra (UMAP the ``umap`` extra, DTW the ``dtw`` extra);
@@ -49,11 +49,11 @@ from PySide6.QtWidgets import (
 )
 
 from well_data_viewer.algorithms import embedding as em
+from well_data_viewer.algorithms.profiles import DESCRIPTOR_MODES, Profiles, labeled_part
 from well_data_viewer.backend import theme
 from well_data_viewer.backend.dataset import DatasetInfo, WellData, instance_title, well_label
 from well_data_viewer.backend.extras import missing
 from well_data_viewer.backend.palette import fault_color, tint, well_colors
-from well_data_viewer.backend.profiles import DESCRIPTOR_MODES, Profiles, labeled_part
 from well_data_viewer.frontend.heatmap import ramp_color
 from well_data_viewer.frontend.items import ScrollFriendlyViewBox, restyle_axes
 from well_data_viewer.frontend.loading import progress_dialog

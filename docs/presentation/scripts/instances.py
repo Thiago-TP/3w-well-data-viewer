@@ -70,10 +70,10 @@ import numpy as np
 from timelines import number, write_csv
 
 from well_data_viewer.algorithms import embedding as em
+from well_data_viewer.algorithms.profiles import load_profiles
 from well_data_viewer.backend import theme
 from well_data_viewer.backend.dataset import DatasetInfo, load_catalogue, split_wells
 from well_data_viewer.backend.palette import fault_color
-from well_data_viewer.backend.profiles import load_profiles
 
 ROOT = Path(__file__).resolve().parents[1]
 FIGURES = ROOT / "figures" / "instances"

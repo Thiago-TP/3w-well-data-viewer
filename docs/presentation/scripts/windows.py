@@ -60,8 +60,8 @@ import numpy as np
 from timelines import number, write_csv
 
 from well_data_viewer.algorithms import windows as wi
+from well_data_viewer.algorithms.availability import LIVE, sensor_state
 from well_data_viewer.backend import theme
-from well_data_viewer.backend.availability import LIVE, sensor_state
 from well_data_viewer.backend.dataset import DatasetInfo, load_catalogue, load_instance_columns
 from well_data_viewer.backend.labels import label_kind, sensor_stats_from_json
 from well_data_viewer.backend.palette import well_colors

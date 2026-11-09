@@ -74,9 +74,9 @@ def test_the_rule_reads_the_profiles_of_the_instances_and_of_the_bars(
     """Fitted on the profile table, keyed like it, exempting the valves, once per view."""
     from conftest import CACHE_HOME
 
+    from well_data_viewer.algorithms import profiles as pr
     from well_data_viewer.algorithms.cleaning import clean_profiles
     from well_data_viewer.backend import dataset as ds
-    from well_data_viewer.backend import profiles as pr
 
     monkeypatch.setenv(CACHE_HOME, str(tmp_path / "cache"))
     info = ds.DatasetInfo.load(raw_dir)

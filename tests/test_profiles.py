@@ -7,9 +7,9 @@ import pandas as pd
 import pytest
 from conftest import CACHE_HOME, hours
 
+from well_data_viewer.algorithms import profiles as pr
 from well_data_viewer.algorithms.interpolation import Sampling
 from well_data_viewer.backend import dataset as ds
-from well_data_viewer.backend import profiles as pr
 
 
 def write_historian_instance(
@@ -172,7 +172,7 @@ def test_the_availability_splits_a_live_cell_into_measured_and_filled(
     raw_dir: Path, tmp_path: Path, monkeypatch
 ):
     """Given the profiles, every live share knows how much of it was measured, per instance and per bar."""
-    from well_data_viewer.backend.availability import LIVE, Availability
+    from well_data_viewer.algorithms.availability import LIVE, Availability
 
     write_historian_instance(raw_dir / "0", 3, hours(100), 3600, 10)
     write_historian_instance(raw_dir / "0", 3, hours(100.5), 3600, 10)
@@ -246,7 +246,7 @@ def test_the_availability_splits_a_live_cell_into_measured_and_filled(
 
 def test_the_profile_pass_marks_the_pressures_read_out_of_order(tmp_path: Path, monkeypatch):
     """A downhole gauge below its tree is found in the pass and reaches the availability, per bar and group."""
-    from well_data_viewer.backend.availability import Availability
+    from well_data_viewer.algorithms.availability import Availability
 
     root = tmp_path / "dataset"
     root.mkdir()
@@ -306,7 +306,7 @@ def test_the_profile_pass_marks_the_pressures_read_out_of_order(tmp_path: Path, 
 
 def test_the_profile_pass_marks_the_valves_against_the_well_state(tmp_path: Path, monkeypatch):
     """A well labeled Open with its wing valve closed reaches the availability, per bar and group."""
-    from well_data_viewer.backend.availability import Availability
+    from well_data_viewer.algorithms.availability import Availability
 
     root = tmp_path / "dataset"
     root.mkdir()

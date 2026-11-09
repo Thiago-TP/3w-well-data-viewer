@@ -8,6 +8,7 @@ import pandas as pd
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QProgressDialog, QWidget
 
+from well_data_viewer.algorithms.profiles import Profiles, load_profiles
 from well_data_viewer.backend.config import FRAME_CACHE_ROWS
 from well_data_viewer.backend.dataset import (
     DatasetInfo,
@@ -19,7 +20,6 @@ from well_data_viewer.backend.dataset import (
     load_joined_stats,
     load_pair_counts,
 )
-from well_data_viewer.backend.profiles import Profiles, load_profiles
 
 
 class FrameCache:

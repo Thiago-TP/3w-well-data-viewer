@@ -9,17 +9,7 @@ import pyarrow.parquet as pq
 import pytest
 from conftest import CACHE_HOME, T0, hours
 
-from well_data_viewer.algorithms.faults import (
-    onset,
-    onset_from_runs,
-    plausible_extent,
-    relative_hours,
-    zscore,
-)
-from well_data_viewer.algorithms.interpolation import GENUINE, sample_kinds
-from well_data_viewer.backend import dataset as ds
-from well_data_viewer.backend import help_text, theme
-from well_data_viewer.backend.availability import (
+from well_data_viewer.algorithms.availability import (
     ABSENT,
     FROZEN,
     LIVE,
@@ -30,6 +20,16 @@ from well_data_viewer.backend.availability import (
     outside_range,
     sensor_state,
 )
+from well_data_viewer.algorithms.faults import (
+    onset,
+    onset_from_runs,
+    plausible_extent,
+    relative_hours,
+    zscore,
+)
+from well_data_viewer.algorithms.interpolation import GENUINE, sample_kinds
+from well_data_viewer.backend import dataset as ds
+from well_data_viewer.backend import help_text, theme
 from well_data_viewer.backend.config import (
     BEST_EFFORT_SIGNATURES,
     BEST_EFFORT_SOURCES,

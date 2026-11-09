@@ -44,6 +44,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from well_data_viewer.algorithms.availability import ABSENT, LIVE, Availability
 from well_data_viewer.algorithms.faults import (
     ALIGNMENT_NAMES,
     ALIGNMENTS,
@@ -51,7 +52,6 @@ from well_data_viewer.algorithms.faults import (
     relative_hours,
 )
 from well_data_viewer.backend import theme
-from well_data_viewer.backend.availability import ABSENT, LIVE, Availability
 from well_data_viewer.backend.config import MAX_SMALL_MULTIPLES, REACH_LABELS
 from well_data_viewer.backend.dataset import DatasetInfo, WellData, well_label
 from well_data_viewer.backend.labels import segments_from_json

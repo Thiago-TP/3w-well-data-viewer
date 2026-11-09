@@ -3,13 +3,13 @@
 Every real instance carries every column the dataset declares, whether or not
 the well had the sensor, so *what was recorded* is a question of its own. The
 catalogue scan keeps, per instance and sensor, how many samples carry a reading
-and the smallest and largest of them (``dataset.read_sensor_stats``); this
+and the smallest and largest of them (``backend.dataset.read_sensor_stats``); this
 module reads those figures back and turns them into the state a sensor is in
 inside one bar, and into the shares a group of bars (a fault class, a well, the
 whole dataset) shows for every sensor. A bar is what the timelines draw: one
 real instance or, in the joined view, one recording merged from the instances
 that overlap with labels that agree, whose figures come from the data itself
-(``dataset.scan_joined_sensor_stats``), since the footers cannot say which
+(``backend.dataset.scan_joined_stats``), since the footers cannot say which
 instants two windows both record.
 
 - **absent**: no sample carries a reading, the usual case for a sensor the
@@ -25,7 +25,7 @@ instants two windows both record.
 
 A reading no instrument could have produced, a negative absolute pressure or a
 temperature of thirty thousand degrees, is flagged apart from the three states
-(``config.plausible_range``): the sample is there and it may move, so the
+(``backend.config.plausible_range``): the sample is there and it may move, so the
 sensor is live, but what it says is not a measurement.
 
 Shares are of samples, or of bars. Every sample of every bar in a group falls
@@ -50,6 +50,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 
+from well_data_viewer.algorithms.profiles import Profiles
 from well_data_viewer.backend.config import WELL_STATES, plausible_range
 from well_data_viewer.backend.dataset import (
     BarStats,
@@ -60,7 +61,6 @@ from well_data_viewer.backend.dataset import (
     split_wells,
 )
 from well_data_viewer.backend.labels import is_flat, sensor_stats_from_json
-from well_data_viewer.backend.profiles import Profiles
 
 # The well states by name, in code order: how the states a valve contradicts are listed.
 STATE_ORDER = {name: code for code, name in WELL_STATES.items()}
@@ -102,7 +102,7 @@ def sensor_state(
 
     A sensor with readings in less than ``threshold`` of the samples counts as
     absent: not available, in the sense a cleaning rule gives the word. Frozen
-    is judged by ``labels.is_flat``, the rule the instance window marks a plot
+    is judged by ``backend.labels.is_flat``, the rule the instance window marks a plot
     *flat* by, so the two never disagree about a sensor. An enumerated variable
     is never frozen.
     """
@@ -391,7 +391,7 @@ class Availability:
             Share of samples a sensor needs readings in to count as available.
         joined_stats : JoinedStats, optional
             The merged figures of every bar of a joined view, from
-            ``dataset.load_joined_sensor_stats``; required for joined views.
+            ``backend.dataset.load_joined_stats``; required for joined views.
         profiles : Profiles, optional
             The profiles of the bars (``profiles.load_profiles``), which split
             the readings of a live sensor into measurements and filled samples
@@ -802,7 +802,7 @@ class PairCoverage:
     """The co-valid sample counts of every pair of sensors, bar by bar.
 
     Built once from the counts the pair scan reads out of the files
-    (``dataset.load_pair_counts``) and folded into a ``PairTable`` over
+    (``backend.dataset.load_pair_counts``) and folded into a ``PairTable`` over
     whatever scope a page asks for. Only the upper triangle is held, the
     matrix being symmetric.
 

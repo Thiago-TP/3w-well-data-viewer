@@ -33,8 +33,8 @@ from PySide6.QtWidgets import (
 )
 
 from well_data_viewer.algorithms import dispersion as di
+from well_data_viewer.algorithms.availability import LIVE, Availability
 from well_data_viewer.backend import theme
-from well_data_viewer.backend.availability import LIVE, Availability
 from well_data_viewer.backend.dataset import (
     DatasetInfo,
     WellData,

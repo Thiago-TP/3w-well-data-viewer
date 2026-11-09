@@ -50,10 +50,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from well_data_viewer.algorithms.cleaning import Cleaned, CleanRule
-from well_data_viewer.algorithms.interpolation import format_spacing
-from well_data_viewer.backend import theme
-from well_data_viewer.backend.availability import (
+from well_data_viewer.algorithms.availability import (
     ABSENT,
     FROZEN,
     LIVE,
@@ -63,6 +60,10 @@ from well_data_viewer.backend.availability import (
     PairCoverage,
     PairTable,
 )
+from well_data_viewer.algorithms.cleaning import Cleaned, CleanRule
+from well_data_viewer.algorithms.interpolation import format_spacing
+from well_data_viewer.algorithms.profiles import Profiles
+from well_data_viewer.backend import theme
 from well_data_viewer.backend.dataset import (
     DatasetInfo,
     PairCounts,
@@ -71,7 +72,6 @@ from well_data_viewer.backend.dataset import (
     well_label,
 )
 from well_data_viewer.backend.palette import bar_color, fault_color
-from well_data_viewer.backend.profiles import Profiles
 from well_data_viewer.frontend import styling
 from well_data_viewer.frontend.heatmap import HeatmapRow, HeatmapWidget, StateKey
 from well_data_viewer.frontend.items import IMPLAUSIBLE_MARK, ORDER_MARK, STATE_MARK

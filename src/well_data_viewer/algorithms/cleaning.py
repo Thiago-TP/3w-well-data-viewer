@@ -27,8 +27,8 @@ from dataclasses import dataclass, field, replace
 
 import numpy as np
 
+from well_data_viewer.algorithms.profiles import Profiles
 from well_data_viewer.backend.dataset import DatasetInfo
-from well_data_viewer.backend.profiles import Profiles
 
 DEFAULT_IQR_FACTOR = 3.0
 DEFAULT_STD_FLOOR = 1e-6

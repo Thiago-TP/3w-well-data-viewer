@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from well_data_viewer.algorithms.availability import implausible_sensors, outside_range
 from well_data_viewer.algorithms.consistency import (
     OrderBreak,
     StateBreak,
@@ -60,7 +61,6 @@ from well_data_viewer.algorithms.spectral import (
     welch,
 )
 from well_data_viewer.backend import theme
-from well_data_viewer.backend.availability import implausible_sensors, outside_range
 from well_data_viewer.backend.config import (
     DEFAULT_FEATURES,
     REACH_LABELS,

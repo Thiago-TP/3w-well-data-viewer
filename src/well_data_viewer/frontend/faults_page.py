@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from well_data_viewer.algorithms.availability import ABSENT, Availability
 from well_data_viewer.algorithms.faults import (
     ALIGNMENT_NAMES,
     ALIGNMENTS,
@@ -41,7 +42,6 @@ from well_data_viewer.algorithms.faults import (
     relative_hours,
 )
 from well_data_viewer.backend import theme
-from well_data_viewer.backend.availability import ABSENT, Availability
 from well_data_viewer.backend.config import (
     DEFAULT_FEATURES,
     MAX_OVERLAID_INSTANCES,

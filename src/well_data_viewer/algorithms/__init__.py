@@ -1,1 +1,1 @@
-"""What is computed from the data: onsets and scaling, the signal transforms, and every analysis this viewer derives from the instances. Numpy only; no Qt here."""
+"""What is computed from the data: onsets and scaling, the signal transforms, the profile pass and the availability model, and every analysis this viewer derives from the instances. Numpy and pandas, importing from ``backend`` alone; no Qt here."""

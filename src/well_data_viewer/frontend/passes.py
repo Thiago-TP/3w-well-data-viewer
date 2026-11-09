@@ -19,6 +19,7 @@ import numpy as np
 from PySide6.QtWidgets import QWidget
 
 from well_data_viewer.algorithms.cleaning import Cleaned, CleanRule, clean_profiles
+from well_data_viewer.algorithms.profiles import Profiles, load_profiles
 from well_data_viewer.backend.dataset import (
     DatasetInfo,
     JoinedStats,
@@ -28,7 +29,6 @@ from well_data_viewer.backend.dataset import (
 )
 from well_data_viewer.backend.labels import Segment, segments_from_json
 from well_data_viewer.backend.model_outputs import Agreement, ModelOutputs
-from well_data_viewer.backend.profiles import Profiles, load_profiles
 from well_data_viewer.frontend.loading import (
     FrameCache,
     joined_stats_with_progress,

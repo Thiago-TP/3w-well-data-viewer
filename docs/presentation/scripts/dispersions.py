@@ -56,6 +56,7 @@ from pathlib import Path
 import numpy as np
 from timelines import number, write_csv
 
+from well_data_viewer.algorithms.availability import LIVE, sensor_state
 from well_data_viewer.algorithms.dispersion import (
     NORMAL,
     STEADY,
@@ -65,7 +66,6 @@ from well_data_viewer.algorithms.dispersion import (
     InstanceRef,
 )
 from well_data_viewer.backend import theme
-from well_data_viewer.backend.availability import LIVE, sensor_state
 from well_data_viewer.backend.config import (
     BEST_EFFORT_SIGNATURES,
     FAULT_SIGNATURES,

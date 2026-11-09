@@ -32,8 +32,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from well_data_viewer.algorithms.availability import ABSENT, FROZEN, LIVE, Availability
 from well_data_viewer.backend import theme
-from well_data_viewer.backend.availability import ABSENT, FROZEN, LIVE, Availability
 from well_data_viewer.backend.config import (
     BAR_HEIGHT,
     DEFAULT_COLUMNS,

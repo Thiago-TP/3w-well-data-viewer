@@ -5,7 +5,7 @@ merged recording), never the window a pipeline cuts: 1,119 points, one per
 real instance of 3W 2.0.0, which is what a reader can hold in view and click
 on. An instance becomes a point through a **representation**:
 
-- its **descriptors** (``backend.profiles``), taken on its labeled samples
+- its **descriptors** (``algorithms.profiles``), taken on its labeled samples
   alone, so that a stretch two overlapping windows share counts once, in the
   window that labels it: per sensor the moments, the
   quantiles, the autocorrelation time, the signal-to-noise ratio, the
@@ -44,9 +44,9 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from well_data_viewer.algorithms.descriptors import ACF_MAX_LAG_S
+from well_data_viewer.algorithms.profiles import Profiles
 from well_data_viewer.backend.dataset import DatasetInfo
 from well_data_viewer.backend.extras import available
-from well_data_viewer.backend.profiles import Profiles
 
 REPRESENTATIONS = ("descriptors", "shape", "dtw")
 REPRESENTATION_NAMES = {
@@ -153,7 +153,7 @@ def feature_matrix(
     ``min_coverage`` of the points; an enumerated variable contributes its
     mean alone, the share of the time the valve was open. ``measured`` reads
     the descriptors taken on the measurements rather than on the grid
-    (``backend.profiles``), and ``labeled`` those of the instances on their
+    (``algorithms.profiles``), and ``labeled`` those of the instances on their
     labeled samples alone, which keeps the samples two overlapping windows
     share from pulling them together. Missing cells (the sensor absent or frozen in
     that instance) take the column's median, and ``imputed`` remembers how

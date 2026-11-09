@@ -38,8 +38,8 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QToolTip, QWidget
 
+from well_data_viewer.algorithms.availability import FROZEN, LIVE
 from well_data_viewer.backend import theme
-from well_data_viewer.backend.availability import FROZEN, LIVE
 from well_data_viewer.backend.palette import tint
 from well_data_viewer.frontend.items import (
     IMPLAUSIBLE_MARK,

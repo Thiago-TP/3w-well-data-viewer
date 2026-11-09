@@ -102,7 +102,7 @@ def test_the_novelty_audit_lists_the_labels_that_disagree_with_the_forest():
 
 def test_the_descriptor_matrix_is_built_from_the_profile_table():
     """Sensors too rarely live are left out, an enumerated one gives its mean alone, gaps are imputed and remembered."""
-    from well_data_viewer.backend import profiles as pr
+    from well_data_viewer.algorithms import profiles as pr
     from well_data_viewer.backend.dataset import DatasetInfo
 
     sensors = ["P-PDG", "T-TPT", "QGL", "ESTADO-W1"]

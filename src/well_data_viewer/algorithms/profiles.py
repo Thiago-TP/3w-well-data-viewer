@@ -263,7 +263,7 @@ def scan_profiles(
 
     A bar of one instance takes that instance's profile as it stands; a bar
     joined from several is profiled from the merged frame
-    (``dataset.merge_instances``), in which every instant appears once and
+    (``backend.dataset.merge_instances``), in which every instant appears once and
     what one window did not record another may have. Every instance is also
     profiled on its labeled samples alone (``labeled_part``), the ``labeled``
     scope; an instance labeled throughout takes its own profile there.

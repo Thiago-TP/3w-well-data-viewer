@@ -176,6 +176,7 @@ The table lives in [`backend/extras.py`](src/well_data_viewer/backend/extras.py)
 
 The viewer is composed of three packages/layers which dependencies grow from one to the next:
 `backend` (data reading and loading), `algorithms` (data processing) and `frontend` (presentation).
+A layer imports only from itself and the layers before it, which the test suite checks.
 A bird's eye view of the project's organization is shown below; every package, file and its public
 functions are documented in detail in the [source `README`](src/README.md).
 
@@ -194,7 +195,7 @@ functions are documented in detail in the [source `README`](src/README.md).
 └── src/well_data_viewer/
     ├── app.py                command line and start-up
     ├── backend/              what the data is: pandas, numpy and pyarrow only
-    ├── algorithms/           what is computed from the data: numpy only; anything heavier is an optional extra
+    ├── algorithms/           what is computed from the data: numpy and pandas; anything heavier is an optional extra
     └── frontend/             how it is shown: PySide6 and pyqtgraph
 ```
 
@@ -309,7 +310,7 @@ T-TPT every 16 s, QGL every 21 s, P-TPT every 100 s, T-JUS-CKP every two minutes
 every four. Every figure taken on the 1 Hz grid inherits the lines: the signal-to-noise ratio of
 T-JUS-CKP is 36,000 on the grid and 1.5 on its measurements, and its autocorrelation takes seven
 minutes to halve on the grid against 73 s on the measurements. The pass that finds this
-([`backend/profiles.py`](src/well_data_viewer/backend/profiles.py)) reads every file in full once,
+([`algorithms/profiles.py`](src/well_data_viewer/algorithms/profiles.py)) reads every file in full once,
 about 100 s for the whole dataset, and keeps the result in the cache; it profiles every sensor of
 every instance (whole, and on its labeled samples alone, for the Instances map) and of every bar of
 the joined view as the merged recording it is, and computes the
