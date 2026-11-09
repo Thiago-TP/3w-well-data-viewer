@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from overlap_viewer.algorithms import embedding as em
+from well_data_viewer.algorithms import embedding as em
 
 RNG = np.random.default_rng(11)
 
@@ -102,8 +102,8 @@ def test_the_novelty_audit_lists_the_labels_that_disagree_with_the_forest():
 
 def test_the_descriptor_matrix_is_built_from_the_profile_table():
     """Sensors too rarely live are left out, an enumerated one gives its mean alone, gaps are imputed and remembered."""
-    from overlap_viewer.backend import profiles as pr
-    from overlap_viewer.backend.dataset import DatasetInfo
+    from well_data_viewer.algorithms import profiles as pr
+    from well_data_viewer.backend.dataset import DatasetInfo
 
     sensors = ["P-PDG", "T-TPT", "QGL", "ESTADO-W1"]
     info = DatasetInfo(
@@ -149,7 +149,7 @@ def test_the_descriptor_matrix_is_built_from_the_profile_table():
 
 def test_dtw_compares_shapes_after_decimation():
     """Two cycles of different phase are close, two of different period far; the decimation keeps the shape."""
-    from overlap_viewer.algorithms.dtw import N_BLOCKS, decimate
+    from well_data_viewer.algorithms.dtw import N_BLOCKS, decimate
 
     t = np.arange(7200, dtype=float)
     slow = np.sin(2 * np.pi * t / 1800)
@@ -163,7 +163,7 @@ def test_dtw_compares_shapes_after_decimation():
     assert decimate(holed) is not None and np.isfinite(decimate(holed)).all()
     assert decimate(np.full(7200, 3.0)) is None and decimate(np.full(7200, np.nan)) is None
     pytest.importorskip("dtaidistance")
-    from overlap_viewer.algorithms.dtw import dtw_distances
+    from well_data_viewer.algorithms.dtw import dtw_distances
 
     D = dtw_distances([decimate(slow), decimate(shifted), decimate(fast)])
     assert D.shape == (3, 3) and np.allclose(np.diag(D), 0) and D[0, 1] == pytest.approx(D[1, 0])

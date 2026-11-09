@@ -9,3 +9,6 @@ docs/presentation/build/
 docs/presentation/*.synctex.gz
 IDEAS.md
 TODO.md
+# The documentation site's build, and the API reference Sphinx generates into it
+docs/_build/
+docs/reference/api/

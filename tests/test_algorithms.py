@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from overlap_viewer.algorithms.descriptors import (
+from well_data_viewer.algorithms.descriptors import (
     SUMMARY,
     acf_half_time,
     autocorrelation,
@@ -14,7 +14,7 @@ from overlap_viewer.algorithms.descriptors import (
     signal_to_noise,
     summary,
 )
-from overlap_viewer.algorithms.interpolation import (
+from well_data_viewer.algorithms.interpolation import (
     GENUINE,
     HELD,
     INTERPOLATED,
@@ -25,7 +25,7 @@ from overlap_viewer.algorithms.interpolation import (
     sample_kinds,
     sampling_of,
 )
-from overlap_viewer.algorithms.spectral import (
+from well_data_viewer.algorithms.spectral import (
     TransformParams,
     average_spectra,
     lomb_scargle,

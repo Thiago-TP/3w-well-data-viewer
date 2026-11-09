@@ -50,16 +50,16 @@ from pathlib import Path
 import numpy as np
 from timelines import number, write_csv
 
-from overlap_viewer.backend.availability import ABSENT, FROZEN, LIVE, sensor_state
-from overlap_viewer.backend.config import (
+from well_data_viewer.algorithms.availability import ABSENT, FROZEN, LIVE, sensor_state
+from well_data_viewer.algorithms.profiles import load_profiles
+from well_data_viewer.backend.config import (
     PRODUCTION_PRESSURES,
     SERVICE_PRESSURE_PAIRS,
     STATE_VALVE_RULES,
     plausible_range,
 )
-from overlap_viewer.backend.dataset import DatasetInfo, load_catalogue, split_wells
-from overlap_viewer.backend.labels import sensor_stats_from_json
-from overlap_viewer.backend.profiles import load_profiles
+from well_data_viewer.backend.dataset import DatasetInfo, load_catalogue, split_wells
+from well_data_viewer.backend.labels import sensor_stats_from_json
 
 ROOT = Path(__file__).resolve().parents[1]
 FIGURES = ROOT / "figures" / "availability"

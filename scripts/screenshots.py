@@ -20,7 +20,7 @@ a cell so that the status line reads it) because the default state of a page is
 not always the state that shows what the page is for; every such choice is
 commented where it is made.
 
-The passes over the data are cached (``~/.cache/overlap-viewer`` or the platform
+The passes over the data are cached (``~/.cache/3w-well-data-viewer`` or the platform
 equivalent), so the first run is minutes and the next is seconds; the
 dispersion scopes are read per session and always cost their read.
 """
@@ -43,8 +43,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import QApplication
 
-from overlap_viewer.app import build_window, parse_args
-from overlap_viewer.frontend import styling
+from well_data_viewer.app import build_window, parse_args
+from well_data_viewer.frontend import styling
 
 PAGE = (1600, 900)  # wide enough that no page's toolbar falls behind the overflow chevron
 SHORT = (1600, 545)  # the availability matrix is eleven rows and no taller

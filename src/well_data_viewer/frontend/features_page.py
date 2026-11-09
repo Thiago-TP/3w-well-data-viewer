@@ -1,0 +1,833 @@
+"""The features page: one sensor, across every fault class, from every well.
+
+The faults page fixes a fault and asks what its instances did to each sensor.
+This one turns the question round: it fixes a **sensor** and gives each fault
+class a section, so that what a gauge reads under a hydrate can be set beside
+what the same gauge reads under severe slugging and under normal operation.
+That is the feature-wise grouping of the catalogue the viewer was missing (the
+timelines are the well-wise one and the faults page the fault-wise one) and
+the histogram of one sensor per class is the closest the viewer comes to the
+pairplot diagonal a pipeline would start from.
+
+Everything between the choice and the picture is
+``series_page.SeriesPage``: the same two layouts, the same three domains, the
+same transforms and the same hover.
+
+**Color.** In the grid every small plot sits under a heading that names its
+class, and the class hues are the shading of the label periods behind it and
+the stacks of a histogram, which a line of the same hue would vanish into; so
+the line takes the color of its **well**, as on the faults page, which is what
+the heading does not say and what the readings of a sensor depend on most.
+Overlaid, the classes are drawn over one another and the line is the only key
+there is: *Color by* chooses whether it keys the class (the default, the
+question the page exists for) or the well. Pooled into one curve per class,
+the curve takes its class's hue. The wells' colors are the ones every page
+gives them (``palette.well_colors``).
+
+**Align at** defaults to the start of the recording here, the one anchor every
+class has: normal operation has no transient and no steady fault state, so
+anchoring on either would silently drop every normal instance.
+"""
+
+import numpy as np
+import pandas as pd
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QLabel,
+    QListWidgetItem,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
+
+from well_data_viewer.algorithms.availability import ABSENT, LIVE, Availability
+from well_data_viewer.algorithms.faults import (
+    ALIGNMENT_NAMES,
+    ALIGNMENTS,
+    onset_from_runs,
+    relative_hours,
+)
+from well_data_viewer.backend import theme
+from well_data_viewer.backend.config import MAX_SMALL_MULTIPLES, REACH_LABELS
+from well_data_viewer.backend.dataset import DatasetInfo, WellData, well_label
+from well_data_viewer.backend.labels import segments_from_json
+from well_data_viewer.backend.palette import fault_color, well_colors
+from well_data_viewer.frontend.instance_window import PANEL_WIDTH
+from well_data_viewer.frontend.loading import FrameCache
+from well_data_viewer.frontend.options import bar_row, toolbar
+from well_data_viewer.frontend.series_page import (
+    LIST_WIDTH,
+    InstanceList,
+    Section,
+    Series,
+    SeriesPage,
+)
+
+HINT = (
+    "One sensor: a section per fault class in the grid, each line in its well's color, every "
+    "class over the others in one plot when overlaid, in the colors of the classes or of the "
+    "wells, as Color by says | hover a trace to name its instance "
+    "and read it, click it to open its instance window on this sensor | tick the classes on the "
+    "left and the instances on the right, click an instance's name to open it | Ctrl + wheel to "
+    "zoom, the wheel scrolls | F1 for help"
+)
+
+# How many instances of each class are ticked when the page opens, or when the
+# sensor or the well changes. Enough to show the spread of a class without
+# opening a file per instance of a dataset that holds thousands.
+DEFAULT_PER_CLASS = 4
+
+FEATURE_TIP = (
+    "The sensor every plot draws. The count beside a name is how many real instances recorded "
+    "it at all; a sensor no instance recorded is greyed out."
+)
+WELL_TIP = (
+    "Narrow the page to one well, so that the classes are compared at one place and one set of "
+    "instruments, rather than across wells that run at different levels."
+)
+DOMAIN_TIP = (
+    "What every plot shows of everything every instance recorded. Time series: the readings "
+    "against the hours from the onset. Distribution: a histogram of the "
+    "readings, as a share of the instance's samples so that instances of different length "
+    "compare, stacked by label period in the class colors in the grid, an area in the color of "
+    "its class (or of its well, as Color by says) when overlaid, so that where two classes sit on "
+    "top of one another reads as a deeper shade, with a triangle over the fullest bin of each. "
+    "Spectrum: the power spectral "
+    "density against the period, both logarithmic, the mean and the trend removed first."
+)
+LAYOUT_TIP = (
+    "Small multiples give every instance a plot of its own, in a grid under a heading per fault "
+    "class, each line in the color of its well, so that the shapes of one class can be read one "
+    "against the next and against the class below. Overlaid draws every class on one set of "
+    "axes, each instance in the color of its class (or of its well, as Color by says), which is "
+    "what makes the classes comparable rather than merely adjacent, and the "
+    "natural view for histograms and spectra, where the question is whether the classes sit at "
+    "different values or peak at different periods. Overall goes one further and pools each "
+    "class into a single curve, so the plot becomes one distribution, or one spectrum, per fault "
+    "class over every instance of it, the feature-level view this page was built for. It is "
+    "offered off the time axis only, instances cut from different months having no common clock."
+)
+COLOR_BY = ("Class", "Well")
+COLOR_TIP = (
+    "What the color of a line says when the classes are overlaid. Class: every instance in its "
+    "class's color, keyed by the list on the left, so that the classes are told apart. Well: "
+    "every instance in its well's color, keyed by the list on the right, the colors every page "
+    "gives the wells, so that what one well reads under each class can be followed. The grid "
+    "always colors by well, its headings naming the classes; a pooled curve takes its class's."
+)
+NORMALIZE_TIP = (
+    "Scale every series to its own level: each reading as standard deviations from the mean of "
+    "that sensor over the whole instance. Wells run at different levels, and with the classes of "
+    "several wells in one section it is the shape of each that is being compared, not the level."
+)
+ALIGN_NOTE = (
+    "Normal operation has no transient and no steady fault state, so anchoring on either leaves "
+    "every normal instance greyed out; the start of the recording is the one anchor every class "
+    "has."
+)
+
+
+class FeaturesPage(SeriesPage):
+    """One sensor in the toolbar, fault classes left, plots center, instances right."""
+
+    HINT = HINT
+
+    def __init__(self, info: DatasetInfo, frames: FrameCache, parent=None):
+        super().__init__(info, parent)
+        self._frames = frames
+        self._catalogue: pd.DataFrame | None = None
+        self._wells: dict[int, WellData] = {}
+        self._availability: Availability | None = None
+        self._instances: list[dict] = []
+        self._items: list[QListWidgetItem] = []
+        self._class_checks: dict[int, QCheckBox] = {}
+        self._recorded: dict[str, int] = {}
+        self._building = False
+        # Whether the chips of the instance list were last painted by well (True)
+        # or by class (False); None before the first list (see ``_refresh_chips``).
+        self._chips_by_well: bool | None = None
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        layout.addWidget(self._build_toolbar())
+        layout.addWidget(self.build_parameter_bar(NORMALIZE_TIP))
+        self._class_panel = self._build_class_panel()
+        self._instance_panel = self._build_instance_panel()
+        layout.addWidget(self.build_body(self._class_panel, self._instance_panel), 1)
+        # Every class has a start; not every class has an onset (see ALIGN_NOTE).
+        self._align.setCurrentIndex(ALIGNMENTS.index("start"))
+        self._restyle()
+
+    # -- construction
+
+    def _build_toolbar(self) -> QWidget:
+        """The first row: what is drawn, then how behind *Options*, the side panels' toggles at the right."""
+        lead = toolbar("Features")
+        lead.addAction(self.options)
+        lead.addSeparator()
+        lead.addWidget(QLabel(" Feature "))
+        self._feature = QComboBox()
+        self._feature.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self._feature.setToolTip(FEATURE_TIP)
+        self._feature.currentIndexChanged.connect(self._on_feature_changed)
+        lead.addWidget(self._feature)
+
+        lead.addWidget(QLabel(" Well "))
+        self._well = QComboBox()
+        self._well.setToolTip(WELL_TIP)
+        self._well.currentIndexChanged.connect(self._on_well_changed)
+        lead.addWidget(self._well)
+
+        options = self.options.add(toolbar("Features options"))
+        options.addSeparator()
+        self.add_alignment_control(options)
+
+        options.addSeparator()
+        self.add_shared_controls(options, DOMAIN_TIP, LAYOUT_TIP)
+        # Only overlaid is there a choice: the grid colors by well, a pooled
+        # curve by class (see COLOR_TIP); the layout's sync shows it.
+        self._color_by = QComboBox()
+        self._color_by.addItems(list(COLOR_BY))
+        self._color_by.setToolTip(COLOR_TIP)
+        self._color_by.currentIndexChanged.connect(self._on_color_by_changed)
+        self._overlaid_only = [
+            options.addWidget(QLabel(" Color by ")),
+            options.addWidget(self._color_by),
+        ]
+
+        panels = toolbar("Features panels")
+        self._note = QLabel()
+        panels.addWidget(self._note)
+        panels.addSeparator()
+        self._show_classes = QAction("Classes", self)
+        self._show_classes.setCheckable(True)
+        self._show_classes.setChecked(True)
+        self._show_classes.setToolTip(
+            "Show or hide the list of fault classes on the left, to give the plots its width"
+        )
+        self._show_classes.toggled.connect(lambda on: self._class_panel.setVisible(on))
+        panels.addAction(self._show_classes)
+        self._show_instances = QAction("Instances", self)
+        self._show_instances.setCheckable(True)
+        self._show_instances.setChecked(True)
+        self._show_instances.setToolTip(
+            "Show or hide the list of instances on the right, to give the plots its width"
+        )
+        self._show_instances.toggled.connect(lambda on: self._instance_panel.setVisible(on))
+        panels.addAction(self._show_instances)
+        return bar_row(lead, options, trailing=panels)
+
+    def _build_class_panel(self) -> QWidget:
+        panel = QWidget()
+        panel.setFixedWidth(PANEL_WIDTH)
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(QLabel("<b>Fault classes</b>"))
+        buttons = QVBoxLayout()
+        buttons.setSpacing(2)
+        every = QPushButton("All")
+        every.clicked.connect(lambda: self._set_all_classes(True))
+        clear = QPushButton("Clear")
+        clear.clicked.connect(lambda: self._set_all_classes(False))
+        buttons.addWidget(every)
+        buttons.addWidget(clear)
+        layout.addLayout(buttons)
+        self._class_scroll = QScrollArea()
+        self._class_scroll.setWidgetResizable(True)
+        self._class_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self._class_box = QWidget()
+        self._class_layout = QVBoxLayout(self._class_box)
+        self._class_layout.setContentsMargins(0, 0, 0, 0)
+        self._class_layout.setSpacing(2)
+        self._class_scroll.setWidget(self._class_box)
+        layout.addWidget(self._class_scroll, 1)
+        self._class_note = QLabel(
+            "Each class ticked gets a section of its own. Greyed-out classes have no instance "
+            "that recorded this sensor."
+        )
+        self._class_note.setWordWrap(True)
+        layout.addWidget(self._class_note)
+        return panel
+
+    def _build_instance_panel(self) -> QWidget:
+        panel = QWidget()
+        panel.setFixedWidth(LIST_WIDTH)
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(QLabel("<b>Instances</b>"))
+        self.add_instance_buttons(layout)
+        self.add_sort_control(layout)
+        self._list = InstanceList()
+        self._list.setMouseTracking(True)
+        self._list.open_requested.connect(self._on_item_open)
+        self._list.itemChanged.connect(self._on_item_changed)
+        self._list.itemEntered.connect(self._on_item_entered)
+        self._list.viewportEntered.connect(lambda: self._highlight(-1))
+        layout.addWidget(self._list, 1)
+        self._instance_note = QLabel()
+        self._instance_note.setWordWrap(True)
+        layout.addWidget(self._instance_note)
+        return panel
+
+    def on_model_results(self) -> None:
+        if self.ready():
+            self._rebuild_instances(fresh=False)
+
+    def on_sort_changed(self, *args) -> None:
+        if self.ready():
+            self._rebuild_instances(fresh=False)
+
+    # -- appearance
+
+    def _restyle(self) -> None:
+        colors = theme.current()
+        self._restyle_plots()
+        for note in (self._class_note, self._instance_note, self._note):
+            note.setStyleSheet(f"color: {colors.muted}; font-size: 8pt;")
+
+    def verbose_widgets(self) -> list[QWidget]:
+        return [self._class_note, self._instance_note]
+
+    def apply_theme(self) -> None:
+        """Take the colors of the theme now in force; ``set_catalogue`` redraws the plots after it."""
+        self._restyle()
+
+    def _sync_layout_controls(self) -> None:
+        """The shared controls, then *Color by*, which only the overlaid layout has a use for."""
+        super()._sync_layout_controls()
+        overlaid = not self.small_multiples and not self.overall
+        for action in self._overlaid_only:
+            action.setVisible(overlaid)
+
+    @property
+    def colors_by_well(self) -> bool:
+        """Whether a line takes its well's color: always in the grid, never pooled, else as chosen."""
+        if self.small_multiples:
+            return True
+        if self.overall:
+            return False
+        return self._color_by.currentText() == "Well"
+
+    def set_color_by(self, name: str) -> None:
+        """Color the overlaid lines by class or by well, as the box would."""
+        if name not in COLOR_BY:
+            raise ValueError(f"unknown coloring {name!r}; expected one of {COLOR_BY}")
+        self._color_by.setCurrentIndex(COLOR_BY.index(name))
+
+    def _line_color(self, entry: dict, wells: dict[int, str]) -> str:
+        """The color of one instance's line, and of its chip in the list."""
+        return wells[entry["well"]] if self.colors_by_well else fault_color(entry["fault"])
+
+    def _refresh_chips(self) -> None:
+        """Paint every chip of the instance list in its line's color, once the coloring changes.
+
+        The list keys the lines whenever they are colored by well, as the
+        class list keys them when they are colored by class.
+        """
+        by_well = self.colors_by_well
+        if by_well == self._chips_by_well:
+            return
+        # A new icon is an item changed, which replots: marked as painted
+        # first, and the list held as it is while being rebuilt.
+        self._chips_by_well = by_well
+        wells = well_colors(self._wells)
+        building, self._building = self._building, True
+        for entry, item in zip(self._instances, self._items):
+            item.setIcon(self.chip(self._line_color(entry, wells)))
+        self._building = building
+
+    def _on_color_by_changed(self, *args) -> None:
+        if self.ready():
+            self._replot(keep_views=True)
+
+    # -- data
+
+    def set_catalogue(self, catalogue: pd.DataFrame, wells: list[WellData]) -> None:
+        """Take a new catalogue and its wells; the sensor and the well chosen stay chosen.
+
+        The very same catalogue again is a theme switch: the lists are written
+        again for their class colors and the plots drawn again for theirs, with
+        the classes and instances ticked and every plot's zoom kept.
+        """
+        if catalogue is self._catalogue and self.ready():
+            self._wells = {well.well: well for well in wells}
+            self._rebuild_classes()
+            self._rebuild_instances(fresh=False)
+            self._replot(keep_views=True)
+            return
+        self._catalogue = catalogue
+        self._wells = {well.well: well for well in wells}
+        self._availability = Availability.from_wells(wells, self.info)
+        self._recorded = self._recorded_counts()
+
+        wanted_well = self._well.currentData()
+        self._well.blockSignals(True)
+        self._well.clear()
+        self._well.addItem("All wells", None)
+        for well in sorted(self._wells):
+            self._well.addItem(well_label(well), well)
+        index = self._well.findData(wanted_well)
+        self._well.setCurrentIndex(max(index, 0))
+        self._well.blockSignals(False)
+
+        wanted = self._feature.currentData()
+        self._feature.blockSignals(True)
+        self._feature.clear()
+        for name in self._availability.sensors:
+            count = self._recorded.get(name, 0)
+            self._feature.addItem(f"{name} ({count})", name)
+            item = self._feature.model().item(self._feature.count() - 1)
+            item.setEnabled(count > 0)
+            unit = self.info.shown_unit(name)
+            description = self.info.sensor_descriptions.get(name, "")
+            item.setToolTip(
+                f"{name}{f' [{unit}]' if unit else ''}\n{description}\n"
+                f"recorded in {count} real instances"
+            )
+        index = self._feature.findData(wanted)
+        if index < 0:
+            index = self._feature.findData(self._best_feature())
+        self._feature.setCurrentIndex(max(index, 0))
+        self._feature.blockSignals(False)
+
+        self._rebuild_classes()
+        self._rebuild_instances(fresh=True)
+        self._replot(keep_range=False)
+
+    def _recorded_counts(self) -> dict[str, int]:
+        """How many real instances carry a reading of each sensor at all."""
+        availability = self._availability
+        return {
+            name: int((availability.state[:, j] != ABSENT).sum())
+            for j, name in enumerate(availability.sensors)
+        }
+
+    def _best_feature(self) -> str | None:
+        """The measuring sensor the most instances recorded a moving reading of.
+
+        Two things have to be kept out of the way of the default. A valve state
+        is carried by nearly every instance and is counted *live* even while it
+        holds one position for a whole recording (that is a fact about the
+        well, not a frozen gauge), so the plainest count opens the page on a
+        row of flat lines whose spectrum declines every one of them. And a
+        gauge that is present but frozen says as little. So: the measuring
+        variables first, ranked by how many instances they are live in.
+        """
+        availability = self._availability
+        live = {
+            name: int((availability.state[:, j] == LIVE).sum())
+            for j, name in enumerate(availability.sensors)
+        }
+        best = sorted(live, key=lambda name: (self.info.is_enumerated(name), -live[name], name))
+        return next(
+            (name for name in best if live[name] > 0),
+            next((name for name in sorted(self._recorded) if self._recorded[name] > 0), None),
+        )
+
+    @property
+    def feature(self) -> str | None:
+        data = self._feature.currentData()
+        return None if data is None else str(data)
+
+    @property
+    def well_filter(self) -> int | None:
+        return self._well.currentData()
+
+    def ready(self) -> bool:
+        return self._availability is not None and self.feature is not None
+
+    def _on_feature_changed(self, *args) -> None:
+        if not self.ready():
+            return
+        self._rebuild_classes()
+        self._rebuild_instances(fresh=True)
+        self._replot(keep_range=False)
+
+    def _on_well_changed(self, *args) -> None:
+        if not self.ready():
+            return
+        self._rebuild_classes()
+        self._rebuild_instances(fresh=True)
+        self._replot(keep_range=False)
+
+    def _on_alignment_changed(self, *args) -> None:
+        # The page sets its own default anchor while it is still being built,
+        # before there is a catalogue to list instances from.
+        if not self.ready():
+            return
+        self._rebuild_instances(fresh=False)
+        self._replot(keep_range=False)
+
+    # -- the fault classes on the left
+
+    def _classes_present(self) -> list[int]:
+        """Every fault class in the catalogue, in folder order."""
+        if self._catalogue is None:
+            return []
+        return sorted(int(fault) for fault in self._catalogue["fault_class"].unique())
+
+    def _class_counts(self) -> dict[int, int]:
+        """Per class, how many of its instances recorded the sensor chosen, under the well filter."""
+        availability, feature = self._availability, self.feature
+        counts = {fault: 0 for fault in self._classes_present()}
+        if availability is None or feature is None:
+            return counts
+        column = availability.sensors.index(feature)
+        bars = availability.bars
+        faults = bars["fault_class"].to_numpy()
+        wells = bars["well"].to_numpy()
+        recorded = availability.state[:, column] != ABSENT
+        chosen = self.well_filter
+        for fault in counts:
+            rows = (faults == fault) & recorded
+            if chosen is not None:
+                rows &= wells == chosen
+            counts[fault] = int(rows.sum())
+        return counts
+
+    def _rebuild_classes(self) -> None:
+        """Offer every fault class, greying those with no instance of the sensor chosen."""
+        wanted = {fault for fault, check in self._class_checks.items() if check.isChecked()}
+        fresh = not self._class_checks
+        for check in self._class_checks.values():
+            check.deleteLater()
+        self._class_checks = {}
+        while self._class_layout.count():
+            item = self._class_layout.takeAt(0)
+            if item.widget() is not None:
+                item.widget().deleteLater()
+        counts = self._class_counts()
+        for fault, count in counts.items():
+            check = QCheckBox(f"{fault}. {self.info.fault_name(fault)} ({count})")
+            check.setIcon(self.chip(fault_color(fault)))
+            check.setToolTip(
+                f"{self.info.fault_name(fault)}: {count} real instances recorded "
+                f"{self.feature}{' at this well' if self.well_filter is not None else ''}"
+            )
+            check.setEnabled(count > 0)
+            check.setChecked(count > 0 and (fresh or fault in wanted))
+            check.toggled.connect(self._on_class_toggled)
+            self._class_checks[fault] = check
+            self._class_layout.addWidget(check)
+        self._class_layout.addStretch(1)
+
+    def selected_classes(self) -> list[int]:
+        return [fault for fault, check in self._class_checks.items() if check.isChecked()]
+
+    def _on_class_toggled(self, *args) -> None:
+        self._rebuild_instances(fresh=True)
+        self._replot(keep_range=False)
+
+    def _set_all_classes(self, checked: bool) -> None:
+        for check in self._class_checks.values():
+            check.blockSignals(True)
+            check.setChecked(checked and check.isEnabled())
+            check.blockSignals(False)
+        self._on_class_toggled()
+
+    # -- the instances on the right
+
+    def _instances_of(self) -> list[dict]:
+        """Every real instance of a ticked class that recorded the sensor, by class then by well."""
+        availability, feature = self._availability, self.feature
+        column = availability.sensors.index(feature)
+        chosen_well = self.well_filter
+        found = []
+        for fault in self.selected_classes():
+            for well in sorted(self._wells):
+                if chosen_well is not None and well != chosen_well:
+                    continue
+                data = self._wells[well]
+                rows = data.rows
+                for position in np.flatnonzero(rows["fault_class"].to_numpy() == fault).tolist():
+                    row = availability.index_of(well, position)
+                    if availability.state[row, column] == ABSENT:
+                        continue  # nothing of this sensor here: never worth a read
+                    entry = rows.iloc[position]
+                    runs = (
+                        segments_from_json(str(entry["class_runs"]))
+                        if "class_runs" in rows.columns
+                        else []
+                    )
+                    found.append(
+                        {
+                            "fault": fault,
+                            "well": well,
+                            "position": position,
+                            "file": str(entry["file"]) if "file" in rows.columns else "",
+                            "title": str(entry["file"]).rsplit(".", 1)[0]
+                            if "file" in rows.columns
+                            else str(entry["title"]),
+                            "reach": str(entry["reach"]),
+                            "start": pd.Timestamp(entry["start"]),
+                            "end": pd.Timestamp(entry["end"]),
+                            "hours": float(entry["hours"]),
+                            "onset": onset_from_runs(
+                                runs, fault, self.info.transient_offset, self.alignment
+                            ),
+                            "runs": runs,
+                            "implausible": bool(availability.implausible[row, column]),
+                        }
+                    )
+        return found
+
+    def _rebuild_instances(self, fresh: bool) -> None:
+        """List the instances, the earliest few of each class ticked when the question changed."""
+        previously = {
+            (entry["fault"], entry["well"], entry["position"])
+            for entry, item in zip(self._instances, self._items)
+            if item.checkState() == Qt.CheckState.Checked
+        }
+        self._instances = self.sorted_entries(self._instances_of())
+        self._building = True
+        self._list.clear()
+        self._items = []
+        per_class: dict[int, int] = {}
+        wells = well_colors(self._wells)
+        for entry in self._instances:
+            item = QListWidgetItem(self._item_text(entry))
+            item.setIcon(self.chip(self._line_color(entry, wells)))
+            item.setToolTip(self._item_tooltip(entry))
+            aligned = entry["onset"] is not None
+            flags = Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsSelectable
+            if aligned:
+                flags |= Qt.ItemFlag.ItemIsEnabled
+            item.setFlags(flags)
+            if fresh:
+                # The earliest few of each class rather than the earliest few
+                # overall: a class whose instances all come later would
+                # otherwise open with nothing in its section.
+                taken = per_class.get(entry["fault"], 0)
+                check = aligned and taken < DEFAULT_PER_CLASS
+                per_class[entry["fault"]] = taken + check
+            else:
+                check = aligned and (
+                    (entry["fault"], entry["well"], entry["position"]) in previously
+                )
+            item.setCheckState(Qt.CheckState.Checked if check else Qt.CheckState.Unchecked)
+            self._list.addItem(item)
+            self._items.append(item)
+        self._building = False
+        self._chips_by_well = self.colors_by_well
+        self._refresh_instance_note()
+
+    def _item_text(self, entry: dict) -> str:
+        onset = entry["onset"]
+        when = f"{onset:%Y-%m-%d %H:%M}" if onset is not None else "no onset in the labels"
+        mark = " ⚠" if entry["implausible"] else ""
+        return f"{entry['fault']}. {entry['title']}{mark} | {when}"
+
+    def _item_tooltip(self, entry: dict) -> str:
+        fault = entry["fault"]
+        reach = "" if fault == 0 else f" | {REACH_LABELS[entry['reach']]}"
+        text = (
+            f"{well_label(entry['well'])} | {self.info.fault_name(fault)}{reach}\n"
+            f"{entry['start']:%Y-%m-%d %H:%M:%S} → {entry['end']:%Y-%m-%d %H:%M:%S} "
+            f"({entry['hours']:.1f} h)"
+        )
+        if entry["onset"] is None:
+            text += (
+                f"\nThe labels never reach the {ALIGNMENT_NAMES[self.alignment].lower()}, so "
+                f"this instance cannot be aligned on it. {ALIGN_NOTE}"
+            )
+        if entry["implausible"]:
+            text += f"\n⚠ {self.feature} reads outside its plausible range in this instance."
+        return text + self.model_tooltip_lines(entry)
+
+    def _on_item_changed(self, item) -> None:
+        if not self._building:
+            self._replot()
+
+    def _on_item_open(self, row: int) -> None:
+        """A click on an instance's name opens its window, on its default features."""
+        entry = self._instances[row]
+        self.open_instance(entry["well"], entry["position"])
+
+    def _set_all_instances(self, checked: bool) -> None:
+        self._building = True
+        for item in self._items:
+            if item.flags() & Qt.ItemFlag.ItemIsEnabled:
+                item.setCheckState(Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked)
+        self._building = False
+        self._replot()
+
+    def _checked_instances(self) -> list[dict]:
+        return [
+            entry
+            for entry, item in zip(self._instances, self._items)
+            if item.checkState() == Qt.CheckState.Checked and entry["onset"] is not None
+        ]
+
+    def _refresh_instance_note(self) -> None:
+        n = len(self._instances)
+        aligned = sum(1 for entry in self._instances if entry["onset"] is not None)
+        drawn = len(self._checked_instances())
+        classes = len(self.selected_classes())
+        parts = [f"{drawn} of {n} instances drawn, in {classes} classes"]
+        if aligned < n:
+            parts.append(
+                f"{n - aligned} greyed out: their labels never reach the "
+                f"{ALIGNMENT_NAMES[self.alignment].lower()}"
+            )
+        if n > drawn and drawn:
+            parts.append(
+                f"the earliest {DEFAULT_PER_CLASS} of each class were ticked to start with"
+            )
+        limit = self._per_section_limit()
+        if self.small_multiples and any(
+            sum(1 for entry in self._checked_instances() if entry["fault"] == fault) > limit
+            for fault in self.selected_classes()
+        ):
+            # Only where it bites: the cap is spent per class, so it is silent
+            # until one class is ticked past its share of the grid.
+            parts.append(f"the grid draws the first {limit} of each class")
+        self._instance_note.setText(" | ".join(parts) + ".")
+        self._note.setText(parts[0])
+
+    # -- what the shared machinery asks of this page
+
+    def before_replot(self) -> None:
+        self._refresh_instance_note()
+        # The layout or the coloring may have changed what the lines key.
+        self._refresh_chips()
+
+    def _per_section_limit(self) -> int:
+        """How many instances of one class a grid draws, so that every class gets a share of it.
+
+        The faults page caps the grid at the first few dozen instances of the
+        one fault it draws; here the cap has to be spent per class, or the last
+        classes of a long list would come out empty while the first filled the
+        screen.
+        """
+        classes = max(len(self.selected_classes()), 1)
+        return max(1, MAX_SMALL_MULTIPLES // classes)
+
+    def _drawn_members(self, section: Section) -> list[int]:
+        if not self.small_multiples:
+            return list(section.members)
+        return section.members[: self._per_section_limit()]
+
+    def load_series(self) -> list[Series]:
+        # In the grid every plot holds one instance under a heading naming its
+        # class, and the class hues are the shading behind it and the stacks of
+        # a histogram, which a line of the same hue would vanish into: the line
+        # takes its well's color, which the heading does not give. Overlaid,
+        # every class is in one plot and the line is the only key there is, of
+        # the class or of the well as *Color by* says; pooled, a curve stands
+        # for a class (``colors_by_well``).
+        wells = well_colors(self._wells)
+        series = []
+        for entry in self._checked_instances():
+            data = self._wells[entry["well"]]
+            frame = self._frames.get(data.rows["path"].iloc[entry["position"]])
+            hours = relative_hours(frame.index, entry["onset"])
+            series.append(
+                Series(
+                    entry["well"],
+                    entry["position"],
+                    entry["title"],
+                    frame,
+                    entry["onset"],
+                    hours,
+                    self._line_color(entry, wells),
+                    int(entry["fault"]),
+                    entry.get("runs", []),
+                    self.model_runs_for(entry["fault"], entry.get("file", "")),
+                )
+            )
+        return series
+
+    def sections(self) -> list[Section]:
+        """The grid: one section per class. Overlaid: one plot, every class in it.
+
+        A section becomes one plot when the layout is *Overlaid*, so a section
+        per class would draw each class on a set of axes of its own, where
+        every curve carries that class's color and the color therefore says
+        nothing: the reader is comparing instances inside one class, and the
+        key has told them nothing. Overlaying is worth doing here precisely
+        *across* the classes: one histogram, or one set of spectra, with the
+        classes over one another in their own hues, which is the question the
+        page was asked for. So the overlay folds them into a single section and
+        the color becomes the key, read off the list of classes on the left.
+        """
+        feature = self.feature
+        if feature is None or not self._series:
+            return []
+        if not self.small_multiples:
+            return [Section(feature, feature, feature, list(range(len(self._series))))]
+        members: dict[int, list[int]] = {fault: [] for fault in self.selected_classes()}
+        for i, series in enumerate(self._series):
+            members.setdefault(series.fault, []).append(i)
+        return [
+            Section(fault, feature, f"{fault}. {self.info.fault_name(fault)}", members[fault])
+            for fault in self.selected_classes()
+            if members.get(fault)
+        ]
+
+    def pool_key(self, series: Series):
+        """Pooled, a class becomes one curve: telling the classes apart is what the page is for."""
+        return series.fault
+
+    def pool_headline(self, members: list[int]) -> str:
+        fault = self._series[members[0]].fault
+        return (
+            f"{fault}. {self.info.fault_name(fault)} | {self.feature} | "
+            f"{SeriesPage.pool_headline(self, members)}"
+        )
+
+    def read_out_features(self) -> list[str]:
+        feature = self.feature
+        return [feature] if feature else []
+
+    def empty_message(self) -> str:
+        if not self.selected_classes():
+            return "Tick a fault class on the left to draw it."
+        return "No instance of the classes ticked is aligned and recorded this sensor."
+
+    def section_note(self, section: Section, drawn: int, total: int) -> str:
+        whole = len([i for i in section.members])
+        if drawn == whole:
+            return ""
+        return f" | {whole - drawn} more ticked, beyond what this layout draws"
+
+    def series_headline(self, series: Series) -> str:
+        return (
+            f"{well_label(series.well)} | {series.title} | "
+            f"{self.info.fault_name(series.fault)} | {self.feature} | "
+            f"{ALIGNMENT_NAMES[self.alignment].lower()} at {series.onset:%Y-%m-%d %H:%M:%S}"
+        )
+
+    def summary(self) -> str:
+        """One line for the status bar: the sensor, the classes it is drawn over, what is on show."""
+        feature = self.feature
+        if feature is None or self._catalogue is None:
+            return ""
+        version = f"3W {self.info.version} | " if self.info.version else ""
+        unit = self.info.shown_unit(feature)
+        where = "" if self.well_filter is None else f" | {well_label(self.well_filter)}"
+        return (
+            f"{version}{feature}{f' [{unit}]' if unit else ''}{where} | recorded in "
+            f"{self._recorded.get(feature, 0)} real instances | "
+            f"{len(self.selected_classes())} classes | {len(self._series)} drawn "
+        )
+
+    # -- pointer
+
+    def _on_item_entered(self, item) -> None:
+        """Pointing at an instance in the list names its line."""
+        try:
+            position = self._items.index(item)
+        except ValueError:
+            return
+        entry = self._instances[position]
+        for i, series in enumerate(self._series):
+            if series.well == entry["well"] and series.position == entry["position"]:
+                self._highlight(i)
+                self.status.emit(self._describe(i, None, None))
+                return
+        self._highlight(-1)

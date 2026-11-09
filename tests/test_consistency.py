@@ -6,7 +6,7 @@ No Qt involved.
 import numpy as np
 import pandas as pd
 
-from overlap_viewer.algorithms.consistency import (
+from well_data_viewer.algorithms.consistency import (
     PRODUCTION,
     SERVICE,
     orders_of,

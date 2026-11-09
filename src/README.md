@@ -3,42 +3,48 @@
 The package is laid out by focus, and the dependencies grow from one layer to the next:
 
 - **`backend`**: what the data is: reading `dataset.ini`, the instance catalogue and its caches,
-  the label runs, the availability model, and the viewer's own data (theme, palette, help text).
-  Pandas, numpy and pyarrow only; no Qt, so every module here is testable without a display.
+  the label runs, and the viewer's own data (theme, palette, help text). Pandas, numpy and pyarrow
+  only; no Qt, so every module here is testable without a display. It imports neither of the other
+  layers.
 - **`algorithms`**: what is computed from the data: onsets and scaling, the signal transforms,
-  and every analysis built for the later pages (interpolation, descriptors, cleaning, embedding,
-  dispersion). Numpy only; anything heavier (scikit-learn, UMAP, dtaidistance) is an
+  the profile pass and the availability model built on it, and every analysis built for the later
+  pages (interpolation, descriptors, cleaning, embedding, dispersion). Numpy and pandas, no Qt; it
+  imports from `backend` alone. Anything heavier (scikit-learn, UMAP, dtaidistance) is an
   optional extra, declared in `pyproject.toml` and looked up through `backend.extras` so that a
   missing one greys a control instead of breaking the viewer.
 - **`frontend`**: how it is shown: the pyqtgraph items, the pages, the instance window and the
   main window. PySide6 and pyqtgraph.
 
+The [UML diagrams](../docs/reference/uml.md) draw the same structure: the imports between the
+layers, and every module's classes with what they inherit, create and keep (written by
+`scripts/uml.py`, which the tests keep in step with the code).
+
 `app.py` is the command line and start-up; it is the one module of the top level that imports from
-all three. `__main__.py` lets `python -m overlap_viewer` run it the same way `main.py` does from a
+all three. `__main__.py` lets `python -m well_data_viewer` run it the same way `main.py` does from a
 checkout.
 
 ```
-src/overlap_viewer/
+src/well_data_viewer/
 ├── app.py                command line and start-up
-├── __main__.py           python -m overlap_viewer
+├── __main__.py           python -m well_data_viewer
 ├── backend/              what the data is: pandas, numpy and pyarrow only
 │   ├── config.py         dataset fallbacks, plausible ranges, the tint ladder, signatures, layout, cache
 │   ├── dataset.py        dataset.ini, instance catalogue and its cache, sensor figures from the footers, from merged recordings and pair by pair, overlaps and joins per well
-│   ├── profiles.py       the pass that profiles every sensor of every instance and bar: how it was measured, what it amounts to, cached
 │   ├── labels.py         label kinds and names, runs, their agreement and their merge, feature statistics, coverage counts, a stamp at a frame's own resolution
 │   ├── timemap.py        gap-compressed (or calendar) time axis in hours
-│   ├── availability.py   the three states of a sensor in a bar, the measured/filled split of the live share, groups folded into shares of samples or of bars, the pair map of a scope
 │   ├── extras.py         the optional dependency groups: what each enables, whether it is installed, how it is installed
 │   ├── model_outputs.py  the model-output format: model.json beside per-instance parquet files, its loader, the agreement with the labels
 │   ├── theme.py          every color of the light and of the dark mode
 │   ├── palette.py        fault hues tinted by reach, legend entries
 │   └── help_text.py      what the help says: classes, variables, statuses, availability, sources
-├── algorithms/           what is computed from the data: numpy only; anything heavier is an optional extra
+├── algorithms/           what is computed from the data: numpy and pandas; anything heavier is an optional extra
 │   ├── faults.py         where the event begins in an instance, z-scores, the plausible extent of a series
 │   ├── interpolation.py  which samples are measurements and which the historian drew: held, interpolated, genuine, the spacing of the measurements
 │   ├── descriptors.py    what a series amounts to: moments, quantiles, autocorrelation time, signal-to-noise ratio, Zhang's Gaussianity test
 │   ├── cleaning.py       the Toolkit's CleanSignals rule on the profiles: bounds at the quartiles, the sensors discarded and dropped
 │   ├── consistency.py    whether the readings of one recording agree: the pressures in the order the flow imposes, line by line, and the well state with the valve states
+│   ├── profiles.py       the pass that profiles every sensor of every instance and bar: how it was measured, what it amounts to, cached
+│   ├── availability.py   the three states of a sensor in a bar, the measured/filled split of the live share, groups folded into shares of samples or of bars, the pair map of a scope
 │   ├── embedding.py      the Instances map: representations, PCA and MDS in numpy, t-SNE and UMAP, the clusterings and their scores, typicality, the one-class audit
 │   ├── dtw.py            the DTW distance between the decimated, z-scored series of one sensor (the `dtw` extra)
 │   ├── dispersion.py     two sensors against each other over a scope: an even subsample of every instance with its label periods and measurements, the pair, its density
@@ -93,8 +99,8 @@ choices.
   measurement.
 - `asset_path(name)`: locates one help-window illustration under `ASSET_DIRS`, `None` if not
   shipped.
-- `cache_dir()`: the platform cache directory (`%LOCALAPPDATA%/overlap-viewer` on Windows,
-  `$XDG_CACHE_HOME/overlap-viewer` or `~/.cache/overlap-viewer` elsewhere).
+- `cache_dir()`: the platform cache directory (`%LOCALAPPDATA%/3w-well-data-viewer` on Windows,
+  `$XDG_CACHE_HOME/3w-well-data-viewer` or `~/.cache/3w-well-data-viewer` elsewhere).
 
 Notable constants: `DEFAULT_FAULT_NAMES`, `DEFAULT_TRANSIENT_OFFSET`, `DEFAULT_SENSOR_UNITS`,
 `WELL_STATES`, `FAULT_SIGNATURES` (the sensors that reproduce the 2.0.0 paper's example figures per
@@ -105,7 +111,7 @@ illustrate (read off the thesis), documentation the help shows and no page ticks
 on), `REAL_PREFIX = "WELL-"`, `PLAUSIBLE_RANGES` and `EXTREME_VALUE_LIMIT` (the plausibility
 survey's results), `REACH_TINTS`/`REACH_LABELS`/`BACKGROUND_TINTS` (the tint ladder `palette.py`
 uses), layout numbers (`DEFAULT_GAP_HOURS`, `BAR_HEIGHT`, `MAX_OVERLAID_INSTANCES`, …),
-`RAW_DIR_ENV = "OVERLAP_VIEWER_RAW_DATA_DIR"` and `RAW_DIR_CANDIDATES`, `PACKAGE_DIR`/`PROJECT_DIR`/
+`RAW_DIR_ENV = "WELL_DATA_VIEWER_RAW_DATA_DIR"` and `RAW_DIR_CANDIDATES`, `PACKAGE_DIR`/`PROJECT_DIR`/
 `ASSET_DIRS`.
 
 ### `dataset.py`
@@ -151,39 +157,6 @@ cached data passes: merged sensor figures for joined bars, and sensor-pair co-va
 - `listing_digest(listing)`: sha1 digest of a file listing, used to validate every cache in the
   package.
 
-### `profiles.py`
-
-The single data pass that profiles every sensor of every real instance and every bar of the joined
-view: how it was measured (genuine/interpolated/held sample counts, spacing, from
-`algorithms.interpolation`) and what it amounts to statistically (moments, quantiles, autocorrelation
-time, SNR, Gaussianity, from `algorithms.descriptors`), computed twice, on the full 1 Hz grid and on
-the measurements alone. It also checks the order of the pressures along each line
-(`algorithms.consistency`), recording per sensor the samples out of order and the pressures it
-contradicts, and the well state against the valve states, recording per valve the samples that
-contradict the state and the states. Every instance is profiled a second time on its labeled samples
-alone (the `labeled` scope, keyed like an instance), which is what the Instances map reads: on 3W
-2.0.0 almost every sample two overlapping windows share is labeled in exactly one of them, so leaving
-the unlabeled samples out counts each shared instant once (`PROFILE_VERSION` 5). Cached as one long
-parquet table next to the catalogue.
-
-- `DescriptorChoice` (frozen dataclass): one of the five descriptors the Windows page offers as a
-  statistic (autocorrelation time, SNR, Gaussianity slope, skewness, kurtosis), its grid column
-  `column` and the measurements' `column_g`; method `format(value)`.
-- `profile_series(values, bounds, enumerated, step_s)`: profiles one sensor's array: strips
-  implausible readings, classifies sample kinds, computes sampling and descriptors twice.
-- `profile_frame(frame, sensors, info)`: one profile row per sensor of one frame.
-- `labeled_part(frame)`: the samples of an instance whose `class` is known.
-- `scan_profiles(wells, sensors, info, progress=None)`: the full pass, over every instance (whole and
-  on its labeled samples) and every joined bar.
-- `Profiles` (dataclass): the loaded table, with lookup indexes; methods `row(key, sensor, joined)`,
-  `descriptor(key, sensor, column, joined)`, `sampling(key, sensor, joined)`, `matrix(keys, joined,
-  column, sensors=None, labeled=False)`, `order_partners(key, sensor, joined)`, `state_conflicts(key, sensor,
-  joined)`, `scope(joined)`.
-- `load_profiles(info, wells, sensors, use_cache=True, progress=None, cache_only=False)`: the
-  cache-aware entry point, validated by listing digest, sensor set and `PROFILE_VERSION`; with
-  `cache_only` it never reads the data and returns `None` for a missing or stale cache, which is how
-  `Passes.profiles_if_loaded` picks up a cache an earlier session left.
-
 ### `labels.py`
 
 Everything derived from the `class`/`state` label columns: classifying label values, splitting into
@@ -223,31 +196,6 @@ proportional and overlaps still read correctly.
   hour axis; `to_x(timestamps)` / `to_time(x)` convert between a timestamp and its axis position
   (`None` inside a collapsed silence); `block_spans()`, `gap_centers()`; properties `span`, `origin`,
   `calendar_days`, `recorded_hours`.
-
-### `availability.py`
-
-Models the three availability states of a sensor within a bar (absent/frozen/live), and folds
-bar-level sensor stats into group-level tables (sample-shares or bar-shares, by fault class, well or
-instance), plus the sensor-pair co-occurrence map behind the "Sensor pairs" matrix. Splits the live
-share further into measured-vs-filled when `profiles.Profiles` are supplied.
-
-- `sensor_state(n_valid, n_total, low, high, enumerated, threshold)`: classifies one sensor of one
-  bar into absent/frozen/live (a valve state never freezes).
-- `implausible_sensors(stats, info)`: sensor names of a bar whose readings leave the plausible
-  range.
-- `AvailabilityTable` (frozen dataclass): one row per group of bars; properties `shares`,
-  `instance_shares`, `measured`; methods `measured_share`, `spacing_s`, `coverage_order`.
-- `Availability` (frozen dataclass): per-bar raw arrays; classmethods `from_wells(views, info,
-  threshold, joined_stats=None, profiles=None)` (the main builder) and `from_catalogue(...)`; methods
-  `index_of(well, bar)`, `shares_of`, `implausible_any`, `order_any`,
-  `out_of_order_pairs`, `state_any`, `state_conflicts_of`, `grouped(keys, order, mask)`
-  (folds bars into an `AvailabilityTable`), `total(key, mask)`.
-- `PairTable` (frozen dataclass): square sensor×sensor co-validity matrix for one scope; method
-  `grouped_order()`: spectral seriation (Fiedler-vector ordering) so co-recorded sensors sit
-  together.
-- `PairCoverage` (frozen dataclass): per-bar upper-triangle pair counts; classmethods
-  `from_counts(availability, counts)` / `from_joined(availability, joined)`; method `table(...)`
-  folds into a `PairTable`.
 
 ### `extras.py`
 
@@ -334,8 +282,9 @@ logic. Every entry names the document it leans on.
 
 ## `algorithms/`
 
-Numpy-only; heavier optional dependencies (`dtaidistance`, scikit-learn, UMAP) are imported lazily
-inside functions and gated by `backend.extras`.
+Numpy and pandas, no Qt, importing from `backend` alone; heavier optional dependencies
+(`dtaidistance`, scikit-learn, UMAP) are imported lazily inside functions and gated by
+`backend.extras`.
 
 ### `faults.py`
 
@@ -435,6 +384,64 @@ says nothing, and a choke is closed at 0 %. The instance window runs it on every
 The profile pass runs it on every instance and joined bar too, recording per valve
 `n_against_state` and `state_conflicts`, which `Availability` reads into `against_state` and
 `state_conflicts` for the red top-left mark of the pages (`items.STATE_MARK`).
+
+### `profiles.py`
+
+The single data pass that profiles every sensor of every real instance and every bar of the joined
+view: how it was measured (genuine/interpolated/held sample counts, spacing, from
+`algorithms.interpolation`) and what it amounts to statistically (moments, quantiles, autocorrelation
+time, SNR, Gaussianity, from `algorithms.descriptors`), computed twice, on the full 1 Hz grid and on
+the measurements alone. It also checks the order of the pressures along each line
+(`algorithms.consistency`), recording per sensor the samples out of order and the pressures it
+contradicts, and the well state against the valve states, recording per valve the samples that
+contradict the state and the states. Every instance is profiled a second time on its labeled samples
+alone (the `labeled` scope, keyed like an instance), which is what the Instances map reads: on 3W
+2.0.0 almost every sample two overlapping windows share is labeled in exactly one of them, so leaving
+the unlabeled samples out counts each shared instant once (`PROFILE_VERSION` 5). Cached as one long
+parquet table next to the catalogue.
+
+- `DescriptorChoice` (frozen dataclass): one of the five descriptors the Windows page offers as a
+  statistic (autocorrelation time, SNR, Gaussianity slope, skewness, kurtosis), its grid column
+  `column` and the measurements' `column_g`; method `format(value)`.
+- `profile_series(values, bounds, enumerated, step_s)`: profiles one sensor's array: strips
+  implausible readings, classifies sample kinds, computes sampling and descriptors twice.
+- `profile_frame(frame, sensors, info)`: one profile row per sensor of one frame.
+- `labeled_part(frame)`: the samples of an instance whose `class` is known.
+- `scan_profiles(wells, sensors, info, progress=None)`: the full pass, over every instance (whole and
+  on its labeled samples) and every joined bar.
+- `Profiles` (dataclass): the loaded table, with lookup indexes; methods `row(key, sensor, joined)`,
+  `descriptor(key, sensor, column, joined)`, `sampling(key, sensor, joined)`, `matrix(keys, joined,
+  column, sensors=None, labeled=False)`, `order_partners(key, sensor, joined)`, `state_conflicts(key, sensor,
+  joined)`, `scope(joined)`.
+- `load_profiles(info, wells, sensors, use_cache=True, progress=None, cache_only=False)`: the
+  cache-aware entry point, validated by listing digest, sensor set and `PROFILE_VERSION`; with
+  `cache_only` it never reads the data and returns `None` for a missing or stale cache, which is how
+  `Passes.profiles_if_loaded` picks up a cache an earlier session left.
+
+### `availability.py`
+
+Models the three availability states of a sensor within a bar (absent/frozen/live), and folds
+bar-level sensor stats into group-level tables (sample-shares or bar-shares, by fault class, well or
+instance), plus the sensor-pair co-occurrence map behind the "Sensor pairs" matrix. Splits the live
+share further into measured-vs-filled when `profiles.Profiles` are supplied.
+
+- `sensor_state(n_valid, n_total, low, high, enumerated, threshold)`: classifies one sensor of one
+  bar into absent/frozen/live (a valve state never freezes).
+- `implausible_sensors(stats, info)`: sensor names of a bar whose readings leave the plausible
+  range.
+- `AvailabilityTable` (frozen dataclass): one row per group of bars; properties `shares`,
+  `instance_shares`, `measured`; methods `measured_share`, `spacing_s`, `coverage_order`.
+- `Availability` (frozen dataclass): per-bar raw arrays; classmethods `from_wells(views, info,
+  threshold, joined_stats=None, profiles=None)` (the main builder) and `from_catalogue(...)`; methods
+  `index_of(well, bar)`, `shares_of`, `implausible_any`, `order_any`,
+  `out_of_order_pairs`, `state_any`, `state_conflicts_of`, `grouped(keys, order, mask)`
+  (folds bars into an `AvailabilityTable`), `total(key, mask)`.
+- `PairTable` (frozen dataclass): square sensor×sensor co-validity matrix for one scope; method
+  `grouped_order()`: spectral seriation (Fiedler-vector ordering) so co-recorded sensors sit
+  together.
+- `PairCoverage` (frozen dataclass): per-bar upper-triangle pair counts; classmethods
+  `from_counts(availability, counts)` / `from_joined(availability, joined)`; method `table(...)`
+  folds into a `PairTable`.
 
 ### `embedding.py`
 
