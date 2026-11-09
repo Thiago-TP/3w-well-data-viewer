@@ -59,22 +59,22 @@ import pandas as pd
 from availability import tex_unit
 from timelines import number, write_csv
 
-from overlap_viewer.algorithms.interpolation import (
+from well_data_viewer.algorithms.availability import ABSENT, FROZEN, sensor_state
+from well_data_viewer.algorithms.interpolation import (
     GENUINE,
     describe_sampling,
     sample_kinds,
     sampling_of,
 )
-from overlap_viewer.backend import theme
-from overlap_viewer.backend.availability import ABSENT, FROZEN, sensor_state
-from overlap_viewer.backend.config import (
+from well_data_viewer.backend import theme
+from well_data_viewer.backend.config import (
     BEST_EFFORT_SIGNATURES,
     FAULT_SIGNATURES,
     WELL_STATES,
     plausible_range,
 )
-from overlap_viewer.backend.dataset import DatasetInfo, load_catalogue, load_instance_columns
-from overlap_viewer.backend.labels import (
+from well_data_viewer.backend.dataset import DatasetInfo, load_catalogue, load_instance_columns
+from well_data_viewer.backend.labels import (
     column_as_float,
     feature_stats,
     format_delta,
@@ -86,7 +86,7 @@ from overlap_viewer.backend.labels import (
     sensor_stats_from_json,
     state_name,
 )
-from overlap_viewer.backend.palette import background_color, bar_color, state_color, text_color
+from well_data_viewer.backend.palette import background_color, bar_color, state_color, text_color
 
 ROOT = Path(__file__).resolve().parents[1]
 FIGURES = ROOT / "figures" / "faults"

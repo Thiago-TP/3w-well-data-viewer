@@ -3,8 +3,8 @@ One sensor of a well the way a model of the 3W reads it: cut into windows of a f
 samples, every window carrying one label. The division is made here, in software, from the
 instance files themselves: choose a well and a sensor and every instance of the well is read,
 behind a progress dialog, and cut into windows of 256, 512 or 1024 samples
-([`algorithms/windows.py`](../../src/overlap_viewer/algorithms/windows.py),
-[`frontend/windows_page.py`](../../src/overlap_viewer/frontend/windows_page.py)).
+([`algorithms/windows.py`](../../src/well_data_viewer/algorithms/windows.py),
+[`frontend/windows_page.py`](../../src/well_data_viewer/frontend/windows_page.py)).
 
 ![Windows page](../assets/windows.png)
 

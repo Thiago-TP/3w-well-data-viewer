@@ -9,7 +9,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
-from overlap_viewer.backend import theme
+from well_data_viewer.backend import theme
 
 T0 = pd.Timestamp("2017-02-01 01:00:00")
 

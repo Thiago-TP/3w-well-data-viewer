@@ -7,7 +7,7 @@ dataset version, when. A file whose provenance is not written down is not an exa
 ## Model outputs
 
 The viewer draws a model's verdicts onto the data when they come in its model-output format
-(`src/overlap_viewer/backend/model_outputs.py`, and the *Model outputs* tab of the help): a folder
+(`src/well_data_viewer/backend/model_outputs.py`, and the *Model outputs* tab of the help): a folder
 holding `model.json` (the model's `name`, its `kind` (`detection` or `classification`), the meaning
 of its `labels`, a `description` and its `provenance`) beside one `<fault_class>/<instance>.parquet`
 per instance scored, each indexed by `timestamp` with an integer `label` column and an optional

@@ -69,11 +69,11 @@ from pathlib import Path
 import numpy as np
 from timelines import number, write_csv
 
-from overlap_viewer.algorithms import embedding as em
-from overlap_viewer.backend import theme
-from overlap_viewer.backend.dataset import DatasetInfo, load_catalogue, split_wells
-from overlap_viewer.backend.palette import fault_color
-from overlap_viewer.backend.profiles import load_profiles
+from well_data_viewer.algorithms import embedding as em
+from well_data_viewer.algorithms.profiles import load_profiles
+from well_data_viewer.backend import theme
+from well_data_viewer.backend.dataset import DatasetInfo, load_catalogue, split_wells
+from well_data_viewer.backend.palette import fault_color
 
 ROOT = Path(__file__).resolve().parents[1]
 FIGURES = ROOT / "figures" / "instances"

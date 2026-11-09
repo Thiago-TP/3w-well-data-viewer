@@ -27,9 +27,9 @@ import pyqtgraph as pg
 from PySide6.QtCore import QRect
 from PySide6.QtWidgets import QApplication
 
-from overlap_viewer.app import build_window, parse_args
-from overlap_viewer.backend.labels import padded_range
-from overlap_viewer.frontend import styling
+from well_data_viewer.app import build_window, parse_args
+from well_data_viewer.backend.labels import padded_range
+from well_data_viewer.frontend import styling
 
 
 def settle(seconds: float) -> None:

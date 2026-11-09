@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from overlap_viewer.algorithms import windows as wi
-from overlap_viewer.algorithms.descriptors import describe
+from well_data_viewer.algorithms import windows as wi
+from well_data_viewer.algorithms.descriptors import describe
 
 RNG = np.random.default_rng(5)
 

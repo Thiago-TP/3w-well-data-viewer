@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from overlap_viewer.algorithms import dispersion as di
+from well_data_viewer.algorithms import dispersion as di
 
 RNG = np.random.default_rng(11)
 SENSORS = ["P-TPT", "T-TPT", "P-PDG"]

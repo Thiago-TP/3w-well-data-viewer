@@ -95,7 +95,7 @@ trace). A band at the top marks the stretches recorded by two or more of the bar
   production line from the downhole gauge to the platform (P-PDG, P-TPT, P-MON-CKP, P-JUS-CKP) and,
   on the service line, P-MON-CKGL and P-ANULAR each above P-JUS-CKGL; a pair across a choke is
   compared only while the choke is open, the annulus only while its valves are. The rules and the
-  survey behind them are in [`backend/config.py`](../../src/overlap_viewer/backend/config.py) and
+  survey behind them are in [`backend/config.py`](../../src/well_data_viewer/backend/config.py) and
   the help's Data availability tab. The Availability and Timelines pages mark the same instances
   in the bottom-right corner of their cells and bars.
 - A **well status its valves contradict** is warned of in red: the header of the block names
@@ -111,7 +111,7 @@ trace). A band at the top marks the stretches recorded by two or more of the bar
   the tree closed rather than both. A valve not recorded decides nothing, the 5 minutes either side
   of a change of the label are not compared (the experts set it by hand), and a status counts once
   more than 1 % of its samples compared are contradicted. The rules and the survey behind them are
-  in [`backend/config.py`](../../src/overlap_viewer/backend/config.py) and the help's Well status
+  in [`backend/config.py`](../../src/well_data_viewer/backend/config.py) and the help's Well status
   tab; under them 41 of the 1,119 real instances contradict their valves.
 - **Statistics**, in the toolbar (Ctrl+T), opens a table of what the readings of every sensor
   ticked amount to, one row per sensor of every block: the count, the mean, the median, the

@@ -52,7 +52,7 @@ Last but not least, `F1` anywhere (or clicking on `Help`) opens the Help modal, 
 
 The GUI indicates to the user when a measurement is outside its plausible range.
 Each kind of measurement has its own range, as shown below, found by a survey of every instance of
-3W 2.0.0 ([`backend/config.py`](src/overlap_viewer/backend/config.py)): a magnitude past 1×10⁸ is a
+3W 2.0.0 ([`backend/config.py`](src/well_data_viewer/backend/config.py)): a magnitude past 1×10⁸ is a
 sentinel value or an instrument off by orders of magnitude in every case surveyed, a negative
 pressure or choke opening is physically impossible and so is an opening above 100 %, and the
 temperature band is wide enough to hold a genuine blowdown (as cold as −33.8 °C) while still
@@ -74,7 +74,7 @@ The GUI also warns when two pressures of one line read out of order, downstream 
 which the flow cannot do: on the production line from the downhole gauge to the platform
 (P-PDG, P-TPT, P-MON-CKP, P-JUS-CKP), and on the service line P-MON-CKGL and P-ANULAR each above
 P-JUS-CKGL, a pair across a closed choke or valve being left out. The rules come from a survey of the
-real instances ([`backend/config.py`](src/overlap_viewer/backend/config.py)); under them 35 of the
+real instances ([`backend/config.py`](src/well_data_viewer/backend/config.py)); under them 35 of the
 1,119 real instances of 3W 2.0.0 are out of order. The instance window marks the contradicting
 samples; the Availability and Timelines pages mark the cells and bars once the profile pass, which
 reads every sample, has run.
@@ -84,7 +84,7 @@ article defines each status by the positions of the valves (Open with M1, W1, SD
 production choke open and the crossovers PXO and XO closed, Shut-In with one of the production
 valves closed, and so on), so a stretch labeled Open while the wing valve reads closed says that
 either the label or the valve's tag is wrong. The same survey of the real instances sets the
-rules ([`backend/config.py`](src/overlap_viewer/backend/config.py)): Bullheading is not checked,
+rules ([`backend/config.py`](src/well_data_viewer/backend/config.py)): Bullheading is not checked,
 since no set of valve positions holds through it, and the 5 minutes either side of a change of
 the hand-set label are left out. Under them 41 of the 1,119 real instances contradict their
 valves. The instance window hatches the contradicted stretches in red, on the state band and
@@ -97,7 +97,7 @@ Requires Python 3.11 or newer, [uv](https://docs.astral.sh/uv/) and a local copy
 
 ```bash
 uv sync                    # creates .venv with PySide6, pyqtgraph, pandas, numpy, pyarrow
-uv run overlap-viewer --raw-dir /path/to/3W/dataset
+uv run 3w-well-data-viewer --raw-dir /path/to/3W/dataset
 ```
 
 A plain `uv sync` installs the core alone, and every page opens; the heavier analyses (the Instances
@@ -112,9 +112,9 @@ stay light.
 > there. Name every extra wanted in the one command (`uv sync --extra analysis --extra umap`), or
 > simply use `uv sync --all-extras`.
 
-Without `--raw-dir`, the dataset is taken from the `OVERLAP_VIEWER_RAW_DATA_DIR` environment variable,
+Without `--raw-dir`, the dataset is taken from the `WELL_DATA_VIEWER_RAW_DATA_DIR` environment variable,
 then from `../3W/dataset`, `dataset` or `3W/dataset` relative to the working directory; if none holds a
-dataset, a folder dialog asks for it. `uv run main.py` and `uv run python -m overlap_viewer` are
+dataset, a folder dialog asks for it. `uv run main.py` and `uv run python -m well_data_viewer` are
 equivalent entry points.
 
 | Option             | Default             | Meaning                                                                         |
@@ -129,7 +129,7 @@ equivalent entry points.
 The first launch reads the time span and labels of every real instance, and what every sensor
 recorded from the footer of each file (about 7 s for the 1,119 instances of 3W 2.0.0, behind a
 progress dialog), and caches the result under the platform cache directory
-(`~/.cache/overlap-viewer/` on Linux). Later launches validate the cache against the files' sizes
+(`~/.cache/3w-well-data-viewer/` on Linux). Later launches validate the cache against the files' sizes
 and modification times and open in a few seconds, a progress bar naming each page as it is built
 and laid out; any changed, added or removed file triggers a fresh
 scan, as does the *Rescan dataset* button, and so does a version of the viewer that records more
@@ -169,34 +169,62 @@ group left out of the command is uninstalled if a previous sync had installed it
 working either way (a control whose group has gone is greyed again), but a sync meant to add one
 capability can quietly take another away, so `uv sync --all-extras` is the simplest habit.
 
-The table lives in [`backend/extras.py`](src/overlap_viewer/backend/extras.py) as well as in
+The table lives in [`backend/extras.py`](src/well_data_viewer/backend/extras.py) as well as in
 `pyproject.toml`, and the tests check that the two agree.
 
 ## Layout
 
 The viewer is composed of three packages/layers which dependencies grow from one to the next:
 `backend` (data reading and loading), `algorithms` (data processing) and `frontend` (presentation).
+A layer imports only from itself and the layers before it, which the test suite checks.
 A bird's eye view of the project's organization is shown below; every package, file and its public
-functions are documented in detail in the [source `README`](src/README.md).
+functions are documented in detail in the [source `README`](src/README.md), drawn in the
+[UML diagrams](docs/reference/uml.md) and referenced from their docstrings on the
+[documentation site](#documentation).
 
 ```
 .
-├── pyproject.toml            standalone uv project (package overlap_viewer, script overlap-viewer, the optional extras)
+├── pyproject.toml            standalone uv project (package well_data_viewer, script 3w-well-data-viewer, the optional extras)
 ├── main.py                   runs the viewer from a checkout without installing
-├── docs/
+├── docs/                     the documentation site's sources (Sphinx: conf.py, index.md), and
 │   ├── gui/                  one detailed README per page, linked from the table above
+│   ├── reference/            the UML diagrams (uml.md, written by scripts/uml.py) and the API reference's index
 │   ├── assets/               screenshots, taken again by scripts/screenshots.py, the platform schematics the help shows
 │   ├── papers/               the 3W data articles, the thesis and the graduation project the help draws on
 │   └── presentation/         the beamer slides of the talk at the 5th 3W Workshop, built by latexmk from the official template
 ├── examples/                 one explained example of every file the viewer reads or writes, with its provenance
-├── scripts/                  what produces the examples and the figures, outside the GUI: pca_control_chart.py, screenshots.py
+├── scripts/                  what produces the examples and the figures, outside the GUI: pca_control_chart.py, screenshots.py, uml.py
 ├── tests/                    the test suite, one module per subpackage or analysis, sharing a synthetic 3W layout
-└── src/overlap_viewer/
+└── src/well_data_viewer/
     ├── app.py                command line and start-up
     ├── backend/              what the data is: pandas, numpy and pyarrow only
-    ├── algorithms/           what is computed from the data: numpy only; anything heavier is an optional extra
+    ├── algorithms/           what is computed from the data: numpy and pandas; anything heavier is an optional extra
     └── frontend/             how it is shown: PySide6 and pyqtgraph
 ```
+
+## Documentation
+
+Besides these READMEs, the repository builds a documentation site with
+[Sphinx](https://www.sphinx-doc.org) and the [Furo](https://github.com/pradyunsg/furo) theme, which
+follows the system's light or dark mode as the viewer does. It holds the pages of the user guide
+(`docs/gui`), the [UML diagrams](docs/reference/uml.md) of the package and an API reference of every
+module, class and function, generated from the docstrings at each build:
+
+```bash
+uv sync --group docs                                   # Sphinx, Furo, MyST, sphinxcontrib-mermaid
+uv run --group docs sphinx-build -M html docs docs/_build
+```
+
+and open `docs/_build/html/index.html`. The build needs no dataset and no display.
+
+The UML diagrams are Mermaid, which GitHub draws in [`docs/reference/uml.md`](docs/reference/uml.md)
+and the site draws with the ELK layout, far more legibly for the larger ones. They are read off the
+source code by [`scripts/uml.py`](scripts/uml.py): a package diagram of the three layers and the
+imports between them; for the frontend, an overview of how its classes are built from one another;
+and for every module, its classes with their public attributes and methods, their bases (a Qt or
+pyqtgraph base as a stereotype) and what they create (composition) or are handed (aggregation) and
+keep. Run `uv run python scripts/uml.py` after changing a class: the test suite fails while the
+diagrams and the code disagree.
 
 ## Integration with 3W Toolkit
 
@@ -209,7 +237,7 @@ instances' means and spreads, three interquartile ranges out on either side, dis
 in an instance whose mean or spread falls outside them (a spread below 1e-6 always fails), drops a
 sensor entirely missing in 60 % or more of the instances, and leaves the valve states alone. The
 profile pass holds exactly what the rule needs, so the viewer applies it at no cost
-([`algorithms/cleaning.py`](src/overlap_viewer/algorithms/cleaning.py)) and lets its thresholds
+([`algorithms/cleaning.py`](src/well_data_viewer/algorithms/cleaning.py)) and lets its thresholds
 move: *Toolkit's CleanSignals*, on the Availability page, marks every cell in which the rule would
 discard the sensor in at least one instance of the row with a slash, greys the columns it would
 drop, and says in the tooltip how many and which bound; the *IQR ×* and *drop if missing in* boxes
@@ -232,7 +260,7 @@ such an export would have to carry.
 
 The viewer displays what a model said; it does not train one. For a model's verdicts to be drawn
 onto the data, every verdict has to say which instance and which instant it is about, so the viewer
-defines the format itself ([`backend/model_outputs.py`](src/overlap_viewer/backend/model_outputs.py)),
+defines the format itself ([`backend/model_outputs.py`](src/well_data_viewer/backend/model_outputs.py)),
 the smallest one that says both, and ships an example of it with its provenance written down.
 
 **The format** is a folder: `model.json` beside one `<fault_class>/<instance>.parquet` per instance
@@ -289,7 +317,7 @@ analysis he set out to do, so he stopped there. The viewer takes the direct rout
 too uncertain to take on the whole dataset: a straight line is a run of samples whose first
 difference is constant.
 
-The rule ([`algorithms/interpolation.py`](src/overlap_viewer/algorithms/interpolation.py)): a
+The rule ([`algorithms/interpolation.py`](src/well_data_viewer/algorithms/interpolation.py)): a
 sample equal to the one before it is **held**; a sample collinear with both its neighbours, with a
 non-zero slope, is **interpolated**; everything else (the ends of every line and the first of
 every held run) is a **measurement**, one per value the historian archived. Interpolated and held
@@ -309,11 +337,11 @@ T-TPT every 16 s, QGL every 21 s, P-TPT every 100 s, T-JUS-CKP every two minutes
 every four. Every figure taken on the 1 Hz grid inherits the lines: the signal-to-noise ratio of
 T-JUS-CKP is 36,000 on the grid and 1.5 on its measurements, and its autocorrelation takes seven
 minutes to halve on the grid against 73 s on the measurements. The pass that finds this
-([`backend/profiles.py`](src/overlap_viewer/backend/profiles.py)) reads every file in full once,
+([`algorithms/profiles.py`](src/well_data_viewer/algorithms/profiles.py)) reads every file in full once,
 about 100 s for the whole dataset, and keeps the result in the cache; it profiles every sensor of
 every instance (whole, and on its labeled samples alone, for the Instances map) and of every bar of
 the joined view as the merged recording it is, and computes the
-descriptors of each ([`algorithms/descriptors.py`](src/overlap_viewer/algorithms/descriptors.py):
+descriptors of each ([`algorithms/descriptors.py`](src/well_data_viewer/algorithms/descriptors.py):
 moments, quantiles, autocorrelation time, signal-to-noise ratio, Gaussianity, Melo's own set) both
 on the grid and on the measurements alone, so that wherever a figure taken on the grid is shown
 the viewer can say so.
