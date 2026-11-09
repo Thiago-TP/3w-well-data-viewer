@@ -15,6 +15,10 @@ The package is laid out by focus, and the dependencies grow from one layer to th
 - **`frontend`**: how it is shown: the pyqtgraph items, the pages, the instance window and the
   main window. PySide6 and pyqtgraph.
 
+The [UML diagrams](../docs/reference/uml.md) draw the same structure: the imports between the
+layers, and every module's classes with what they inherit, create and keep (written by
+`scripts/uml.py`, which the tests keep in step with the code).
+
 `app.py` is the command line and start-up; it is the one module of the top level that imports from
 all three. `__main__.py` lets `python -m well_data_viewer` run it the same way `main.py` does from a
 checkout.

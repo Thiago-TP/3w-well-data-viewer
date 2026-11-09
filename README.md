@@ -178,7 +178,8 @@ The viewer is composed of three packages/layers which dependencies grow from one
 `backend` (data reading and loading), `algorithms` (data processing) and `frontend` (presentation).
 A layer imports only from itself and the layers before it, which the test suite checks.
 A bird's eye view of the project's organization is shown below; every package, file and its public
-functions are documented in detail in the [source `README`](src/README.md).
+functions are documented in detail in the [source `README`](src/README.md) and drawn in the
+[UML diagrams](docs/reference/uml.md).
 
 ```
 .
@@ -186,11 +187,12 @@ functions are documented in detail in the [source `README`](src/README.md).
 ├── main.py                   runs the viewer from a checkout without installing
 ├── docs/
 │   ├── gui/                  one detailed README per page, linked from the table above
+│   ├── reference/            the UML diagrams (uml.md, written by scripts/uml.py)
 │   ├── assets/               screenshots, taken again by scripts/screenshots.py, the platform schematics the help shows
 │   ├── papers/               the 3W data articles, the thesis and the graduation project the help draws on
 │   └── presentation/         the beamer slides of the talk at the 5th 3W Workshop, built by latexmk from the official template
 ├── examples/                 one explained example of every file the viewer reads or writes, with its provenance
-├── scripts/                  what produces the examples and the figures, outside the GUI: pca_control_chart.py, screenshots.py
+├── scripts/                  what produces the examples and the figures, outside the GUI: pca_control_chart.py, screenshots.py, uml.py
 ├── tests/                    the test suite, one module per subpackage or analysis, sharing a synthetic 3W layout
 └── src/well_data_viewer/
     ├── app.py                command line and start-up
@@ -198,6 +200,16 @@ functions are documented in detail in the [source `README`](src/README.md).
     ├── algorithms/           what is computed from the data: numpy and pandas; anything heavier is an optional extra
     └── frontend/             how it is shown: PySide6 and pyqtgraph
 ```
+
+## Documentation
+
+The [UML diagrams](docs/reference/uml.md) of the package are Mermaid, which GitHub draws. They are
+read off the source code by [`scripts/uml.py`](scripts/uml.py): a package diagram of the three
+layers and the imports between them; for the frontend, an overview of how its classes are built
+from one another; and for every module, its classes with their public attributes and methods, their
+bases (a Qt or pyqtgraph base as a stereotype) and what they create (composition) or are handed
+(aggregation) and keep. Run `uv run python scripts/uml.py` after changing a class: the test suite
+fails while the diagrams and the code disagree.
 
 ## Integration with 3W Toolkit
 
