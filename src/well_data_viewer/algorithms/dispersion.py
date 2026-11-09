@@ -134,10 +134,16 @@ class Cloud:
     genuine : np.ndarray
         ``(rows, sensors)``: whether the reading was measured rather than
         drawn by the historian.
-    period, fault, well, instance, seconds : np.ndarray
-        Per row: its label period code, the fault folder and the well of its
-        instance, the position of its instance in ``instances``, and the
-        seconds since that instance's first sample.
+    period : np.ndarray
+        Per row: its label period code.
+    fault : np.ndarray
+        Per row: the fault folder of its instance.
+    well : np.ndarray
+        Per row: the well of its instance.
+    instance : np.ndarray
+        Per row: the position of its instance in ``instances``.
+    seconds : np.ndarray
+        Per row: the seconds since its instance's first sample.
     n_samples : int
         How many rows the instances held before the subsample.
     """

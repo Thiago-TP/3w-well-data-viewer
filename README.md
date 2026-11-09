@@ -178,16 +178,17 @@ The viewer is composed of three packages/layers which dependencies grow from one
 `backend` (data reading and loading), `algorithms` (data processing) and `frontend` (presentation).
 A layer imports only from itself and the layers before it, which the test suite checks.
 A bird's eye view of the project's organization is shown below; every package, file and its public
-functions are documented in detail in the [source `README`](src/README.md) and drawn in the
-[UML diagrams](docs/reference/uml.md).
+functions are documented in detail in the [source `README`](src/README.md), drawn in the
+[UML diagrams](docs/reference/uml.md) and referenced from their docstrings on the
+[documentation site](#documentation).
 
 ```
 .
 ├── pyproject.toml            standalone uv project (package well_data_viewer, script 3w-well-data-viewer, the optional extras)
 ├── main.py                   runs the viewer from a checkout without installing
-├── docs/
+├── docs/                     the documentation site's sources (Sphinx: conf.py, index.md), and
 │   ├── gui/                  one detailed README per page, linked from the table above
-│   ├── reference/            the UML diagrams (uml.md, written by scripts/uml.py)
+│   ├── reference/            the UML diagrams (uml.md, written by scripts/uml.py) and the API reference's index
 │   ├── assets/               screenshots, taken again by scripts/screenshots.py, the platform schematics the help shows
 │   ├── papers/               the 3W data articles, the thesis and the graduation project the help draws on
 │   └── presentation/         the beamer slides of the talk at the 5th 3W Workshop, built by latexmk from the official template
@@ -203,13 +204,27 @@ functions are documented in detail in the [source `README`](src/README.md) and d
 
 ## Documentation
 
-The [UML diagrams](docs/reference/uml.md) of the package are Mermaid, which GitHub draws. They are
-read off the source code by [`scripts/uml.py`](scripts/uml.py): a package diagram of the three
-layers and the imports between them; for the frontend, an overview of how its classes are built
-from one another; and for every module, its classes with their public attributes and methods, their
-bases (a Qt or pyqtgraph base as a stereotype) and what they create (composition) or are handed
-(aggregation) and keep. Run `uv run python scripts/uml.py` after changing a class: the test suite
-fails while the diagrams and the code disagree.
+Besides these READMEs, the repository builds a documentation site with
+[Sphinx](https://www.sphinx-doc.org) and the [Furo](https://github.com/pradyunsg/furo) theme, which
+follows the system's light or dark mode as the viewer does. It holds the pages of the user guide
+(`docs/gui`), the [UML diagrams](docs/reference/uml.md) of the package and an API reference of every
+module, class and function, generated from the docstrings at each build:
+
+```bash
+uv sync --group docs                                   # Sphinx, Furo, MyST, sphinxcontrib-mermaid
+uv run --group docs sphinx-build -M html docs docs/_build
+```
+
+and open `docs/_build/html/index.html`. The build needs no dataset and no display.
+
+The UML diagrams are Mermaid, which GitHub draws in [`docs/reference/uml.md`](docs/reference/uml.md)
+and the site draws with the ELK layout, far more legibly for the larger ones. They are read off the
+source code by [`scripts/uml.py`](scripts/uml.py): a package diagram of the three layers and the
+imports between them; for the frontend, an overview of how its classes are built from one another;
+and for every module, its classes with their public attributes and methods, their bases (a Qt or
+pyqtgraph base as a stereotype) and what they create (composition) or are handed (aggregation) and
+keep. Run `uv run python scripts/uml.py` after changing a class: the test suite fails while the
+diagrams and the code disagree.
 
 ## Integration with 3W Toolkit
 

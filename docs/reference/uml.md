@@ -2,7 +2,7 @@
 
 <!-- Written by scripts/uml.py from the source code; do not edit by hand. Run `uv run python scripts/uml.py` after changing a class. -->
 
-The structure of the `well_data_viewer` package, read off its source code by [`scripts/uml.py`](https://github.com/Thiago-TP/3w-well-data-viewer/blob/main/scripts/uml.py) and checked against it by the test suite. A layer whose classes are built from one another has an overview of how, by name; every module then has a diagram of its classes with their public attributes and methods.
+The structure of the `well_data_viewer` package, read off its source code by [`scripts/uml.py`](https://github.com/Thiago-TP/3w-well-data-viewer/blob/main/scripts/uml.py) and checked against it by the test suite. A layer whose classes are built from one another has an overview of how, by name; every module then has a diagram of its classes with their public attributes and methods. The documentation site lays the diagrams out with ELK, which draws the larger ones far more legibly than the layout GitHub uses.
 
 - Inheritance (`<|--`) is drawn between the package's own classes; a base from outside (Qt, pyqtgraph, `NamedTuple`) is the class's stereotype instead, as is `<<dataclass>>`.
 - Composition (`*--`) is an instance a class creates and keeps, aggregation (`o--`) one it keeps but was handed; in a module's diagram each is labeled with the attribute that holds it.

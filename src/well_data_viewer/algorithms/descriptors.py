@@ -201,7 +201,7 @@ def describe(values: np.ndarray, step_s: float = 1.0) -> Descriptors:
 
 
 def autocorrelation(values: np.ndarray, max_lag: int) -> np.ndarray:
-    """The sample autocorrelation ``rho_k`` for ``k = 0 .. max_lag`` (thesis eq. 4.9).
+    """The sample autocorrelation ``rho_k`` for every lag ``k`` from 0 to ``max_lag`` (thesis eq. 4.9).
 
     Computed through the FFT of the zero-padded, demeaned series, which is the
     same sum as the direct formula, normalised by the total sum of squares.
