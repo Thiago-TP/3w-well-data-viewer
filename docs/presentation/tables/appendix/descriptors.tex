@@ -1,0 +1,17 @@
+% Per descriptor of an analog sensor, what it reads of the signal (its level,
+% its shape, how it was sampled) and which representation of the Instances
+% page takes it (algorithms.embedding: LEVEL_FIELDS, SHAPE_FIELDS,
+% SAMPLING_FIELDS; "(log)" for those taken as logarithms, LOG_FIELDS). The
+% cells are written by scripts/instances.py into the CSV beside this file.
+\pgfplotstabletypeset[
+  string type,
+  columns={descriptor, reads, descriptors, shape},
+  columns/descriptor/.style={column name={Descriptor}, column type={l}},
+  columns/reads/.style={column name={Reads}, column type={l}},
+  columns/descriptors/.style={column name={Descriptors}, column type={c}},
+  columns/shape/.style={column name={Shape only}, column type={c}},
+  every head row/.style={before row=\toprule, after row=\midrule},
+  every row no 5/.style={before row=\midrule},
+  every row no 10/.style={before row=\midrule},
+  every last row/.style={after row=\bottomrule},
+]{tables/appendix/descriptors.csv}

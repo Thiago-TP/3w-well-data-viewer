@@ -1,0 +1,13 @@
+descriptor,reads,descriptors,shape
+Mean,level,\checkmark,
+Standard deviation,level,\checkmark,
+Median,level,\checkmark,
+5th percentile,level,\checkmark,
+95th percentile,level,\checkmark,
+Skewness,shape,\checkmark,\checkmark
+Kurtosis,shape,\checkmark,\checkmark
+Autocorrelation time (log),shape,\checkmark,\checkmark
+Signal-to-noise ratio (log),shape,\checkmark,\checkmark
+Gaussianity slope,shape,\checkmark,\checkmark
+Share of samples measured,sampling,\checkmark,\checkmark
+Spacing of the measurements (log),sampling,\checkmark,\checkmark

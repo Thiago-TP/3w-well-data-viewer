@@ -1,7 +1,10 @@
 % The instances of the wells whose instances overlap: each well's instances in
 % grey, the overlapping ones in blue over them; the tag sits at the end of the
 % grey bar, which a stack would not draw for the wells whose instances all
-% overlap. The table is written by scripts/timelines.py.
+% overlap. The table is written by scripts/timelines.py. The blue is the
+% Availability chart's (the viewer's "live", light theme), so that the deck's
+% bar charts share one.
+\definecolor{tloverlap}{HTML}{4F6D8F}
 \begin{tikzpicture}
   \begin{axis}[
       xbar, bar shift=0pt, bar width=1.8mm, scale only axis, width=48mm, height=37mm,
@@ -16,7 +19,7 @@
               nodes near coords, point meta=explicit symbolic,
               every node near coord/.style={font=\tiny, text=ws3wnavy, anchor=west}]
       table [x=instances, y expr=\coordindex, meta=tag] {figures/timelines/overlaps.csv};
-    \addplot [fill=ws3wblue, draw=none]
+    \addplot [fill=tloverlap, draw=none]
       table [x=overlapping, y expr=\coordindex] {figures/timelines/overlaps.csv};
     \legend{instances, overlapping another}
   \end{axis}

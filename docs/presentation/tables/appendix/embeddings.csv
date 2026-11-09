@@ -1,0 +1,5 @@
+representation,data,columns,imputed,variance,pca,tsne,umap
+Descriptors,interpolated,60,26\%,18\% + 15\%,35\%,67\%,57\%
+Descriptors,measurements,60,28\%,16\% + 14\%,32\%,66\%,56\%
+Shape only,interpolated,35,26\%,21\% + 9\%,23\%,62\%,55\%
+Shape only,measurements,35,31\%,16\% + 12\%,22\%,61\%,53\%

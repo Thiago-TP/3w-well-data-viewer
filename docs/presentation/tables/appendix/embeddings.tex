@@ -1,0 +1,28 @@
+% Per representation and data, its standardized columns and the share of their
+% cells imputed; the share of the variance PCA's two axes carry; and, per
+% embedding, how many of an instance's \isKeep{} nearest neighbours in the
+% columns stay among its \isKeep{} nearest on the plane. The cells are written
+% by scripts/instances.py into the CSV beside this file.
+\pgfplotstabletypeset[
+  string type,
+  columns={representation, data, columns, imputed, variance, pca, tsne, umap},
+  columns/representation/.style={column type={l}},
+  columns/data/.style={column type={l}},
+  columns/columns/.style={column type={c}},
+  columns/imputed/.style={column type={c}},
+  columns/variance/.style={column type={c}},
+  columns/pca/.style={column type={c}},
+  columns/tsne/.style={column type={c}},
+  columns/umap/.style={column type={c}},
+  every head row/.style={
+    output empty row,
+    before row={\toprule
+                \multicolumn{1}{c}{\multirow{2}{*}[-.5mm]{Representation}}
+                & \multicolumn{1}{c}{\multirow{2}{*}[-.5mm]{Data}}
+                & \multicolumn{2}{c}{Columns} & PCA
+                & \multicolumn{3}{c}{Neighbours kept} \\
+                \cmidrule(lr){3-4}\cmidrule(lr){5-5}\cmidrule(lr){6-8}
+                & & count & imputed & variance & PCA & t-SNE & UMAP \\},
+    after row=\midrule},
+  every last row/.style={after row=\bottomrule},
+]{tables/appendix/embeddings.csv}

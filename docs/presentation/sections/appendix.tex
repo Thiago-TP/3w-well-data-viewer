@@ -21,6 +21,10 @@
 %% Windows: every well's separations by every statistic at 512 samples, with
 %% its sensor and its windows, from tables/appendix/windows.csv, under a note
 %% on how the sensor is chosen and how little the window length matters.
+%%
+%% Instances: what places an instance, the descriptors of each representation
+%% (tables/appendix/descriptors.csv), and chance spelt out; how the embeddings
+%% are set and what they keep of the columns (tables/appendix/embeddings.csv).
 
 \pgfplotstableread{tables/appendix/changes.csv}\apchanges
 
@@ -174,4 +178,60 @@
   \setlength{\tabcolsep}{2pt}
   \pgfplotstableset{wi rows/.style={skip rows between index={0}{19}}}
   \input{tables/appendix/windows}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+% The Instances section: what places an instance (the descriptors of each
+% representation) and what chance is; then how the embeddings lay the
+% instances out, and how much of the columns' neighbourhoods each keeps.
+\begin{frame}[label=instances]{Appendix: what places an instance on the maps}
+  \framesubtitle{\isquestion}
+  {\scriptsize\color{ws3wbrown} Per instance, the \isSensors{} sensors live in at least \isCoverage{}
+  of the instances (\isSensorList), each by the descriptors below: all of them (Descriptors,
+  \isColumns{} columns) or those that leave the level out (Shape only, \isShapeColumns). They are
+  taken on the instance's labeled samples, over the 1\,Hz grid (interpolated) or over the samples
+  the historian measured (measurements), the sampling ones alike. Every column is standardized, and
+  a cell an instance lacks (its sensor absent or frozen) takes the column's median.\par}
+  \vskip 2mm
+  \begin{columns}[T]
+    \begin{column}{0.53\textwidth}
+      \centering\scriptsize\setlength{\tabcolsep}{2.4pt}
+      \def\arraystretch{1.25}
+      \input{tables/appendix/descriptors}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \scriptsize
+      \textbf{Chance.} Two different instances drawn at random, the second from those left,
+      share a fault class with probability
+      \begin{align*}
+        \sum_{c=\isChanceFirst}^{\isChanceLast} \frac{n_c}{N} \frac{n_c-1}{N-1}
+          &= \frac{\isChanceTerms}{\isChanceTotalTerms} \\
+          &= \frac{\text{\isChancePairs}}{\text{\isChanceTotal}} = \text{\isChanceExact},
+      \end{align*}
+      \(n_c\) the instances of class \(c\) and \(N\) all of them.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Appendix: how the maps lay the instances out}
+  \framesubtitle{\isquestion}
+  \scriptsize
+  \begin{itemize}
+    \item[] \textbf{PCA}: the two principal components of the standardized columns (numpy's SVD),
+      which carry the share of the variance below.
+    \item[] \textbf{t-SNE}: scikit-learn's, perplexity \isPerplexity, initialized by PCA, Euclidean
+      distances, seed \isSeed.
+    \item[] \textbf{UMAP}: umap-learn's, \isUmapNeighbours{} neighbours, Euclidean distances, seed
+      \isSeed, its other settings the defaults.
+  \end{itemize}
+  \vskip 2mm
+  \centering
+  \setlength{\tabcolsep}{4pt}
+  \def\arraystretch{1.5}
+  \input{tables/appendix/embeddings}
+  \par 
+  \vskip 2mm
+  \begin{description}
+    \item [Neighbours kept] of an instance's \isKeep{} nearest neighbours in the columns, the share still among its \isKeep{} nearest on the map.
+  \end{description}
 \end{frame}

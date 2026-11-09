@@ -9,7 +9,7 @@ the viewer, each the page's research question and what looking at 3W through it 
 | File                           | What it is                                                                                                            |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | `presentation.tex`             | the deck: the title frame, one `\input` per section, the closing frame, then the appendix                             |
-| `sections/`                    | one file per section: `timelines.tex`, `availability.tex`, `faults.tex`, `dispersions.tex`, `windows.tex`, `references.tex` (the paper and thesis the slides cite, set without a `.bib` file) and `appendix.tex` so far                      |
+| `sections/`                    | one file per section: `timelines.tex`, `availability.tex`, `faults.tex`, `dispersions.tex`, `windows.tex`, `instances.tex`, `references.tex` (the paper and thesis the slides cite, set without a `.bib` file) and `appendix.tex` so far                      |
 | `figures/`                     | what the sections draw, one folder per section: the charts (`.tikz`), the numbers they quote, the CSV tables behind the charts, crops of the viewer |
 | `tables/`                      | the tables the sections set, one folder per section: the tabulars (`.tex`) and, where a table is long, the CSV it reads |
 | `scripts/`                     | what writes the numbers, CSV tables and crops, one script per section, from the 3W dataset and the viewer's own code |
@@ -36,7 +36,10 @@ in the terminal/shell. Alternatively, you can use a LaTeX IDE of your choice (Ov
 > so. A LaTeX IDE does not read `latexmkrc` and compiles with pdfLaTeX unless told otherwise: set
 > its compiler to LuaLaTeX (on Overleaf, *Menu → Compiler*; in TeXstudio, *Options → Configure →
 > Build → Default Compiler*). Under pdfLaTeX the deck still builds, but in Fira Sans instead of the
-> template's Trebuchet MS, so lines break elsewhere and a frame that fits under LuaLaTeX may not.
+> template's Trebuchet MS, so lines break elsewhere and a frame that fits under LuaLaTeX may not;
+> and only with more main memory than TeX Live's fixed default, for the Instances maps, which
+> `latexmk -pdf` passes (`-cnf-line=extra_mem_top=6000000 -cnf-line=extra_mem_bot=2000000`, see
+> `latexmkrc`) and a plain `pdflatex` does not.
 > Even under LuaLaTeX, a system without Trebuchet MS (Linux, Overleaf) falls back to Fira Sans.
 > The first LuaLaTeX run on a machine builds its font database, which can take a few minutes with
 > no output; later runs take seconds.
@@ -70,6 +73,7 @@ uv run python docs/presentation/scripts/availability.py               # the Avai
 uv run python docs/presentation/scripts/faults.py                     # the Faults and Features section, likewise
 uv run python docs/presentation/scripts/dispersions.py                # the Dispersions section, likewise
 uv run python docs/presentation/scripts/windows.py                    # the Windows section, likewise
+uv run python docs/presentation/scripts/instances.py                  # the Instances section, likewise
 uv run python docs/presentation/scripts/appendix.py                   # the appendix, likewise
 ```
 
@@ -88,6 +92,7 @@ without the dataset; the scripts are for when the dataset, or the viewer, change
 | `faults.py` | into `tables/faults/`: `signatures.csv` (per fault class, its instances and wells, and per signature variable the move the paper or thesis expects, how many instances make it of those that can show it, and how many lack the variable); `hydrate.csv` (the well state under each label of every real Hydrate in Production Line); into `figures/faults/`: `numbers.tex`; `scaling.png` (the Faults page on Scaling in PCK, one instance per well); `well19.png` and `well25.png` (the instance window of a hydrate of each well on P-TPT); `simulated.csv` and `simulated-bands.csv` (a simulated hydrate, which the viewer does not read, for `simulated.tikz` to draw in the instance window's style). It reads the signature variables of about 500 instances, about a minute |
 | `dispersions.py` | into `tables/dispersions/`: `pairs.csv` (per fault class, its pair of sensors, the two live in the most samples of those every instance of the class records live, and their Pearson coefficient over its normal operation, transient and steady state, on every sample and on the measurements alone, with how many these are); into `tables/appendix/`: `wells.csv` (the same per well); into `figures/dispersions/`: `numbers.tex`; `wells.csv` and `pooled.csv` (every well's coefficient and the pooled one, on every sample and on the measurements alone, for `wells.tikz`). No crops: it reads every row of the pair of each class, rather than the page's subsample, in under a minute once the viewer has cached the dataset |
 | `windows.py` | into `tables/appendix/`: `windows.csv` (per well, its sensor, the analog one live in the most samples, ties to the one separating best, and every statistic's separation of event windows from normal ones at 512 samples, with its windows of each kind and whether fewer than 30 of a kind); into `figures/windows/`: `numbers.tex` (with how far windows of 256 and 1024 samples move a well's best separation, and the appendix rows of the wells on few windows); `statistics.csv` and `medians.csv` (every well's separation by every statistic at 512 samples, a dot flagged when its well rests on few windows, the median and the wells each statistic is the best in, for `statistics.tikz`). No crops: it cuts and describes the windows as the page does, every well and size, in about three minutes. (`separation.tikz`, the ROC drawn beside the chart, is no data and no script's) |
+| `instances.py` | into `figures/instances/`: `numbers.tex` (with the viewer's fault colors, chance spelt out, the embeddings' settings and, per map, how often an instance's nearest neighbour shares its well, its fault, and the nearest of another well its fault); `maps/<map>.csv` (per map, a representation, its data and an embedding as the Instances page computes them, every real instance's place, fault and the class its well's past names, for `maps.tikz` and `wellpast.tikz`); into `tables/instances/`: `legend.csv` (the fault classes, five to a row) and `wellpast.csv` (per class, how often the well's past names it); into `tables/appendix/`: `descriptors.csv` (the descriptors each representation takes) and `embeddings.csv` (per representation and data, its columns, PCA's variance and the neighbours each embedding keeps). No crops. It reads the viewer's profile pass (the labeled scope of profile version 5) from the cache, and runs the pass itself when the cache is missing or out of date, as the page would (about three minutes, the cache left for the viewer); then a minute for the twelve maps |
 | `appendix.py`  | into `tables/appendix/`: `changes.csv` (every label change across an unlabeled stretch of a joined history, with the sensor shown); into `figures/appendix/`: `change-<n>.png` (each change in the instance window) |
 
 ## Instructions communicated via email (portuguese)
