@@ -4,8 +4,8 @@ The viewer is several pages over one catalogue of the real instances. The
 timelines page groups them by well and lays them out in time, the availability
 page groups them by fault class or by well and says what their sensors
 recorded; each page owns the controls that mean something only to it, and this
-window owns what they share: the theme, the rescan, the help, the status bar the
-pages write to, and the instance windows the pages open.
+window owns what they share: the theme, the verbosity, the rescan, the help, the
+status bar the pages write to, and the instance windows the pages open.
 """
 
 from collections.abc import Callable, Sequence
@@ -42,6 +42,7 @@ from overlap_viewer.frontend.features_page import FeaturesPage
 from overlap_viewer.frontend.help import HelpWindow, real_instance_counts
 from overlap_viewer.frontend.loading import FrameCache, catalogue_with_progress
 from overlap_viewer.frontend.map_page import MapPage
+from overlap_viewer.frontend.options import VerboseAction
 from overlap_viewer.frontend.overview import ElidedLabel, TimelinesPage
 from overlap_viewer.frontend.passes import Passes
 from overlap_viewer.frontend.windows_page import WindowsPage
@@ -82,7 +83,8 @@ class MainWindow(QMainWindow):
         "Every real instance of one fault, from every well, drawn over the others",
         "One sensor, a section per fault class: what it reads under each event",
         (
-            "Two sensors against each other over every instance, one class or one well: every "
+            "Two sensors against each other over every instance, one class, one well or one class "
+            "on one well: every "
             "sample a dot, the density behind, the measurements alone on request"
         ),
         (
@@ -103,6 +105,7 @@ class MainWindow(QMainWindow):
         columns: int = DEFAULT_COLUMNS,
         frames: FrameCache | None = None,
         theme_mode: str = "system",
+        verbose: bool = True,
         progress: Callable[[str], None] | None = None,
         parent=None,
     ):
@@ -116,6 +119,7 @@ class MainWindow(QMainWindow):
         self._windows: list[QMainWindow] = []
         self._help: HelpWindow | None = None
         self._theme_mode = theme_mode
+        self.verbose = verbose
         self.setWindowTitle(f"3W Well Data Viewer | {info.raw_dir}")
 
         self._build_toolbar()
@@ -144,6 +148,7 @@ class MainWindow(QMainWindow):
         ):
             self._tabs.addTab(page, title)
             self._tabs.setTabToolTip(index, styling.bounded_tooltip(tip))
+            page.set_verbose(verbose)
         self._tabs.currentChanged.connect(self._on_page_changed)
         self.setCentralWidget(self._tabs)
         self._catalogue = None
@@ -151,7 +156,7 @@ class MainWindow(QMainWindow):
         # Pages a theme switch left to be laid out when next shown.
         self._stale: set = set()
 
-        self._status = ElidedLabel(self.timelines.hint())
+        self._status = ElidedLabel(self._hint_of(self.timelines))
         self.statusBar().addWidget(self._status, 1)
         # The count of what is on show sits at the right end of the status bar, where
         # it does not crowd the toolbar's controls off a window of ordinary width.
@@ -239,6 +244,9 @@ class MainWindow(QMainWindow):
             lambda index: self.set_theme_mode(theme.MODES[index])
         )
         bar.addWidget(self._theme)
+        self._verbose = VerboseAction(self, self.verbose)
+        self._verbose.toggled.connect(self.set_verbose)
+        bar.addAction(self._verbose)
 
         bar.addSeparator()
         reset = QAction("Reset views", self)
@@ -322,10 +330,18 @@ class MainWindow(QMainWindow):
     def _refresh_summary(self, *args) -> None:
         self._dataset_label.setText(self._tabs.currentWidget().summary())
 
+    def _hint_of(self, page) -> str:
+        """What the status bar says over nothing in particular: the page's hint, if verbose."""
+        return page.hint() if self.verbose else ""
+
     def _on_page_status(self, page, text: str) -> None:
-        """Show what a page says, if it is the page on show: a hidden page rebuilding stays quiet."""
+        """Show what a page says, if it is the page on show: a hidden page rebuilding stays quiet.
+
+        Not verbose, the page's hint gives way to an empty line; what the
+        pointer is over still shows.
+        """
         if self._tabs.currentWidget() is page:
-            self._status.setText(text)
+            self._status.setText(self._hint_of(page) if text == page.hint() else text)
 
     def _on_page_changed(self, index: int) -> None:
         page = self._tabs.widget(index)
@@ -336,7 +352,7 @@ class MainWindow(QMainWindow):
                 self._lay_out(page)
             finally:
                 QApplication.restoreOverrideCursor()
-        self._status.setText(page.hint())
+        self._status.setText(self._hint_of(page))
         self._refresh_summary()
 
     # -- appearance
@@ -378,6 +394,29 @@ class MainWindow(QMainWindow):
         finally:
             QApplication.restoreOverrideCursor()
 
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide the explanations of every page and of every open instance window.
+
+        An instance window opens as verbose as this window is and follows it
+        when it changes; its own button changes that window alone.
+        """
+        verbose = bool(verbose)
+        if self._verbose.isChecked() != verbose:  # a change made in code
+            self._verbose.blockSignals(True)
+            self._verbose.setChecked(verbose)
+            self._verbose.blockSignals(False)
+        if verbose == self.verbose:
+            return
+        self.verbose = verbose
+        styling.save_verbose(verbose)
+        for page in self.pages:
+            page.set_verbose(verbose)
+        for window in list(self._windows):
+            window.set_verbose(verbose)
+        page = self._tabs.currentWidget()
+        if self._status.full_text() in ("", page.hint()):
+            self._status.setText(self._hint_of(page))
+
     def _on_system_scheme(self, *args) -> None:
         """Follow the desktop switching between light and dark, while ``system`` is chosen."""
         if self._theme_mode == "system":
@@ -415,6 +454,7 @@ class MainWindow(QMainWindow):
                 self._frames,
                 passes=self._passes,
                 features=features,
+                verbose=self.verbose,
             )
         except Exception as error:  # noqa: BLE001 - one unreadable file must not take the app down
             QMessageBox.warning(

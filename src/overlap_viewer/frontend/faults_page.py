@@ -51,6 +51,7 @@ from overlap_viewer.backend.config import (
 )
 from overlap_viewer.backend.dataset import DatasetInfo, WellData, well_label
 from overlap_viewer.backend.labels import segments_from_json
+from overlap_viewer.backend.palette import well_colors
 from overlap_viewer.frontend.instance_window import PANEL_WIDTH
 from overlap_viewer.frontend.loading import FrameCache
 from overlap_viewer.frontend.options import bar_row, toolbar
@@ -255,6 +256,9 @@ class FaultsPage(SeriesPage):
         """Take the colors of the theme now in force; ``set_catalogue`` redraws the plots after it."""
         self._restyle()
 
+    def verbose_widgets(self) -> list[QWidget]:
+        return [self._feature_note, self._instance_note]
+
     # -- data
 
     def set_catalogue(self, catalogue: pd.DataFrame, wells: list[WellData]) -> None:
@@ -370,18 +374,13 @@ class FaultsPage(SeriesPage):
         return found
 
     def _well_colors(self) -> dict[int, str]:
-        """One color per well of the whole catalogue, in well order.
+        """One color per well of the whole catalogue (``palette.well_colors``).
 
         Over the catalogue and not over the instances of the fault on show, so
-        that a well keeps its color from one fault to the next: the page exists
-        to compare an event across wells, and a reader who has learnt that this
-        green is WELL-00014 in one fault should not find it standing for
-        another well in the next. The palette cycles when the dataset holds
-        more wells than it has colors, which at least cycles in the same place
-        every time.
+        that a well keeps its color from one fault to the next, and from this
+        page to the others.
         """
-        palette = theme.current().wells
-        return {well: palette[k % len(palette)] for k, well in enumerate(sorted(self._wells))}
+        return well_colors(self._wells)
 
     def _rebuild_instances(self) -> None:
         """List the instances of the fault, the earliest ticked, those without an onset greyed out."""

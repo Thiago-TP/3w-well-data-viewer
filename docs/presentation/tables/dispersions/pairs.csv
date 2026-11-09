@@ -1,0 +1,10 @@
+fault,name,x,times,y,normal_all,normal_measured,normal_count,transient_all,transient_measured,transient_count,steady_all,steady_measured,steady_count
+1,Abrupt Increase of BSW,P-TPT,\texttimes{},T-TPT,+0.08,\dpfew{+0.88},\dpfew{\dpcount{24}},\textminus{}0.08,\dpfew{+0.17},\dpfew{\dpcount{20}},\textminus{}0.44,\dpfew{\textminus{}1.00},\dpfew{\dpcount{6}}
+2,Spurious Closure of DHSV,P-TPT\dpsig{},\texttimes{},T-TPT,+0.29,+0.07,\dpn{314},+0.59,+0.65,\dpn{494},\textminus{}0.62,\dpfew{\textminus{}0.46},\dpfew{\dpcount{28}}
+3,Severe Slugging,P-TPT,\texttimes{},T-JUS-CKP,\dpnil,\dpnil,,\dpnil,\dpnil,,\textminus{}0.07,+0.30,\dpn{1348}
+4,Flow Instability,P-MON-CKP\dpsig{},\texttimes{},P-TPT\dpsig{},\dpnil,\dpnil,,\dpnil,\dpnil,,+0.90,+0.99,\dpn{11999}
+5,Rapid Productivity Loss,P-ANULAR,\texttimes{},T-TPT,\textminus{}0.92,\textminus{}0.82,\dpn{366},\textminus{}0.69,\textminus{}0.86,\dpn{394},\textminus{}0.94,\textminus{}0.76,\dpn{42}
+6,Quick Restriction in PCK,P-ANULAR,\texttimes{},P-TPT,\textminus{}0.03,+0.48,\dpn{1132},+0.36,+0.78,\dpn{420},\textminus{}0.57,\textminus{}0.52,\dpn{130}
+7,Scaling in PCK,P-JUS-CKGL,\texttimes{},P-MON-CKP,\textminus{}0.20,+0.77,\dpn{1555},\textminus{}0.24,+0.73,\dpn{12891},\textminus{}0.86,\dpfew{\textminus{}0.92},\dpfew{\dpcount{16}}
+8,Hydrate in Production Line,P-MON-CKP,\texttimes{},QGL,\textminus{}0.32,\textminus{}0.71,\dpn{7349},\textminus{}0.32,\textminus{}0.41,\dpn{22644},\textminus{}0.40,\textminus{}0.56,\dpn{493}
+9,Hydrate in Service Line,P-JUS-CKGL,\texttimes{},P-MON-CKP,\textminus{}0.15,+0.28,\dpn{14053},\textminus{}0.03,+0.01,\dpn{3125},\textminus{}0.32,\dpfew{+0.80},\dpfew{\dpcount{15}}

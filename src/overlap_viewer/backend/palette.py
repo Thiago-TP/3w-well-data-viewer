@@ -9,7 +9,7 @@ Every color is a ``#rrggbb`` string so the backend and its tests stay free of
 Qt; the widgets turn them into ``QColor`` at draw time.
 """
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
 from overlap_viewer.backend import theme
@@ -48,6 +48,21 @@ def fault_color(fault_class: int) -> str:
     """Hue of one fault-class folder."""
     colors = theme.current()
     return colors.faults.get(fault_class, colors.fallback_fault)
+
+
+def well_colors(wells: Iterable[int]) -> dict[int, str]:
+    """One color per well, in well order, from the theme's well palette.
+
+    Given every well of the catalogue rather than those on show, so that a well
+    keeps its color from one fault, page or filter to the next: a reader who
+    has learnt that this green is WELL-00014 on the Faults page should not
+    find it standing for another well on the Features page, or under the next
+    fault. Every page that colors by well takes its colors here. The palette
+    cycles when the dataset holds more wells than it has colors, which at
+    least cycles in the same place every time.
+    """
+    palette = theme.current().wells
+    return {well: palette[k % len(palette)] for k, well in enumerate(sorted(set(wells)))}
 
 
 def luminance(color: str) -> float:

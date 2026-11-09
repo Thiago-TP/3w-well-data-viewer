@@ -1,0 +1,32 @@
+% Six maps of every real instance, as the Instances page places them: the
+% descriptors (with their levels, then the shape only) by row, PCA, t-SNE and
+% UMAP by column, every instance in the color of its fault class. The data,
+% interpolated or the measurements alone, is \ismode (i or m), which the frame
+% sets before the input. Under each map, how often an instance's nearest
+% neighbour on it shares its well, its fault, and the nearest instance of
+% another well its fault (\isScore, figures/instances/numbers.tex). The places
+% are those of maps/<map>.csv, written by scripts/instances.py, each map
+% scaled into the box the axes draw.
+\begin{tikzpicture}[font=\tiny]
+  \pgfplotsset{is cell/.style={is map={32mm}{20.6mm}}}
+  % Row 1: the descriptors; row 2: the shape only. (Written out: the axes are
+  % named, and the names place the labels.)
+  \begin{axis}[is cell, at={(0mm,0mm)}, name=dpca]\isplot{d\ismode pca}{fault}\end{axis}
+  \begin{axis}[is cell, at={(35mm,0mm)}, name=dtsne]\isplot{d\ismode tsne}{fault}\end{axis}
+  \begin{axis}[is cell, at={(70mm,0mm)}, name=dumap]\isplot{d\ismode umap}{fault}\end{axis}
+  \begin{axis}[is cell, at={(0mm,-27mm)}, name=spca]\isplot{s\ismode pca}{fault}\end{axis}
+  \begin{axis}[is cell, at={(35mm,-27mm)}, name=stsne]\isplot{s\ismode tsne}{fault}\end{axis}
+  \begin{axis}[is cell, at={(70mm,-27mm)}, name=sumap]\isplot{s\ismode umap}{fault}\end{axis}
+  % The embeddings over the columns, the representations beside the rows.
+  \node [anchor=south, text=ws3wnavy] at (dpca.north) {PCA};
+  \node [anchor=south, text=ws3wnavy] at (dtsne.north) {t-SNE};
+  \node [anchor=south, text=ws3wnavy] at (dumap.north) {UMAP};
+  \node [anchor=south, rotate=90, text=ws3wnavy] at (dpca.west) {Descriptors};
+  \node [anchor=south, rotate=90, text=ws3wnavy] at (spca.west) {Shape only};
+  % The neighbours, under each map.
+  \foreach \map/\rep/\emb in {dpca/d/pca, dtsne/d/tsne, dumap/d/umap,
+                              spca/s/pca, stsne/s/tsne, sumap/s/umap}
+    \node [anchor=north, text=ws3wbrown, inner sep=1pt] at (\map.south)
+      {well \isScore{\rep\ismode}{\emb}{well}\quad fault \isScore{\rep\ismode}{\emb}{fault}\quad
+       across wells \isScore{\rep\ismode}{\emb}{across}};
+\end{tikzpicture}

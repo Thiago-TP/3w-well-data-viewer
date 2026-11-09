@@ -1,0 +1,48 @@
+% Per fault class and well, the Pearson coefficient of the class's pair over
+% the well's normal operation, transient and steady state, on every sample and
+% on the measurements alone, with how many these are (a dash where the well
+% has fewer than \dpMinSamples samples of the period). The class is named on
+% its first row. The rows a frame shows are the style dp rows, which the frame
+% sets before the input. The cells are written by scripts/dispersions.py into
+% the CSV beside this file; their macros are sections/dispersions.tex's, the
+% layout tables/dispersions/pairs.tex's.
+\pgfplotstabletypeset[
+  columns={name, x, times, y, well,
+           normal_all, normal_measured, normal_count,
+           transient_all, transient_measured, transient_count,
+           steady_all, steady_measured, steady_count},
+  columns/name/.style={string type, column type={l}},
+  columns/x/.style={string type, column type={r@{\hspace{3pt}}}},
+  columns/times/.style={string type, column type={c@{\hspace{3pt}}}},
+  columns/y/.style={string type, column type={l}},
+  columns/well/.style={string type, column type={l}},
+  dp all/.style={string type, column type={c}},
+  dp measured/.style={string type, column type={c@{\hspace{2pt}}}},
+  dp count/.style={string type, column type={c}},
+  columns/normal_all/.style={dp all},
+  columns/normal_measured/.style={dp measured},
+  columns/normal_count/.style={dp count},
+  columns/transient_all/.style={dp all},
+  columns/transient_measured/.style={dp measured},
+  columns/transient_count/.style={dp count},
+  columns/steady_all/.style={dp all},
+  columns/steady_measured/.style={dp measured},
+  columns/steady_count/.style={dp count},
+  % Fault, Pair and Well span both header rows, centered in their cells.
+  every head row/.style={
+    output empty row,
+    before row={\toprule
+                \multicolumn{1}{c}{\multirow{2}{*}[-1mm]{Fault}}
+                & \multicolumn{3}{c}{\multirow{2}{*}[-1mm]{Pair}}
+                & \multicolumn{1}{c}{\multirow{2}{*}[-1mm]{Well}}
+                & \multicolumn{3}{c}{Normal operation} & \multicolumn{3}{c}{Transient}
+                & \multicolumn{3}{c}{Steady state} \\
+                \cmidrule(lr){6-8}\cmidrule(lr){9-11}\cmidrule(lr){12-14}
+                & \multicolumn{3}{c}{} &
+                & all & \multicolumn{2}{c}{measured}
+                & all & \multicolumn{2}{c}{measured}
+                & all & \multicolumn{2}{c}{measured} \\},
+    after row=\midrule},
+  every last row/.style={after row=\bottomrule},
+  dp rows,
+]{tables/appendix/wells.csv}

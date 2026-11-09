@@ -1,0 +1,57 @@
+% Every variable's samples over the real instances as the coverage chart draws
+% them: live, frozen and missing, which split the samples, and between them
+% the implausible, out-of-order and against-state readings, which are among
+% the live and frozen ones. Each as a count, a share of the samples and the
+% instances it is found in: live in, frozen in, holding such readings, and,
+% for missing, the instances without a single reading. Then the reading
+% farthest outside the plausible range. A dash: a check that does not compare
+% the variable. The table is figures/availability/coverage.csv, which the chart
+% draws, written by scripts/availability.py.
+\pgfplotstabletypeset[
+  columns={sensor,
+           live, live_share, instances_live,
+           frozen, frozen_share, instances_frozen,
+           implausible, implausible_share, instances_implausible,
+           out_of_order, out_of_order_share, instances_out_of_order,
+           against_state, against_state_share, instances_against_state,
+           missing, missing_share, instances_absent,
+           worst},
+  % nan, a check that does not apply, is set as a dash.
+  av number/.style={column type={r}, string replace={nan}{}, empty cells with={--}},
+  av samples/.style={av number, column name={samples}, fixed, precision=0, 1000 sep={,}},
+  av share/.style={av number, column name={\%}, fixed, fixed zerofill, precision=1},
+  av instances/.style={av number, column name={inst.}, fixed, precision=0, 1000 sep={,}},
+  columns/sensor/.style={string type, column name={}, column type={l}},
+  columns/live/.style={av samples},
+  columns/frozen/.style={av samples},
+  columns/implausible/.style={av samples},
+  columns/out_of_order/.style={av samples},
+  columns/against_state/.style={av samples},
+  columns/missing/.style={av samples},
+  columns/live_share/.style={av share},
+  columns/frozen_share/.style={av share},
+  columns/implausible_share/.style={av share},
+  columns/out_of_order_share/.style={av share},
+  columns/against_state_share/.style={av share},
+  columns/missing_share/.style={av share},
+  columns/instances_live/.style={av instances},
+  columns/instances_frozen/.style={av instances},
+  columns/instances_implausible/.style={av instances},
+  columns/instances_out_of_order/.style={av instances},
+  columns/instances_against_state/.style={av instances},
+  columns/instances_absent/.style={av instances},
+  columns/worst/.style={string type, column name={}, column type={r}},
+  % Variable and Farthest out span both header rows, centered in their cells:
+  % lowered by about the space the \cmidrule takes, which \multirow leaves out.
+  every head row/.style={
+    before row={\toprule
+                \multicolumn{1}{c}{\multirow{2}{*}[-1mm]{Variable}}
+                & \multicolumn{3}{c}{Live} & \multicolumn{3}{c}{Frozen}
+                & \multicolumn{3}{c}{Implausible} & \multicolumn{3}{c}{Out of order}
+                & \multicolumn{3}{c}{Against state} & \multicolumn{3}{c}{Missing}
+                & \multicolumn{1}{c}{\multirow{2}{*}[-1mm]{Farthest out}} \\
+                \cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+                \cmidrule(lr){11-13}\cmidrule(lr){14-16}\cmidrule(lr){17-19}},
+    after row=\midrule},
+  every last row/.style={after row=\bottomrule},
+]{figures/availability/coverage.csv}

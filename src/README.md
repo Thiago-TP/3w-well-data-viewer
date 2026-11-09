@@ -54,6 +54,7 @@ src/overlap_viewer/
     ├── heatmap.py            the matrix widget of the availability page, its tooltips and the keys of the states
     ├── legend.py             the clickable color key and its flow layout
     ├── options.py            the Options button of a page or window: how it draws, behind one click
+    ├── scope_boxes.py        the Class and Well boxes that narrow a scope together (Dispersions, the pair map)
     ├── help.py               the help window
     ├── overview.py           the timelines page: the grid of well timelines
     ├── availability_page.py  the availability page: its two matrices (availability, sensor pairs) and what each says
@@ -159,7 +160,11 @@ time, SNR, Gaussianity, from `algorithms.descriptors`), computed twice, on the f
 the measurements alone. It also checks the order of the pressures along each line
 (`algorithms.consistency`), recording per sensor the samples out of order and the pressures it
 contradicts, and the well state against the valve states, recording per valve the samples that
-contradict the state and the states (`PROFILE_VERSION` 4). Cached as one long parquet table next to the catalogue.
+contradict the state and the states. Every instance is profiled a second time on its labeled samples
+alone (the `labeled` scope, keyed like an instance), which is what the Instances map reads: on 3W
+2.0.0 almost every sample two overlapping windows share is labeled in exactly one of them, so leaving
+the unlabeled samples out counts each shared instant once (`PROFILE_VERSION` 5). Cached as one long
+parquet table next to the catalogue.
 
 - `DescriptorChoice` (frozen dataclass): one of the five descriptors the Windows page offers as a
   statistic (autocorrelation time, SNR, Gaussianity slope, skewness, kurtosis), its grid column
@@ -167,11 +172,12 @@ contradict the state and the states (`PROFILE_VERSION` 4). Cached as one long pa
 - `profile_series(values, bounds, enumerated, step_s)`: profiles one sensor's array: strips
   implausible readings, classifies sample kinds, computes sampling and descriptors twice.
 - `profile_frame(frame, sensors, info)`: one profile row per sensor of one frame.
-- `scan_profiles(wells, sensors, info, progress=None)`: the full pass, over every instance and every
-  joined bar.
+- `labeled_part(frame)`: the samples of an instance whose `class` is known.
+- `scan_profiles(wells, sensors, info, progress=None)`: the full pass, over every instance (whole and
+  on its labeled samples) and every joined bar.
 - `Profiles` (dataclass): the loaded table, with lookup indexes; methods `row(key, sensor, joined)`,
   `descriptor(key, sensor, column, joined)`, `sampling(key, sensor, joined)`, `matrix(keys, joined,
-  column, sensors=None)`, `order_partners(key, sensor, joined)`, `state_conflicts(key, sensor,
+  column, sensors=None, labeled=False)`, `order_partners(key, sensor, joined)`, `state_conflicts(key, sensor,
   joined)`, `scope(joined)`.
 - `load_profiles(info, wells, sensors, use_cache=True, progress=None, cache_only=False)`: the
   cache-aware entry point, validated by listing digest, sensor set and `PROFILE_VERSION`; with
@@ -301,6 +307,9 @@ fault-bar fill/background tinting by reach, legend entries, text-contrast and bl
 - `fault_color(fault_class)` / `bar_color(fault_class, reach)` / `background_color(fault_class,
   reach)`: a fault's hue, an instance bar's fill, and a time-series stretch's background.
 - `state_color(state)`: color of a well operational-status code.
+- `well_colors(wells)`: one color per well, in well order, cycling the theme's well palette; given
+  every well of the catalogue, so that a well has the same color on every page that colors by well
+  (Faults, Features, Dispersions, Instances).
 - `text_color(background)`: black or white, whichever reads better on `background`.
 - `LegendEntry` (frozen dataclass) and `legend_entries(present, fault_names)`: one entry per
   distinct `(fault_class, reach)` combination present, sorted by class then decreasing tint.
@@ -437,8 +446,9 @@ ground truth, computes **typicality** (distance to the class medoid) and runs a 
 (one-class SVM trained on normal instances).
 
 - `Representation` (dataclass): `keys, X, columns, distances, imputed, sensors`; property `metric`.
-- `feature_matrix(profiles, keys, joined, info, shape_only, measured, min_coverage)`: builds the
-  standardized descriptor representation.
+- `feature_matrix(profiles, keys, joined, info, shape_only, measured, min_coverage, labeled)`: builds
+  the standardized descriptor representation; `labeled` reads the instances on their labeled samples
+  alone, as the map does.
 - `pca(X, n_components=2)` / `classical_mds(D, n_components=2)`: the two numpy-only embeddings.
 - `embed(rep, method)`: dispatches to PCA/MDS, t-SNE (`analysis` extra) or UMAP (`umap` extra).
 - `embedding_available(method)`: `None` if it can run, else a message naming the missing extra.
@@ -464,7 +474,7 @@ one fault class, for the Instances map's DTW representation. Requires the `dtw` 
 
 ### `dispersion.py`
 
-Backs the two-sensor scatter/density view: reads an even subsample of every instance's rows (all analog sensors, label period, measurement genuineness) into one `Cloud` so changing the sensor pair, coloring or filters afterward is free.
+Backs the two-sensor scatter/density view: reads an even subsample of every instance's rows (all analog sensors, label period, measurement genuineness) into one `Cloud` so changing the sensor pair, coloring or filters afterward is free. Every instance gives about as many rows (`BUDGET // n_instances`, all of a shorter one), so the cloud, its density and `Pair.pearson()` weigh the instances alike rather than the samples: an approximation of the scope's coefficient over every sample, which the page's help and tooltip state (a `DispersionPass` built with a budget larger than the scope reads every row).
 
 - `InstanceRef` (frozen dataclass): identifies the instance/bar a cloud row came from.
 - `period_codes(class_values, offset)`: maps `class` values to period codes
@@ -659,8 +669,10 @@ that title bar on hover.
 - `FlowLayout(QLayout)`: a left-to-right wrapping layout Qt does not ship, with a uniform-pitch mode
   so rows line up.
 - `LegendSwatch(QFrame)`: one clickable color+label entry; signal `clicked(fault_class)`.
-- `LegendBar(QWidget)`: the whole key; signal `fault_clicked(fault_class)`; methods
-  `set_entries(entries, fault_names)`, `highlight(keys)`, `set_selected_fault(fault_class)`.
+- `LegendBar(QWidget)`: the whole key, retracted from the start with `collapsed=True` (as the
+  Timelines page builds it); signal `fault_clicked(fault_class)`; methods
+  `set_entries(entries, fault_names)`, `highlight(keys)`, `set_selected_fault(fault_class)`,
+  `set_collapsed(collapsed)`.
 
 ### `options.py`
 
@@ -672,10 +684,28 @@ toggles of the side panels stay in view.
   action of a toolbar that also holds what stays in view), hidden until the button is checked.
   Whole toolbars are hidden rather than their controls one by one, so a page's own rules for which
   of its controls are on show keep working underneath.
+- `VerboseAction(QAction)`: the checkable *Verbose* button of the main window and of every instance
+  window; checked, the hints, subtitles, notes and in-plot figures are on show. Every page answers
+  `set_verbose(verbose)` by hiding its notes (`SeriesPage.verbose_widgets()` names those of the
+  Faults and Features pages) or by writing its subtitles terse (the Timelines' well titles, the
+  series pages' section headings, kept in both forms so the switch is a change of text).
 - `toolbar(name)`: a fixed toolbar, the kind every row of a page is made of.
 - `bar_row(*bars, trailing=None)`: toolbars side by side as one row, `trailing` at its right end;
   a page splits its first row into what stays in view, what *Options* hides, and its panel
   toggles, so that hiding the options leaves the rest where it was.
+
+### `scope_boxes.py`
+
+The scope of the Dispersions page and of the Availability page's pair map, as a *Class* and a *Well*
+box that narrow it together: every real instance, one class, one well, or one class on one well.
+
+- `ScopeBoxes(QObject)`: the two boxes, `class_box` and `well_box`, each with an *All* entry keyed
+  `ALL` (-1); signal `changed()`. `set_catalogue(catalogue)` lists the classes and wells, each box
+  counted under the other's choice with the empty entries disabled (a pair left empty by code or a
+  rescan keeps the class and lets the well go); `add_to(bar)` puts the boxes and their labels on a
+  toolbar and returns the actions; `fault`, `well`, `key()`, `name()` (the scope in words) and
+  `mask(bars)` (the rows of a frame with `fault_class` and `well` in scope, `None` for all) read
+  them; `set_scope(fault, well)` chooses in code.
 
 ### `help.py`
 
@@ -718,7 +748,7 @@ co-occurrence), grouped by fault class, well or instances of one, drawn via `Hea
 progress-dialog-gated passes for joined stats, pair counts and profiles.
 
 - `AvailabilityPage(QWidget)`: signals `status`, `summary_changed`, `open_requested(well, bar,
-  sensor, joined)`. The toolbar offers *Matrix* (availability/pairs), *Rows*, *Over*,
+  sensor, joined)`. The toolbar offers *Matrix* (availability/pairs), *Rows*, *Class* and *Well* (a `ScopeBoxes`, the pair map only),
   *Sensors*, *Cells*, *Join*, plus per-matrix controls (IQR × for the Toolkit rule). `_ensure_data()` dispatches which passes the current matrix needs;
   `_refresh()` redraws whichever matrix is selected. `summary()`.
 
@@ -747,7 +777,8 @@ section, colored by well, aligned on a chosen onset. Subclasses `SeriesPage`.
 
 - `FaultsPage(SeriesPage)`: toolbar: Fault, Alignment, the shared domain/layout controls, Features/
   Instances visibility toggles. `_instances_of(fault)` lists every real instance of the fault with its
-  onset; `_well_colors()` gives one stable color per well across faults; `_rebuild_features()` offers
+  onset; `_well_colors()` gives one stable color per well across faults and pages
+  (`palette.well_colors`); `_rebuild_features()` offers
   every sensor, ticking `config.DEFAULT_FEATURES` by default, with the placement boxes over them. Implements `load_series()`
   (per-instance frames aligned to hours-from-onset) and `sections()` (one per ticked feature).
 
@@ -762,7 +793,10 @@ across classes (optionally narrowed to one well). Subclasses `SeriesPage`; the m
   record a *moving* reading of, so the page never opens on a flat valve state. `_rebuild_classes()`
   and `_rebuild_instances()` build the class/instance lists, ticking the earliest few of each class by
   default. `sections()` is one section per class in the grid, or one section spanning all classes
-  (colored by fault hue) when overlaid.
+  when overlaid. `colors_by_well` says what a line's color keys: its well in the grid (the heading
+  names the class), its class pooled, and overlaid whichever the *Color by* box says (Class by
+  default, Well); `_refresh_chips()` paints the instance list's chips to match, so that the list keys
+  the lines whenever they are colored by well.
 
 ### `map_page.py`
 
@@ -783,13 +817,17 @@ clustering scores and a "label audit" list of instances a one-class model disagr
 ### `dispersion_page.py`
 
 The Dispersions page: draws two chosen sensors against each other as a point cloud over a scope
-(all/one class/one well), with density shading, coloring modes,
+(chosen by a *Class* and a *Well* box, each with an *All*: every instance, one class, one well, or
+one class on one well), with density shading, coloring modes,
 measurements-only filtering, label-period filters, and hover/click on individual samples.
 
 - `DispersionPage(QWidget)`: signals `status`, `summary_changed`,
   `open_requested(WellData, index, sensors)`, a clicked dot's bar with the plot's X and Y.
   `_load_cloud()` reads every analog sensor of every instance in scope via
-  `algorithms.dispersion.DispersionPass`, progress-dialog-gated and cached by scope.
+  `algorithms.dispersion.DispersionPass`, progress-dialog-gated and cached by scope, the pair
+  `(fault, well)` of its `ScopeBoxes`, `ALL` (-1) for either box's *All*; `set_scope(fault, well)`
+  chooses a scope in code, as a script would. The view is framed afresh when X or Y changes, never
+  when the scope does, so that narrowing a cloud keeps the zoom on show.
   `_redraw()` draws the density image (a log-scaled 2D histogram) and, per color group, a
   `ScatterPlotItem` of the dot cloud (subsampled to `MAX_DOTS`). `_light_instance(instance)`
   brings every drawn dot of one instance forward and fades the groups while a dot of it is
@@ -848,6 +886,9 @@ window.
   class/model bands, per-feature trace + optional histogram/spectrum row). `_refresh_stretch()`
   recomputes histograms/spectra for the on-screen time range as the user pans and zooms.
   `set_model_results(results)` adds the model band once outputs are loaded.
+  `set_verbose(verbose)` shows or hides the window's explanations (the hint, the heading's second
+  line, the details of each block's header, the figures inside the plots, the feature note) and
+  lays the stack out again; it opens with the main window's and follows its changes.
   `show_statistics()` opens the statistics table on the sensors ticked, fed by `_statistics_rows`
   (the readings of every block in their shown unit, the stretch on screen or the measurements
   alone when asked); `_on_range_settled()`, after every pan and zoom, recounts it when it describes
@@ -866,7 +907,7 @@ column per figure of `descriptors.SUMMARY`.
 ### `window.py`
 
 The main application window: hosts the seven pages as tabs, owns what they all share (theme control,
-rescan, help, status bar, the passes, model-output loading) and opens
+the *Verbose* button, rescan, help, status bar, the passes, model-output loading) and opens
 `InstanceWindow`s on request.
 
 - `MainWindow(QMainWindow)`: builds all seven pages sharing one `Passes` and `FrameCache`, and wires
@@ -875,6 +916,8 @@ rescan, help, status bar, the passes, model-output loading) and opens
   window. `set_theme_mode(mode)` persists the mode and lays the page on show out again, leaving
   the other pages stale until they are next shown (`set_catalogue(lazy=True)`, `_on_page_changed`):
   pyqtgraph bakes colors in at build time, so a theme change cannot be repainted in place, and
-  laying every page out at once was most of a nine-second switch. `open_instances(data, index,
+  laying every page out at once was most of a nine-second switch. `set_verbose(verbose)` persists
+  the choice, hands it to every page and every open instance window, and blanks the status bar's
+  hint (not what the pointer is over) when it is off. `open_instances(data, index,
   features)` constructs and tracks an `InstanceWindow`, on the sensors a page asked for when it
   asked for any (`_open_on_feature` for one).

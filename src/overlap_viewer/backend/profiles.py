@@ -16,6 +16,16 @@ same pass checks the order of the pressures along each line
 every pressure the others it contradicts; and the state label against the
 valve states, recording for every valve the states it contradicts.
 
+Every instance is profiled a second time on its **labeled** samples alone,
+the ``class`` column known, which is what the Instances map places its
+points by. The windows of a well that overlap in time share samples, and on
+3W 2.0.0 almost every shared instant is labeled by exactly one of them and
+left unlabeled by the others; profiled whole, two overlapping windows would
+both carry those readings and sit closer together than the recordings they
+were cut from, tightening the clusters of the map. Leaving the unlabeled
+samples out counts each shared instant once, in the window whose experts
+labeled it.
+
 The result is one long table, a row per (scope, instance or bar, sensor),
 kept as parquet next to the catalogue and valid while the listing of the
 files has the digest it was written under, the sensors are the ones it was
@@ -67,9 +77,11 @@ ProgressCallback = Callable[[int, int, str], bool]
 
 # Bumped whenever the rule or the columns change, so that an older cache is
 # read again rather than trusted.
-PROFILE_VERSION = 4
+PROFILE_VERSION = 5
 
-SCOPES = ("instance", "bar")
+# An instance as its file holds it, a bar of the joined view, and an instance
+# on its labeled samples alone (keyed like an instance).
+SCOPES = ("instance", "bar", "labeled")
 KEY_COLUMNS = ["scope", "well", "bar", "fault_class", "file", "sensor"]
 SAMPLING_COLUMNS = [
     "n_total",
@@ -234,6 +246,13 @@ def profile_frame(frame: pd.DataFrame, sensors: Sequence[str], info: DatasetInfo
     return rows
 
 
+def labeled_part(frame: pd.DataFrame) -> pd.DataFrame:
+    """The samples of one instance whose ``class`` is known; the whole frame if it has no such column."""
+    if "class" not in frame.columns:
+        return frame
+    return frame[~np.isnan(column_as_float(frame, "class"))]
+
+
 def scan_profiles(
     wells: list[WellData],
     sensors: Sequence[str],
@@ -245,7 +264,9 @@ def scan_profiles(
     A bar of one instance takes that instance's profile as it stands; a bar
     joined from several is profiled from the merged frame
     (``dataset.merge_instances``), in which every instant appears once and
-    what one window did not record another may have.
+    what one window did not record another may have. Every instance is also
+    profiled on its labeled samples alone (``labeled_part``), the ``labeled``
+    scope; an instance labeled throughout takes its own profile there.
 
     Parameters
     ----------
@@ -271,17 +292,22 @@ def scan_profiles(
             for m, frame in zip(members, frames):
                 profile = profile_frame(frame, sensors, info)
                 profiles.append(profile)
-                for row in profile:
-                    records.append(
-                        {
-                            "scope": "instance",
-                            "well": well.well,
-                            "bar": -1,
-                            "fault_class": int(rows["fault_class"].iloc[m]),
-                            "file": str(rows["file"].iloc[m]),
-                            **row,
-                        }
-                    )
+                labeled = labeled_part(frame)
+                on_labels = (
+                    profile if len(labeled) == len(frame) else profile_frame(labeled, sensors, info)
+                )
+                for scope, scoped in (("instance", profile), ("labeled", on_labels)):
+                    for row in scoped:
+                        records.append(
+                            {
+                                "scope": scope,
+                                "well": well.well,
+                                "bar": -1,
+                                "fault_class": int(rows["fault_class"].iloc[m]),
+                                "file": str(rows["file"].iloc[m]),
+                                **row,
+                            }
+                        )
             merged = (
                 profiles[0]
                 if len(frames) == 1
@@ -323,6 +349,8 @@ class Profiles:
     ----------
     table : pd.DataFrame
         ``PROFILE_COLUMNS``, one row per (scope, instance or bar, sensor).
+        Every lookup takes ``joined`` for a bar of the joined view and
+        ``labeled`` for an instance on its labeled samples alone.
     sensors : list[str]
         The sensors profiled, in the order the matrices are laid out in.
     """
@@ -331,6 +359,7 @@ class Profiles:
     sensors: list[str]
     _instances: dict[tuple[int, str], int] = field(default_factory=dict, repr=False)
     _bars: dict[tuple[int, int], int] = field(default_factory=dict, repr=False)
+    _labeled: dict[tuple[int, str], int] = field(default_factory=dict, repr=False)
     _column: dict[str, int] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
@@ -341,13 +370,16 @@ class Profiles:
         firsts = table.index[table["sensor"] == self.sensors[0]] if self.sensors else []
         for first in firsts:
             row = table.loc[first]
-            if row["scope"] == "instance":
-                self._instances[(int(row["fault_class"]), str(row["file"]))] = int(first)
-            else:
+            if row["scope"] == "bar":
                 self._bars[(int(row["well"]), int(row["bar"]))] = int(first)
+            else:
+                lookup = self._labeled if row["scope"] == "labeled" else self._instances
+                lookup[(int(row["fault_class"]), str(row["file"]))] = int(first)
 
-    def _block(self, key, joined: bool) -> int | None:
-        return self._bars.get(key) if joined else self._instances.get(key)
+    def _block(self, key, joined: bool, labeled: bool = False) -> int | None:
+        if joined:
+            return self._bars.get(key)
+        return (self._labeled if labeled else self._instances).get(key)
 
     def row(self, key, sensor: str, joined: bool = False) -> pd.Series | None:
         """The profile of one sensor of one instance ``(fault_class, file)`` or bar ``(well, bar)``."""
@@ -392,20 +424,26 @@ class Profiles:
         return str(row["state_conflicts"]).split(",")
 
     def matrix(
-        self, keys: Sequence, joined: bool, column: str, sensors: Sequence[str] | None = None
+        self,
+        keys: Sequence,
+        joined: bool,
+        column: str,
+        sensors: Sequence[str] | None = None,
+        labeled: bool = False,
     ) -> np.ndarray:
         """One column of the table as a ``(len(keys), sensors)`` array, NaN where nothing is known.
 
         ``keys`` are ``(fault_class, file)`` pairs, or ``(well, bar)`` pairs
-        for the bars of a joined view. The columns follow ``sensors`` when
-        given (a sensor not profiled stays NaN) and this table's own
-        sensors otherwise.
+        for the bars of a joined view. ``labeled`` reads the instances on
+        their labeled samples alone (it has no say over the bars). The
+        columns follow ``sensors`` when given (a sensor not profiled stays
+        NaN) and this table's own sensors otherwise.
         """
         values = self.table[column].to_numpy(dtype=float)
         own = len(self.sensors)
         block = np.full((len(keys), own), np.nan)
         for i, key in enumerate(keys):
-            first = self._block(key, joined)
+            first = self._block(key, joined, labeled)
             if first is not None:
                 block[i] = values[first : first + own]
         if sensors is None:

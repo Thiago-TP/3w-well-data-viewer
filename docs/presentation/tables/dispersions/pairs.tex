@@ -1,0 +1,48 @@
+% Per fault class, its pair of sensors and their Pearson coefficient over its
+% normal operation, its transient and its steady state, on every sample and on
+% the measurements alone, with how many these are, pooled over its instances:
+% the summary the appendix opens the Dispersions section's frames with. The
+% cells are written by scripts/dispersions.py into the CSV beside this file,
+% ready to set; their macros (\dpnil, \dpn, \dpcount, \dpfew, \dpsig) are
+% sections/dispersions.tex's.
+\pgfplotstabletypeset[
+  columns={name, x, times, y,
+           normal_all, normal_measured, normal_count,
+           transient_all, transient_measured, transient_count,
+           steady_all, steady_measured, steady_count},
+  columns/name/.style={string type, column type={l}},
+  % The pair: each sensor against the times sign between them.
+  columns/x/.style={string type, column type={r@{\hspace{3pt}}}},
+  columns/times/.style={string type, column type={c@{\hspace{3pt}}}},
+  columns/y/.style={string type, column type={l}},
+  % The coefficients, centered; a measured one close to its count.
+  dp all/.style={string type, column type={c}},
+  dp measured/.style={string type, column type={c@{\hspace{2pt}}}},
+  dp count/.style={string type, column type={c}},
+  columns/normal_all/.style={dp all},
+  columns/normal_measured/.style={dp measured},
+  columns/normal_count/.style={dp count},
+  columns/transient_all/.style={dp all},
+  columns/transient_measured/.style={dp measured},
+  columns/transient_count/.style={dp count},
+  columns/steady_all/.style={dp all},
+  columns/steady_measured/.style={dp measured},
+  columns/steady_count/.style={dp count},
+  % Both header rows set here, the generated one left out: Fault and Pair
+  % span both, centered in their cells (see tables/appendix/coverage.tex), and
+  % measured spans its coefficient and its count.
+  every head row/.style={
+    output empty row,
+    before row={\toprule
+                \multicolumn{1}{c}{\multirow{2}{*}[-1mm]{Fault}}
+                & \multicolumn{3}{c}{\multirow{2}{*}[-1mm]{Pair}}
+                & \multicolumn{3}{c}{Normal operation} & \multicolumn{3}{c}{Transient}
+                & \multicolumn{3}{c}{Steady state} \\
+                \cmidrule(lr){5-7}\cmidrule(lr){8-10}\cmidrule(lr){11-13}
+                & \multicolumn{3}{c}{}
+                & all & \multicolumn{2}{c}{measured}
+                & all & \multicolumn{2}{c}{measured}
+                & all & \multicolumn{2}{c}{measured} \\},
+    after row=\midrule},
+  every last row/.style={after row=\bottomrule},
+]{tables/dispersions/pairs.csv}

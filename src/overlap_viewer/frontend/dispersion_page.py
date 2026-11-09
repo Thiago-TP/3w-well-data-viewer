@@ -5,8 +5,8 @@ figures of one instance, and what they show is the historian's lines: the
 cloud of two interpolated series is the trajectories of the interpolations,
 straight segments between the few instants that were measured. This page
 draws that cloud for any pair of sensors over every real instance, one fault
-class or one well and lets it be read rather than
-looked at: every dot is a sample that names its instance and its instant on
+class, one well, or one fault class on one well (two boxes, each with its
+*All*), and lets it be read rather than looked at: every dot is a sample that names its instance and its instant on
 hover, lights up every other dot of that instance while the rest of the
 cloud fades, and opens it on click, on the two sensors of the plot; the
 density of the samples sits behind the dots; the label periods are switched
@@ -42,14 +42,14 @@ from overlap_viewer.backend.dataset import (
     merge_instances,
     well_label,
 )
-from overlap_viewer.backend.palette import fault_color, tint
-from overlap_viewer.frontend import styling
+from overlap_viewer.backend.palette import fault_color, tint, well_colors
 from overlap_viewer.frontend.heatmap import ColorKey
 from overlap_viewer.frontend.items import AnchoredText, ScrollFriendlyViewBox, restyle_axes
 from overlap_viewer.frontend.loading import progress_dialog
 from overlap_viewer.frontend.options import OptionsAction, bar_row, toolbar
 from overlap_viewer.frontend.overview import ElidedLabel
 from overlap_viewer.frontend.passes import Passes
+from overlap_viewer.frontend.scope_boxes import ALL, ScopeBoxes
 
 HINT = (
     "Every dot is one sample of two sensors | hover a dot for its instance, its instant and its "
@@ -71,11 +71,13 @@ SENSOR_TIP = (
     "plausible range are left out. The count is how many real instances recorded the sensor."
 )
 SCOPE_TIP = (
-    "The instances the samples come from: all of them, those of one fault class, or those of one "
-    "well. The first look at a scope reads its instances in full, behind a progress dialog, "
-    "every analog sensor at once, and keeps an even subsample of the rows for the session, so "
-    "that changing the sensors, the coloring or the filters is instant. Pooling wells mixes "
-    "their levels: two clouds side by side may be two wells, not one relation."
+    "The instances the samples come from: those of one fault class, those of one well, or both "
+    "at once (the instances of one class on one well); All in either box lifts that condition. "
+    "Each box counts the instances under the other's choice, and greys out what has none there. "
+    "The first look at a scope reads its instances in full, behind a progress dialog, every "
+    "analog sensor at once, and keeps an even subsample of the rows for the session, so that "
+    "changing the sensors, the coloring or the filters is instant. Pooling wells mixes their "
+    "levels: two clouds side by side may be two wells, not one relation."
 )
 COLORING_TIP = (
     "What colors the dots: the fault folder of the sample's instance, its well, or the label "
@@ -100,8 +102,16 @@ PERIODS_TIP = (
 )
 DENSITY_TIP = (
     "Shade the plane behind the dots by how many samples fall in each cell of a grid, darker for "
-    "more, on a logarithmic scale; the dots are an even subsample of the samples, the density "
-    "counts them all."
+    "more, on a logarithmic scale; the dots are an even subsample of the rows the page keeps of "
+    "the scope, the density counts them all."
+)
+PEARSON_TIP = (
+    "Pearson's coefficient over the samples on show: the rows the page keeps of the scope, in the "
+    "label periods ticked. It keeps about as many rows of every instance, however long the "
+    "instance is, so the coefficient weighs the instances alike rather than the samples: an "
+    "approximation of the coefficient over every sample, which can stray from it when the "
+    "instances differ in length (over the transients of Hydrate in Production Line, "
+    "P-MON-CKP × P-PDG reads +0.71 here and +0.87 over every sample)."
 )
 
 
@@ -211,13 +221,11 @@ class DispersionPage(QWidget):
         bar.addWidget(self._y)
 
         bar.addSeparator()
-        bar.addWidget(QLabel(" Over "))
-        self._scope = QComboBox()
-        self._scope.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-        styling.limit_popup(self._scope)
-        self._scope.setToolTip(SCOPE_TIP)
-        self._scope.currentIndexChanged.connect(self._refresh)
-        bar.addWidget(self._scope)
+        # The scope as two boxes, a fault class and a well, which narrow it
+        # together: the instances of one class on one well, or either alone.
+        self._scope = ScopeBoxes(info=self.info, tip=SCOPE_TIP, parent=self)
+        self._scope.changed.connect(self._refresh)
+        self._scope.add_to(bar)
 
         bar = self.options.add(toolbar("Dispersion options"))
         bar.addSeparator()
@@ -266,6 +274,10 @@ class DispersionPage(QWidget):
         restyle_axes(self._plot_widget.getPlotItem())
         self._note.setStyleSheet(f"color: {colors.muted}; font-size: 8pt;")
 
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide the line under the plot that says what was read and how."""
+        self._note.setVisible(bool(verbose))
+
     def apply_theme(self) -> None:
         self._restyle()
         self._key.apply_theme()
@@ -295,13 +307,25 @@ class DispersionPage(QWidget):
     def periods(self) -> list[int]:
         return [code for code, check in self._periods.items() if check.isChecked()]
 
-    def _scope_key(self) -> tuple:
-        kind, key = self._scope.currentData() or ("all", -1)
-        return (str(kind), int(key))
+    @property
+    def fault(self) -> int:
+        """The fault class in scope, ``ALL`` for every class."""
+        return self._scope.fault
+
+    @property
+    def well(self) -> int:
+        """The well in scope, ``ALL`` for every well."""
+        return self._scope.well
+
+    def set_scope(self, fault: int = ALL, well: int = ALL) -> None:
+        """Choose the instances of ``fault`` on ``well`` (``ALL`` lifts either), and draw them."""
+        self._scope.set_scope(fault, well)
+
+    def _scope_key(self) -> tuple[int, int]:
+        return self._scope.key()
 
     def _scope_name(self) -> str:
-        text = self._scope.currentText().split(" (")[0]
-        return text or "All real instances"
+        return self._scope.name()
 
     # -- data
 
@@ -322,7 +346,7 @@ class DispersionPage(QWidget):
         self._wells = list(wells)
         self._availability = Availability.from_wells(wells, self.info)
         self._fill_sensors()
-        self._fill_scopes()
+        self._scope.set_catalogue(catalogue)
         self._pending = True
         if self.isVisible():
             QTimer.singleShot(0, self._ensure_and_draw)
@@ -361,36 +385,6 @@ class DispersionPage(QWidget):
             box.setCurrentIndex(max(index, 0))
             box.blockSignals(False)
 
-    def _fill_scopes(self) -> None:
-        wanted = self._scope.currentData()
-        self._scope.blockSignals(True)
-        self._scope.clear()
-        self._scope.addItem("All real instances", ("all", -1))
-        if self._catalogue is not None:
-            faults = self._catalogue["fault_class"].value_counts()
-            if len(faults):
-                self._scope.insertSeparator(self._scope.count())
-            for fault in sorted(faults.index):
-                self._scope.addItem(
-                    f"{fault}. {self.info.fault_name(int(fault))} ({int(faults[fault])} instances)",
-                    ("class", int(fault)),
-                )
-            wells = self._catalogue["well"].value_counts()
-            if len(wells):
-                self._scope.insertSeparator(self._scope.count())
-            for well in sorted(wells.index):
-                self._scope.addItem(
-                    f"{well_label(int(well))} ({int(wells[well])} instances)", ("well", int(well))
-                )
-        index = -1
-        if wanted is not None:
-            for k in range(self._scope.count()):
-                if self._scope.itemData(k) == wanted:
-                    index = k
-                    break
-        self._scope.setCurrentIndex(max(index, 0))
-        self._scope.blockSignals(False)
-
     def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._pending:
@@ -402,12 +396,12 @@ class DispersionPage(QWidget):
         self._pending = False
         self._refresh()
 
-    def _in_scope(self, data: WellData, index: int, kind: str, key: int) -> bool:
-        if kind == "well":
-            return data.well == key
-        if kind == "class":
-            return key in {fault for fault, _ in data.colors[index]}
-        return True
+    @staticmethod
+    def _in_scope(data: WellData, index: int, fault: int, well: int) -> bool:
+        """Whether one bar is an instance of ``fault`` on ``well``, ``ALL`` lifting either."""
+        if well != ALL and data.well != well:
+            return False
+        return fault == ALL or fault in {klass for klass, _ in data.colors[index]}
 
     def _frame(self, path) -> pd.DataFrame:
         if self._passes is not None:
@@ -422,12 +416,12 @@ class DispersionPage(QWidget):
             return True
         if self._availability is None:
             return False
-        kind, scope_key = key
+        fault, well = key
         bars = [
             (data, index)
             for data in self._wells
             for index in range(data.n_instances)
-            if self._in_scope(data, index, kind, scope_key)
+            if self._in_scope(data, index, fault, well)
         ]
         analog = self._analog_sensors()
         availability = self._availability
@@ -473,7 +467,9 @@ class DispersionPage(QWidget):
             self._cloud = None
             self._pair = None
             self._clear_plot()
-            self._note.setText("The instances were not read. Choose the scope again to read them.")
+            self._note.setText(
+                "The instances were not read. Choose a class or a well again to read them."
+            )
             self._summary = ""
             self.summary_changed.emit()
             return
@@ -499,11 +495,8 @@ class DispersionPage(QWidget):
         self._density = None
 
     def _well_colors(self) -> dict[int, str]:
-        palette = theme.current().wells
-        return {
-            well.well: palette[k % len(palette)]
-            for k, well in enumerate(sorted(self._wells, key=lambda w: w.well))
-        }
+        """One color per well of the whole catalogue, the same on every page."""
+        return well_colors(well.well for well in self._wells)
 
     def _period_colors(self) -> dict[int, str]:
         """Normal operation's green, an amber while the fault installs itself, a fault's red once
@@ -618,12 +611,14 @@ class DispersionPage(QWidget):
         unit_x, unit_y = self.info.shown_unit(x), self.info.shown_unit(y)
         plot.setLabel("bottom", f"{x}{f' [{unit_x}]' if unit_x else ''}")
         plot.setLabel("left", f"{y}{f' [{unit_y}]' if unit_y else ''}")
-        # Framed afresh only when the cloud or the pair of sensors changes, which
-        # changes what the axes mean: the coloring and every tick box (the label
-        # periods, the measurements alone, the density behind the dots) only
-        # thin or recolor the dots on the same axes, and throwing away a zoom for
-        # them would be a nuisance (Reset views frames the dots again).
-        framing = (self._scope_key(), x, y)
+        # Framed afresh only when the pair of sensors changes, which changes what
+        # the axes mean: the scope and every tick box (the label periods, the
+        # measurements alone, the density behind the dots) only thin or recolor
+        # the dots on the same axes, and throwing away a zoom for them would be a
+        # nuisance, the more so when a class's cloud is narrowed to one of its
+        # wells to look at the very spot on show (Reset views frames the dots
+        # again).
+        framing = (x, y)
         if pair.n and framing != self._framed:
             plot.getViewBox().autoRange(padding=0.04)
             self._framed = framing
@@ -638,8 +633,8 @@ class DispersionPage(QWidget):
         parts = [
             (
                 f"{len(self._dots):,} dots of {pair.n:,} samples of {self.x} × {self.y}, kept one "
-                f"in {cloud.stride:.0f} from the {cloud.n_samples:,} of the {cloud.n_instances} "
-                f"instances of {self._scope_name()}"
+                f"in {cloud.stride:.0f} from the {cloud.n_samples:,} of "
+                f"{self._instances_text(cloud.n_instances)}"
             )
         ]
         if len(self.periods) < len(di.PERIODS):
@@ -671,14 +666,23 @@ class DispersionPage(QWidget):
             frac=(0.0, 1.0),
             anchor=(-0.03, -0.25),
         )
+        self._pearson.setToolTip(PEARSON_TIP)
         self._pearson.attach(self._plot_widget.getPlotItem())
 
     def _summary_text(self, pair: di.Pair) -> str:
         cloud = self._cloud
         return (
-            f"{pair.n:,} samples of {self.x} × {self.y} over {cloud.n_instances} instances of "
-            f"{self._scope_name()} "
+            f"{pair.n:,} samples of {self.x} × {self.y} over "
+            f"{self._instances_text(cloud.n_instances)} "
         )
+
+    def _instances_text(self, n: int) -> str:
+        """``the 4 instances of 1. Abrupt Increase of BSW``, ``the instance of …`` for one, ``all 1,119 real instances`` unscoped."""
+        if self._scope_key() == (ALL, ALL):
+            return f"all {n:,} real instances"
+        if n == 1:
+            return f"the instance of {self._scope_name()}"
+        return f"the {n:,} instances of {self._scope_name()}"
 
     def summary(self) -> str:
         return self._summary

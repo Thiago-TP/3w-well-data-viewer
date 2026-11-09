@@ -1,0 +1,318 @@
+%% beamerthemews3w.sty
+%%
+%% A beamer theme after the official PowerPoint template of the 5th Workshop
+%% on the 3W (template_5o_ws3w.pptx, in this folder). Its colors, sizes and
+%% positions were read off the template's masters and layouts and scaled from
+%% its 13.333 in x 7.5 in slide to beamer's 160 mm x 90 mm page
+%% (aspectratio=169), so that 1 in of the template is 12 mm here and its type
+%% sizes are multiplied by 0.472.
+%%
+%% Everything is placed from the anchors of the page (current page.north west
+%% and so on) with TikZ's positioning library, and every logo is drawn by one
+%% command, so that it has one size and, for the Petrobras logo, one place:
+%%
+%%   - content frames: the template's gold network under a white veil that
+%%     lets a quarter of it through two thirds of the way across, the 3W logo
+%%     top-left, the Petrobras logo top-right, the title in the template's dark
+%%     blue beside the 3W logo, an optional subtitle under it (\framesubtitle),
+%%     the frame number at the bottom-right;
+%%   - \wstitleframe: the title layout (the blue panel over the tilted yellow
+%%     sheet, white title, yellow subtitle, the yellow dash, the presenter's
+%%     lines, the white Petrobras logo, the 3W logo);
+%%   - \wsclosingframe{message}{line}{line}: the closing layout (the navy page,
+%%     the 3W logo at its center, the message over it, two lines under it, the
+%%     white Petrobras logo).
+%%
+%% Fonts: the template is set in Trebuchet MS. Under LuaLaTeX or XeLaTeX the
+%% theme uses it whenever the system has it and falls back to Fira Sans (which
+%% TeX Live ships) otherwise; under pdfLaTeX it uses Fira Sans.
+%%
+%% The images in assets/ are the template's own media (ppt/media/ of the pptx).
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{beamerthemews3w}[2026/11/04 Beamer theme after the 5th 3W Workshop template]
+
+\mode<presentation>
+
+\RequirePackage{iftex}
+\RequirePackage{graphicx}
+\RequirePackage{tikz}
+\usetikzlibrary{fadings,positioning}
+
+\graphicspath{{assets/}{../assets/}}
+
+% ---------------------------------------------------------------- fonts
+
+\ifPDFTeX
+  \RequirePackage[T1]{fontenc}
+  \RequirePackage[sfdefault]{FiraSans}
+\else
+  \RequirePackage{fontspec}
+  \IfFontExistsTF{Trebuchet MS}
+    {\setsansfont{Trebuchet MS}}
+    {\setsansfont{Fira Sans}}
+\fi
+
+% --------------------------------------------------------------- colors
+% The "Petrobras" color scheme of the template's themes.
+
+\definecolor{ws3wnavy}{HTML}{004165}    % dk2 of the content master: titles, text
+\definecolor{ws3wbrown}{HTML}{675C53}   % dk1: secondary text, captions
+\definecolor{ws3wgrey}{HTML}{BCBDBC}    % lt2
+\definecolor{ws3wyellow}{HTML}{FDC82F}  % accent 1: the title layout's sheet and dash, outlines
+\definecolor{ws3wteal}{HTML}{00B2A9}    % accent 2
+\definecolor{ws3wblue}{HTML}{006298}    % accent 3: the title layout's panel
+\definecolor{ws3worange}{HTML}{FF7000}  % accent 4
+\definecolor{ws3wlime}{HTML}{A8B400}    % accent 5
+\definecolor{ws3wgreen}{HTML}{008542}   % accent 6
+\definecolor{ws3wdeep}{HTML}{00314C}    % the closing slide's background
+
+\setbeamercolor{normal text}{fg=ws3wnavy, bg=white}
+\setbeamercolor{structure}{fg=ws3wnavy}
+\setbeamercolor{frametitle}{fg=ws3wnavy, bg=}
+\setbeamercolor{framesubtitle}{fg=ws3wbrown}
+\setbeamercolor{alerted text}{fg=ws3worange}
+\setbeamercolor{example text}{fg=ws3wgreen}
+\setbeamercolor{item}{fg=ws3wblue}
+\setbeamercolor{subitem}{fg=ws3wblue}
+\setbeamercolor{subsubitem}{fg=ws3wblue}
+\setbeamercolor{caption name}{fg=ws3wbrown}
+\setbeamercolor{footnote}{fg=ws3wbrown}
+\setbeamercolor{footnote mark}{fg=ws3wbrown}
+
+\setbeamercolor{title}{fg=white}
+\setbeamercolor{subtitle}{fg=ws3wyellow}
+\setbeamercolor{author}{fg=white}
+\setbeamercolor{institute}{fg=white}
+\setbeamercolor{date}{fg=white}
+
+\setbeamercolor{block title}{fg=white, bg=ws3wblue}
+\setbeamercolor{block body}{fg=ws3wnavy, bg=ws3wblue!7!white}
+\setbeamercolor{block title alerted}{fg=white, bg=ws3worange}
+\setbeamercolor{block body alerted}{fg=ws3wnavy, bg=ws3worange!7!white}
+\setbeamercolor{block title example}{fg=white, bg=ws3wgreen}
+\setbeamercolor{block body example}{fg=ws3wnavy, bg=ws3wgreen!7!white}
+
+% ---------------------------------------------------------------- sizes
+% Template: title 22 pt, body 18 pt, title-slide title 37 pt and lines 18 pt,
+% closing message 32 pt; times 0.472, as above.
+
+\setbeamerfont{frametitle}{size=\large, series=\bfseries}
+\setbeamerfont{framesubtitle}{size=\footnotesize, series=\mdseries}
+\setbeamerfont{title}{size=\fontsize{17.5}{19}, series=\bfseries}
+\setbeamerfont{subtitle}{size=\fontsize{10.5}{12.5}, series=\bfseries}
+\setbeamerfont{author}{size=\fontsize{8.5}{10}, series=\bfseries}
+\setbeamerfont{institute}{size=\fontsize{8.5}{10}, series=\mdseries}
+\setbeamerfont{date}{size=\fontsize{8.5}{10}, series=\mdseries}
+\setbeamerfont{block title}{size=\normalsize, series=\bfseries}
+\setbeamerfont{caption}{size=\scriptsize}
+\setbeamerfont{footnote}{size=\tiny}
+
+% ----------------------------------------------------------- templates
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+\setbeamertemplate{footline}{}
+\setbeamertemplate{itemize items}[circle]
+\setbeamertemplate{enumerate items}[default]
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
+
+% The template's body placeholder: 2.4 % in from either side, 19 % from the top.
+\setbeamersize{text margin left=3.8mm, text margin right=3.8mm}
+% 17.1 mm less the 3.5 mm beamer leaves above the text area.
+\newlength{\ws@bodytop}\setlength{\ws@bodytop}{13.6mm}
+
+% Lists start at the text margin, as a paragraph would: the label takes only
+% its own width and the space after it, in place of beamer's indent of 2 em.
+\setlength{\labelsep}{.4em}
+\setlength{\leftmargini}{1em}
+\setlength{\leftmarginii}{1em}
+\setlength{\leftmarginiii}{1em}
+
+% ---------------------------------------------------------------- logos
+% One size for each logo wherever it is drawn, and for the Petrobras logo one
+% place too: its top-right corner \ws@margin in from the page's.
+
+\newlength{\ws@margin}\setlength{\ws@margin}{3mm}
+\newlength{\ws@petrobraswidth}\setlength{\ws@petrobraswidth}{23.6mm}
+\newlength{\ws@logowidth}\setlength{\ws@logowidth}{12mm}
+
+% \ws@petrobras[image]: the Petrobras logo, named "petrobras logo"; the white
+% one on the dark layouts.
+\NewDocumentCommand{\ws@petrobras}{O{petrobras}}{%
+  \node (petrobras logo) [below left=\ws@margin of current page.north east, inner sep=0pt]
+    {\includegraphics[width=\ws@petrobraswidth]{#1.png}};}
+
+% \ws@logo{options}: the 3W logo, named "workshop logo", placed by the options.
+\NewDocumentCommand{\ws@logo}{m}{%
+  \node (workshop logo) [inner sep=0pt, #1]
+    {\includegraphics[width=\ws@logowidth]{ws3w-logo.png}};}
+
+% ------------------------------------------------------ content frames
+
+% The frame title beside the 3W logo, 2 mm to its right, its line centered
+% where the template's title placeholder centers it (6.65 mm down), and as
+% wide as the room left 2 mm short of the Petrobras logo; a subtitle, which the
+% template has no place for, takes the line under it, above the body, and
+% reaches the text margin, the logos being above it. The box the template
+% reserves is pushed down so the body starts at \ws@bodytop.
+\newlength{\ws@titleindent}
+\setlength{\ws@titleindent}{\dimexpr\ws@margin+\ws@logowidth+2mm\relax}
+\newlength{\ws@titlewidth}
+\setlength{\ws@titlewidth}{\dimexpr\paperwidth-\ws@titleindent-\ws@petrobraswidth-\ws@margin-2mm\relax}
+\newlength{\ws@subtitlewidth}
+\setlength{\ws@subtitlewidth}{\dimexpr\paperwidth-\ws@titleindent-\beamer@rightmargin\relax}
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip
+  \begin{tikzpicture}[remember picture, overlay]
+    \node (frame title)
+      [anchor=west, inner sep=0pt, text width=\ws@titlewidth, minimum height=7.1mm, align=left,
+       text=ws3wnavy]
+      at ([shift={(\ws@titleindent, -6.65mm)}] current page.north west)
+      {\usebeamerfont{frametitle}\insertframetitle};
+    \ifx\insertframesubtitle\@empty\else
+      \node (frame subtitle)
+        [below=.7mm of frame title.south west, anchor=north west, inner sep=0pt,
+         text width=\ws@subtitlewidth, align=left]
+        {\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\insertframesubtitle};
+    \fi
+  \end{tikzpicture}%
+  \vskip\ws@bodytop
+}
+
+% The veil of the template's content layout, a linear gradient over the
+% network: white and opaque at the left edge, white at 74 % opacity two thirds
+% of the way across, so that a quarter of the network shows there, then the
+% light grey of the background (white at 95 % luminance), opaque, at the right
+% edge. A fading is read as luminosity: white keeps the fill, black lets what
+% is under it through.
+\definecolor{ws@veil}{gray}{0.95}
+\definecolor{ws@opaque}{gray}{0.95}
+\definecolor{ws@peak}{gray}{0.95}
+\pgfdeclarehorizontalshading{ws@veilcolor}{100bp}{%
+  color(0bp)=(white); color(67bp)=(white); color(100bp)=(ws@veil)}
+\pgfdeclarehorizontalshading{ws@veilopacity}{100bp}{%
+  color(0bp)=(ws@opaque); color(67bp)=(ws@peak); color(100bp)=(ws@opaque)}
+\pgfdeclarefading{ws network fade}{\tikz\shade[shading=ws@veilopacity] (0,0) rectangle (100bp,100bp);}
+
+% \ws@network: the template's gold network over the whole page, mirrored and
+% stretched as the template has it (1600 x 718 pixels into 16:9), under the
+% veil of the content layout and the shapes of the title layout.
+\NewDocumentCommand{\ws@network}{}{%
+  \node [below right=0pt of current page.north west, inner sep=0pt]
+    {\reflectbox{\includegraphics[width=\paperwidth, height=\paperheight]{network.jpg}}};}
+
+\defbeamertemplate{background canvas}{ws3w content}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \ws@network
+    \shade [shading=ws@veilcolor, path fading=ws network fade]
+      (current page.north west) rectangle (current page.south east);
+    \ws@logo{below right=\ws@margin of current page.north west}
+    \ws@petrobras
+    \node (frame number) [above left=\ws@margin of current page.south east, inner sep=0pt,
+                          text=ws3wbrown, font=\bfseries]
+      {\insertframenumber};
+  \end{tikzpicture}}
+\setbeamertemplate{background canvas}[ws3w content]
+
+% ---------------------------------------------------------- title frame
+
+% The title layout: the network, a yellow sheet tilted 3.6 degrees clockwise, the blue
+% panel whose lower-right corner is cut away, the white Petrobras logo, and
+% the 3W logo at the lower right, where the template's center is (18.1 mm in
+% from the right edge, 27.4 mm up from the bottom). The two shapes are traced
+% off the template, in millimeters down and across from the top-left corner.
+\defbeamertemplate{background canvas}{ws3w title}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \ws@network
+    \fill [ws3wyellow, draw=ws3wyellow, line width=0.2pt,
+           shift={(current page.north west)}, x=1mm, y=-1mm, rotate around={3.63:(71.6,46.8)}]
+      (31.1,6.3) -- (145.8,-1.0) -- (139.2,76.1) -- (136.3,80.0) -- (101.5,88.3) -- (2.9,94.5)
+      -- (-2.6,8.5) -- cycle;
+    \fill [ws3wblue, draw=ws3wyellow, line width=0.2pt,
+           shift={(current page.north west)}, x=1mm, y=-1mm]
+      (-0.2,-0.2) -- (160.2,-0.2) -- (154.0,68.3) -- (151.1,72.3) -- (150.3,72.5) -- (76.2,90.2)
+      -- (-0.2,90.2) -- cycle;
+    \ws@petrobras[petrobras-white]
+    \ws@logo{at={([shift={(-18.1mm, 27.4mm)}] current page.south east)}}
+  \end{tikzpicture}}
+
+% The title, top-anchored where the template's box is (20.2 mm in, 19.5 mm
+% down, 69.3 mm wide), the subtitle under it; the template's yellow dash under
+% them, 2.5 mm clear of the node's bottom, which sits at the last baseline
+% rather than under its descenders; the presenter's lines from 52.5 mm down,
+% one paragraph each, as the template's placeholder text has them (name,
+% affiliation, event, date).
+\setbeamertemplate{title page}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \node (title) [below right=19.5mm and 20.2mm of current page.north west, inner sep=0pt,
+                   text width=69.3mm, align=left] {%
+      \hyphenpenalty=10000 \exhyphenpenalty=10000 % a title is not hyphenated
+      {\usebeamerfont{title}\usebeamercolor[fg]{title}\inserttitle\par}%
+      \ifx\insertsubtitle\@empty\else
+        \vskip 1.2mm
+        {\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par}%
+      \fi};
+    \node (title dash) [below=2.5mm of title.south west, anchor=north west, inner sep=0pt,
+                        text=ws3wyellow, font=\fontsize{17.6}{19}\selectfont\bfseries]
+      {\textemdash};
+    \node (presenter) [below right=52.5mm and 20.2mm of current page.north west, inner sep=0pt,
+                       text width=64.1mm, align=left] {%
+      {\usebeamerfont{author}\usebeamercolor[fg]{author}\insertauthor\par}%
+      \vskip 1.6mm
+      {\usebeamerfont{institute}\usebeamercolor[fg]{institute}\insertinstitute\par}%
+      \vskip 1.6mm
+      {\usebeamerfont{date}\usebeamercolor[fg]{date}\insertdate\par}};
+  \end{tikzpicture}}
+
+\NewDocumentCommand{\wstitleframe}{}{{%
+  \setbeamertemplate{background canvas}[ws3w title]%
+  \begin{frame}[plain]\titlepage\end{frame}}}
+
+% -------------------------------------------------------- closing frame
+
+% The closing layout: the navy page, the 3W logo at its center, the message
+% over it and two lines (a link, an address) under it, the white Petrobras
+% logo. The group keeps the navy canvas to this frame: the appendix follows.
+\defbeamertemplate{background canvas}{ws3w closing}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill [ws3wdeep] (current page.north west) rectangle (current page.south east);
+  \end{tikzpicture}}
+
+\NewDocumentCommand{\wsclosingframe}{m m m}{{%
+  \setbeamertemplate{background canvas}[ws3w closing]%
+  \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay]
+      \ws@logo{at={(current page.center)}}
+      \ws@petrobras[petrobras-white]
+      \node (final message) [above=3mm of workshop logo, font=\Large, text=white] {#1};
+      \node (link1) [below=5mm of workshop logo, font=\small, text=white] {#2};
+      \node (link2) [below=1mm of link1, font=\small, text=white] {#3};
+    \end{tikzpicture}
+  \end{frame}}}
+
+% ------------------------------------------------------------ helpers
+
+% \wsstat{figure}{what it is}: a large figure over a small label.
+\NewDocumentCommand{\wsstat}{m m}{%
+  {%
+    \centering
+    {\bfseries\color{ws3wblue}#1\par}
+    \vskip 0.5mm
+    {\footnotesize\color{ws3wbrown}#2\par}
+    \vskip 2.5mm
+  }%
+}
+
+% \wspage{name}: a page of the viewer, named in the panel's blue.
+\NewDocumentCommand{\wspage}{m}{\textcolor{ws3wblue}{\textbf{#1}}}
+
+% \br{width}{text}: text broken over lines in a table cell, as wide as given.
+\NewDocumentCommand{\br}{m m}{%
+  \begin{minipage}{#1}
+    #2
+  \end{minipage}%
+}
+
+\mode<all>

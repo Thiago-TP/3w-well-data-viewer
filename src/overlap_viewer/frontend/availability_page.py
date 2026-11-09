@@ -83,6 +83,7 @@ from overlap_viewer.frontend.loading import (
 from overlap_viewer.frontend.options import OptionsAction, bar_row, toolbar
 from overlap_viewer.frontend.overview import describe_instance
 from overlap_viewer.frontend.passes import Passes
+from overlap_viewer.frontend.scope_boxes import ScopeBoxes
 
 MATRICES = ("Sensor availability", "Sensor pairs")
 MODES = ("Fault classes", "Wells", "Instances of one well", "Instances of one fault class")
@@ -191,6 +192,10 @@ class AvailabilityPage(QWidget):
         heading_layout.addWidget(self._title, 1)
         heading_layout.addWidget(self._key, 0, Qt.AlignmentFlag.AlignTop)
         heading_layout.addWidget(self._pair_key, 0, Qt.AlignmentFlag.AlignTop)
+        # Takes the room the title leaves when it is hidden (``set_verbose``),
+        # so that the key keeps to the left rather than floating mid-row.
+        heading_layout.addStretch(0)
+        self._heading_layout = heading_layout
         layout.addWidget(heading)
 
         self._heatmap = HeatmapWidget()
@@ -250,16 +255,20 @@ class AvailabilityPage(QWidget):
         self._subject.currentIndexChanged.connect(self._refresh)
         self._subject_combo_action = bar.addWidget(self._subject)
 
-        self._scope_actions = [bar.addWidget(QLabel(" Over "))]
-        self._scope = QComboBox()
-        self._scope.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-        styling.limit_popup(self._scope)
-        self._scope.setToolTip(
-            "The instances the pairs are taken over: all of them, those of one fault class, or "
-            "those of one well."
+        # The instances the pair map is counted over, as a class and a well that
+        # narrow it together; shown with the pair map only.
+        self._scope = ScopeBoxes(
+            info=self.info,
+            tip=(
+                "The instances the pairs are taken over: those of one fault class, those of one "
+                "well, or both at once (the instances of one class on one well); All in either "
+                "box lifts that condition. Each box counts the instances under the other's "
+                "choice, and greys out what has none there."
+            ),
+            parent=self,
         )
-        self._scope.currentIndexChanged.connect(self._refresh)
-        self._scope_actions.append(bar.addWidget(self._scope))
+        self._scope.changed.connect(self._refresh)
+        self._scope_actions = self._scope.add_to(bar)
 
         bar = self.options.add(toolbar("Availability options"))
         bar.addSeparator()
@@ -407,6 +416,11 @@ class AvailabilityPage(QWidget):
 
     # -- appearance
 
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide the title that spells out what the matrix holds; its key stays."""
+        self._title.setVisible(bool(verbose))
+        self._heading_layout.setStretch(self._heading_layout.count() - 1, 0 if verbose else 1)
+
     def apply_theme(self) -> None:
         """Take the colors of the theme now in force: the keys, the title, the matrix."""
         colors = theme.current()
@@ -473,7 +487,7 @@ class AvailabilityPage(QWidget):
         self._cleaned = None
         self._rebuild_plain()
         self._fill_subjects()
-        self._fill_scopes()
+        self._scope.set_catalogue(self._catalogue)
         if not self._ensure_data():
             self._fall_back()
         self._refresh()
@@ -695,36 +709,6 @@ class AvailabilityPage(QWidget):
         self._subject.blockSignals(False)
         self._show_subject(mode.startswith("Instances"))
 
-    def _fill_scopes(self) -> None:
-        """List, in the Over box, the instances the pair map can be counted over."""
-        wanted = self._scope.currentData()
-        self._scope.blockSignals(True)
-        self._scope.clear()
-        self._scope.addItem("All real instances", ("all", -1))
-        if self._catalogue is not None:
-            faults = self._catalogue["fault_class"].value_counts()
-            if len(faults):
-                self._scope.insertSeparator(self._scope.count())
-            for fault in sorted(faults.index):
-                self._scope.addItem(
-                    f"{fault}. {self.info.fault_name(int(fault))} "
-                    f"({_plural(int(faults[fault]), 'instance')})",
-                    ("class", int(fault)),
-                )
-            wells = self._catalogue["well"].value_counts()
-            if len(wells):
-                self._scope.insertSeparator(self._scope.count())
-            for well in sorted(wells.index):
-                self._scope.addItem(
-                    f"{well_label(int(well))} ({_plural(int(wells[well]), 'instance')})",
-                    ("well", int(well)),
-                )
-        # Asked for nothing in particular, the search must not run: a separator
-        # carries no data of its own, and looking for none of it finds one.
-        index = self._scope.findData(wanted) if wanted is not None else -1
-        self._scope.setCurrentIndex(max(index, 0))
-        self._scope.blockSignals(False)
-
     def show_instances_of(self, kind: str, key: int) -> None:
         """Make the rows the instances of one ``well`` or one fault ``class``."""
         mode = "Instances of one well" if kind == "well" else "Instances of one fault class"
@@ -799,13 +783,7 @@ class AvailabilityPage(QWidget):
 
     def _scope_mask(self) -> np.ndarray | None:
         """Which bars the pair map is counted over, ``None`` for all of them."""
-        kind, key = self._scope.currentData() or ("all", -1)
-        bars = self.availability.bars
-        if kind == "class":
-            return bars["fault_class"].to_numpy() == key
-        if kind == "well":
-            return bars["well"].to_numpy() == key
-        return None
+        return self._scope.mask(self.availability.bars)
 
     def _build_pairs(self) -> PairTable:
         table = self.pair_coverage.table(
@@ -955,7 +933,7 @@ class AvailabilityPage(QWidget):
 
     def _pair_title_text(self) -> str:
         table = self._pair_table
-        scope = self._scope.currentText() or "All real instances"
+        scope = self._scope.name()
         noun = "bar" if self.joined else "real instance"
         rule = (
             f"counted only in the {noun}s where both sensors are live"
@@ -967,10 +945,7 @@ class AvailabilityPage(QWidget):
                 "Per pair of sensors: the share of the samples in which both carry a reading at "
                 "the same instant"
             ),
-            (
-                f"{scope.split(' (')[0]} | {_plural(table.n_bars, noun)}, "
-                f"{table.n_samples:,} samples"
-            ),
+            (f"{scope} | {_plural(table.n_bars, noun)}, {table.n_samples:,} samples"),
             rule,
             "the diagonal is each sensor's own coverage",
         ]

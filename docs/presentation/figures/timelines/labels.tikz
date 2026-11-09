@@ -1,0 +1,51 @@
+% Each fault folder's recorded time by label, as a pair of bars: its files
+% apart (the upper bar) and joined (the lower), every instant of a joined
+% history counted once. pgfplots stacks every plot of an axis onto the one
+% before, so the two stacks are drawn instead as overlaid bars from zero to
+% each cumulative share, the longest first: the whole bar (its unlabeled end),
+% then up to the end of steady, of transient and of normal. The tables are
+% written by scripts/timelines.py.
+\begin{tikzpicture}
+  \begin{axis}[
+      xbar, bar shift=0pt, bar width=1.5mm, scale only axis, width=30mm, height=50mm,
+      y dir=reverse, ytick={0,...,9},
+      yticklabels from table={figures/timelines/labels-pre-join.csv}{name},
+      enlarge y limits={abs=2.4mm}, xmin=0, xmax=100, xtick={0,50,100},
+      xticklabel={\pgfmathprintnumber{\tick}\,\%},
+      axis x line*=bottom, axis y line*=left, y axis line style={draw=none},
+      tick label style={font=\tiny, text=ws3wbrown}, ytick style={draw=none},
+      legend style={font=\tiny, draw=none, fill=none, at={(0.5,1.02)}, anchor=south,
+                    legend columns=4, /tikz/every even column/.append style={column sep=2mm}},
+      area legend, reverse legend, clip=false,
+      normal/.style={fill=ws3wblue!25, draw=none},
+      transient/.style={fill=ws3wblue!55, draw=none},
+      steady/.style={fill=ws3wblue, draw=none},
+      unlabeled/.style={fill=ws3wgrey!45, draw=none,
+                        postaction={pattern=north east lines, pattern color=ws3wbrown!60}},
+    ]
+    % The files apart.
+    \addplot [unlabeled] table [x expr=\thisrow{normal}+\thisrow{transient}+\thisrow{steady}+\thisrow{unknown},
+                                y expr=\coordindex-0.2] {figures/timelines/labels-pre-join.csv};
+    \addplot [steady] table [x expr=\thisrow{normal}+\thisrow{transient}+\thisrow{steady},
+                             y expr=\coordindex-0.2] {figures/timelines/labels-pre-join.csv};
+    \addplot [transient] table [x expr=\thisrow{normal}+\thisrow{transient},
+                                y expr=\coordindex-0.2] {figures/timelines/labels-pre-join.csv};
+    \addplot [normal] table [x=normal, y expr=\coordindex-0.2] {figures/timelines/labels-pre-join.csv};
+    \legend{unlabeled, steady, transient, normal}
+    % The files joined.
+    \addplot [unlabeled, forget plot] table [x expr=\thisrow{normal}+\thisrow{transient}+\thisrow{steady}+\thisrow{unknown},
+                                             y expr=\coordindex+0.2] {figures/timelines/labels-post-join.csv};
+    \addplot [steady, forget plot] table [x expr=\thisrow{normal}+\thisrow{transient}+\thisrow{steady},
+                                          y expr=\coordindex+0.2] {figures/timelines/labels-post-join.csv};
+    \addplot [transient, forget plot] table [x expr=\thisrow{normal}+\thisrow{transient},
+                                             y expr=\coordindex+0.2] {figures/timelines/labels-post-join.csv};
+    \addplot [normal, forget plot] table [x=normal, y expr=\coordindex+0.2] {figures/timelines/labels-post-join.csv};
+    % Which bar is which, beside the first pair.
+    \node [anchor=west, font=\tiny, text=ws3wbrown, inner sep=1pt] at (axis cs:100,-0.2) {apart};
+    \node [anchor=west, font=\tiny, text=ws3wbrown, inner sep=1pt] at (axis cs:100,0.2) {joined};
+    \node [anchor=west, font=\tiny, text=ws3worange, align=left] at (axis cs:101,9)
+      {\textbf{\tlServiceOnlyNormal{} of \tlServiceFiles{} files}\\never leave normal};
+    \node [anchor=west, font=\tiny, text=ws3wnavy, align=left] at (axis cs:101,7)
+      {\tlScalingNeverSteady{} of \tlScalingFiles{} files\\never reach steady};
+  \end{axis}
+\end{tikzpicture}

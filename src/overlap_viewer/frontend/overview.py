@@ -274,6 +274,10 @@ class ElidedLabel(QLabel):
         self.setToolTip(text)
         self._refresh()
 
+    def full_text(self) -> str:
+        """The text as it was set, before any of it was elided."""
+        return self._full
+
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._refresh()
@@ -485,12 +489,16 @@ class WellTimelinePlot(WheelToParent, pg.PlotWidget):
         if getattr(self, "_auto_view", False) and getattr(self, "_timemap", None) is not None:
             self.reset_view()
 
-    def title_html(self, extra: str = "") -> str:
+    def title_html(self, extra: str = "", verbose: bool = True) -> str:
         """The well's name and a one-line summary of its recording, for the label above the plot.
 
         ``extra`` is appended to the summary: what the page's coloring adds,
-        such as the measurements of the sensor the bars are tinted by.
+        such as the measurements of the sensor the bars are tinted by. Not
+        ``verbose``, the name stands alone.
         """
+        name = f'<span style="font-size:10pt; font-weight:bold;">{self.data.label}</span>'
+        if not verbose:
+            return name
         data, bursts = self.data, self._bursts
         rows = data.rows
         first, last = pd.Timestamp(rows["start"].min()), pd.Timestamp(rows["end"].max())
@@ -524,8 +532,8 @@ class WellTimelinePlot(WheelToParent, pg.PlotWidget):
             + (f" | {extra}" if extra else "")
         )
         return (
-            f'<span style="font-size:10pt; font-weight:bold;">{data.label}</span>'
-            f'&nbsp;&nbsp;<span style="font-size:8pt; color:{theme.current().muted};">{summary}</span>'
+            f'{name}&nbsp;&nbsp;<span style="font-size:8pt; color:{theme.current().muted};">'
+            f"{summary}</span>"
         )
 
     # -- mouse
@@ -614,13 +622,13 @@ class WellTimelinePlot(WheelToParent, pg.PlotWidget):
 class WellCell(QWidget):
     """One cell of the grid: the well's title, wrapping as needed, above its timeline."""
 
-    def __init__(self, plot: WellTimelinePlot, extra: str = "", parent=None):
+    def __init__(self, plot: WellTimelinePlot, extra: str = "", verbose: bool = True, parent=None):
         super().__init__(parent)
         self.plot = plot
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(1)
-        self.title = QLabel(plot.title_html(extra))
+        self.title = QLabel(plot.title_html(extra, verbose))
         self.title.setTextFormat(Qt.TextFormat.RichText)
         self.title.setWordWrap(True)
         self.title.setContentsMargins(6, 0, 6, 0)
@@ -673,6 +681,7 @@ class TimelinesPage(QWidget):
         self._fault_filter: int | None = None
         self._catalogue = None
         self._summary = ""
+        self.verbose = True  # whether every well's name carries its summary
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -687,7 +696,9 @@ class TimelinesPage(QWidget):
         self._state_key = StateKey(("ramp", "frozen", "absent", "implausible", "order", "state"))
         self._state_key.hide()
         body_layout.addWidget(self._state_key, 0, Qt.AlignmentFlag.AlignLeft)
-        self._legend = LegendBar()
+        # Retracted to start with: eighteen entries take the height of a well's
+        # plot, and the retracted key still names the colors under the pointer.
+        self._legend = LegendBar(collapsed=True)
         self._legend.fault_clicked.connect(self.toggle_fault_filter)
         body_layout.addWidget(self._legend)
         self._scroll = QScrollArea()
@@ -901,7 +912,7 @@ class TimelinesPage(QWidget):
             plot.hovered.connect(partial(self._on_hover, plot))
             plot.clicked.connect(partial(self._on_click, plot))
             self._plots[well.well] = plot
-            self._cells[well.well] = WellCell(plot, self._title_extra(well))
+            self._cells[well.well] = WellCell(plot, self._title_extra(well), self.verbose)
 
         present = set().union(*(well.present_colors() for well in shown))
         self._legend.set_entries(
@@ -1081,10 +1092,20 @@ class TimelinesPage(QWidget):
             self._coloring.blockSignals(False)
         for plot in self._plots.values():
             plot.set_coloring(*self._coloring_of(plot.data))
-        for cell in self._cells.values():
-            cell.title.setText(cell.plot.title_html(self._title_extra(cell.plot.data)))
+        self._refresh_titles()
         self._show_key()
         self.status.emit(HINT)
+
+    def _refresh_titles(self) -> None:
+        for cell in self._cells.values():
+            cell.title.setText(
+                cell.plot.title_html(self._title_extra(cell.plot.data), self.verbose)
+            )
+
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide the one-line summary beside the name of every well."""
+        self.verbose = bool(verbose)
+        self._refresh_titles()
 
     def _show_key(self) -> None:
         """Show the key that names the bars' fills: the faults', the sensor's, or the Toolkit's."""

@@ -1,0 +1,116 @@
+%% Faults and Features pages: what a fault does across sensors, and a sensor
+%% across faults.
+%%
+%% Every figure quoted here is a macro of figures/faults/numbers.tex; the
+%% tabulars are tables/faults/*.tex, each reading the CSV table beside it, and
+%% the crops of the viewer are figures/faults/*.png. All are written by
+%% scripts/faults.py (see README.md), from the catalogue and the files of 3W.
+%% Three frames: the signature of every fault, read against the instances; the
+%% same fault well by well; and what the labels of a hydrate mean.
+
+\input{figures/faults/numbers}
+
+\newcommand{\faquestion}{\wspage{Faults \& Features pages} \raisebox{.75pt}{$\blacktriangleright$}~What does a fault do across sensors, and a sensor across faults?}
+
+% The cells of the signature table (tables/faults/signatures.csv): the move
+% the sources expect, and the instances that lack the variable.
+\newcommand{\faup}{$\uparrow$}
+\newcommand{\fadown}{$\downarrow$}
+\newcommand{\faswing}{$\sim$}
+\newcommand{\fanone}{?}
+\newcommand{\fanil}{--}
+\newcommand{\famiss}[1]{{\color{ws3wbrown}(#1)}}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What each fault does to its signature}
+  \framesubtitle{\faquestion}
+  \centering
+  {%
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \input{tables/faults/signatures}
+    \vskip 1mm
+    \begin{description}
+      \item [\faup{} \fadown{}] the move the 3W paper~\cite{vargas2026} or thesis~\cite{vargas2019} expects from the last hour of normal operation to the last hour of the event
+      \item [\faswing{}] a swing
+      \item [\fanone{}] no source
+      \item [\emph{a/b}] instances that make it, of those that can show it (Severe Slugging: a swing over the paper's 10\,bar). 
+      \item [\famiss{m}] instances where the variable is absent or frozen
+    \end{description}
+  }
+
+  \vfill
+  \alert{Most signatures hold, but each has its exceptions, and some cannot be checked at all}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The same fault, well by well}
+  \framesubtitle{\faquestion}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      {\scriptsize\color{ws3wbrown} Scaling in PCK: P-MON-CKP from the onset of the transient, the
+      earliest instance of each well\par}
+      \vskip 1mm
+      \includegraphics[width=\linewidth]{figures/faults/scaling.png}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \footnotesize
+      \begin{itemize}
+        \item \textbf{Scaling in PCK}: 
+          P-MON-CKP rises in \faScalingRise{} of \faScalingMeasured{},
+          but T-TPT, expected to fall, rises in \faCaseScalingAgainst{} of
+          \faCaseScalingWell's \faCaseScalingOf{} instances.
+      \vskip 4mm
+
+        \item \textbf{Rapid Productivity Loss}:
+          \faCaseLossWell's P-TPT rises in \faCaseLossAgainst{} of \faCaseLossOf.
+      \vskip 4mm
+
+        \item \textbf{Quick Restriction in PCK}: 
+          P-PDG is frozen in \faRestrictionPdgLacking{} of
+          \faRestrictionInstances{} instances, the choke opening live in \faRestrictionChokeLive.
+      \vskip 4mm
+
+        \item \textbf{Severe Slugging}: 
+          swings P-TPT by \faSluggingTpt\,\faPressureUnit{}
+          (median), \faSluggingTptOver{} of \faSluggingTptOf{} over 10\,bar, but P-PDG by
+          \faSluggingPdg{} (\faSluggingPdgOver{} of \faSluggingPdgOf)
+      \vskip 4mm
+          
+        \item \textbf{Flow Instability}:
+          swings P-TPT by \faInstabilityTpt.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Hydrate in Production Line: the ugly duckling}
+  \framesubtitle{\faquestion}
+  \vspace{-2mm}
+  \begin{columns}[T]
+
+    % Stacked prints of Well 19 and simulated instance; the simulated one is
+    % drawn, the viewer reading only the real instances, in the crops' units.
+    \begin{column}{0.5\textwidth}
+      {\scriptsize\color{ws3wbrown} WELL-00019: steady means \textbf{plugged}.\par}
+      \includegraphics[width=.95\linewidth]{figures/faults/well19.png}
+      %
+      {\scriptsize\color{ws3wbrown} \faSimName: steady means \textbf{plugged}.\par}
+      \resizebox{.95\linewidth}{!}{\input{figures/faults/simulated.tikz}}
+    \end{column}
+
+    % Bullet points
+    \begin{column}{.5\textwidth}
+      {\scriptsize\color{ws3wbrown} WELL-00025: steady means \textbf{reopened}.\par}
+      \includegraphics[width=.95\linewidth]{figures/faults/well25.png}
+      
+      % Summary
+      \vskip 10mm
+      \centering
+      \alert{Hydrate labeling across instances, real or simulated, do not seem to share the same philosophy}
+      \vskip 2mm
+      \hyperlink{hydrate labels}{\beamergotobutton{Appendix}}
+    \end{column}
+  \end{columns}
+\end{frame}

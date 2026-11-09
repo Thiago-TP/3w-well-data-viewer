@@ -239,6 +239,11 @@ class LegendSwatch(QFrame):
 class LegendBar(QWidget):
     """The whole key: a title that retracts it, the swatches, and the popped entries.
 
+    Parameters
+    ----------
+    collapsed : bool
+        Whether the key starts retracted to its title row.
+
     Signals
     -------
     fault_clicked(int)
@@ -249,14 +254,14 @@ class LegendBar(QWidget):
 
     TITLE = "Bar color: fault folder (severity reach)"
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, collapsed: bool = False):
         super().__init__(parent)
         self._entries: list[LegendEntry] = []
         self._swatches: list[LegendSwatch] = []
         self._popped: list[LegendSwatch] = []
         self._highlighted: set[tuple[int, str]] = set()
         self._selected: int | None = None
-        self._collapsed = False
+        self._collapsed = collapsed
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -294,7 +299,7 @@ class LegendBar(QWidget):
         outer.addWidget(self._body)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         self.apply_theme()
-        self._refresh_header()
+        self.set_collapsed(collapsed)
 
     def apply_theme(self) -> None:
         """Take the colors of the theme now in force."""
@@ -333,6 +338,8 @@ class LegendBar(QWidget):
         self.set_selected_fault(self._selected if self._selected in present else None)
         self.apply_theme()
         self._refresh_header()
+        # The title row of a retracted key counts the colors, and they have just changed.
+        self._refresh_popped()
         self.updateGeometry()
 
     # -- state
@@ -390,8 +397,6 @@ class LegendBar(QWidget):
         self._more.setText(f"+{missing} more" if missing > 0 else "")
         self._more.setVisible(missing > 0)
         self._hint.setText(
-            f"{len(self._entries)} colors; hover a bar, or click to open"
-            if self._collapsed and not popping
-            else ""
+            "hover a bar or click to open" if self._collapsed and not popping else ""
         )
         self._hint.setVisible(self._collapsed and not popping)

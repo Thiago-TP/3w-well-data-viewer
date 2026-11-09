@@ -25,13 +25,22 @@ summarized in the following table and detailed in their own READMEs.
 | [Availability](docs/gui/Availability.md) | Show what each sensor actually recorded, not just what the file declares                             | Two matrices: sensor availability (live/frozen/absent shares) and sensor pairs (how often two sensors are recorded at the same instant), grouped by fault class, well, or the instances of one                                        |
 | [Faults](docs/gui/Faults.md)             | Compare how one fault looks across every well it occurred on                                         | Every real instance of one fault, aligned at its onset, one section per sensor, as small multiples or overlaid, in the time, distribution or spectrum domain                                                                          |
 | [Features](docs/gui/Features.md)         | Compare what one sensor reads across every fault class                                               | One sensor fixed, one section per fault class, the same layouts, domains and transforms as the Faults page                                                                                                                            |
-| [Dispersions](docs/gui/Dispersions.md)   | See two sensors against each other, the way the historian's interpolation shows up in a scatter plot | A point cloud, with its density, of two sensors over a scope (every instance, one class or one well), colored by class, well or label period, thinnable to genuine measurements alone                                                 |
+| [Dispersions](docs/gui/Dispersions.md)   | See two sensors against each other, the way the historian's interpolation shows up in a scatter plot | A point cloud, with its density, of two sensors over a scope (every instance, one class, one well, or one class on one well), colored by class, well or label period, thinnable to genuine measurements alone                                                 |
 | [Windows](docs/gui/Windows.md)           | See one sensor of a well the way a model reads it: in windows of a fixed size, one label each        | The windows of a well cut in software (256, 512 or 1024 samples, zero padding, each instant once), filterable by instance, fault and label, as a table, thumbnails named and shaded by label, and one of the viewer's statistics per window |
 | [Instances](docs/gui/Instances.md)       | Place every real instance on one plane by what its sensors amount to                                 | A 2D embedding (PCA, t-SNE or UMAP) of each instance's descriptors or DTW shape, colored by class, well, cluster, typicality, novelty or model agreement, with clustering scores and a label-audit of disagreements                   |
 
 Every page, and every instance window, opens on what it shows: the controls of how it is drawn sit
 behind an **Options** button at the left of its toolbar, and only what picks the data on show (a
 fault, a sensor, a well, a scope) stays in view until it is clicked.
+
+The **Verbose** button, beside the theme in the main toolbar, shows or hides the text that explains
+rather than shows: the hint in the status bar, the subtitles that spell out what a figure is (the
+summary beside each well's name, the title of the availability matrix, the counts in a section's
+heading, the line under a plot), the notes under the side panels and the figures written inside the
+plots. The keys, the counts of what is drawn, the warnings and the reading under the pointer stay
+either way. Off, a page is quieter for a first look; the choice is remembered. Every instance window
+opens as the main window is and follows it when it changes, and has a **Verbose** button of its own
+that changes that window alone.
 
 Furthermore, an *instance window* is available for visualizing the signals and labeling of an instance (see [the color code](docs/gui/ColorCode.md)).
 This window can be accessed whenever user clicks on a representation of an instance (horizontal bar in the Timelines page, points in cluster maps, etc.), and is [documented in detail](docs/gui/InstanceWindow.md).
@@ -114,6 +123,7 @@ equivalent entry points.
 | `--columns N`    | 1                   | plots per row of the timelines (1 to 4)                                         |
 | `--gap-hours H`  | 12                  | a silence at least this long splits a well's recording into two bursts          |
 | `--theme MODE`   | the last one chosen | `light`, `dark`, or `system` to follow the desktop                        |
+| `--verbose`, `--no-verbose` | the last one chosen | show or hide the hints, subtitles and notes that explain each page (the **Verbose** button) |
 | `--no-cache`     | off                 | read every instance again instead of using the cached catalogue                 |
 
 The first launch reads the time span and labels of every real instance, and what every sensor
@@ -176,7 +186,8 @@ functions are documented in detail in the [source `README`](src/README.md).
 ├── docs/
 │   ├── gui/                  one detailed README per page, linked from the table above
 │   ├── assets/               screenshots, taken again by scripts/screenshots.py, the platform schematics the help shows
-│   └── papers/               the 3W data articles, the thesis and the graduation project the help draws on
+│   ├── papers/               the 3W data articles, the thesis and the graduation project the help draws on
+│   └── presentation/         the beamer slides of the talk at the 5th 3W Workshop, built by latexmk from the official template
 ├── examples/                 one explained example of every file the viewer reads or writes, with its provenance
 ├── scripts/                  what produces the examples and the figures, outside the GUI: pca_control_chart.py, screenshots.py
 ├── tests/                    the test suite, one module per subpackage or analysis, sharing a synthetic 3W layout
@@ -300,7 +311,8 @@ T-JUS-CKP is 36,000 on the grid and 1.5 on its measurements, and its autocorrela
 minutes to halve on the grid against 73 s on the measurements. The pass that finds this
 ([`backend/profiles.py`](src/overlap_viewer/backend/profiles.py)) reads every file in full once,
 about 100 s for the whole dataset, and keeps the result in the cache; it profiles every sensor of
-every instance and of every bar of the joined view as the merged recording it is, and computes the
+every instance (whole, and on its labeled samples alone, for the Instances map) and of every bar of
+the joined view as the merged recording it is, and computes the
 descriptors of each ([`algorithms/descriptors.py`](src/overlap_viewer/algorithms/descriptors.py):
 moments, quantiles, autocorrelation time, signal-to-noise ratio, Gaussianity, Melo's own set) both
 on the grid and on the measurements alone, so that wherever a figure taken on the grid is shown

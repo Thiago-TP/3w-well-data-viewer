@@ -1,0 +1,21 @@
+% Per fault class, its dot (the legend of the maps beside), its instances with
+% a past (an earlier instance in their well), and how many of these the well's
+% past names right: the class most of the earlier instances of the well hold.
+% The cells are written by scripts/instances.py into the CSV beside this file.
+\pgfplotstabletypeset[
+  columns={dot, fault, name, past, right, share},
+  columns/dot/.style={string type, column type={@{}c}},
+  columns/fault/.style={column type={r}},
+  columns/name/.style={string type, column type={l}},
+  wp count/.style={column type={r}, fixed, precision=0, 1000 sep={,}},
+  columns/past/.style={wp count},
+  columns/right/.style={wp count},
+  columns/share/.style={string type, column type={r}},
+  every head row/.style={
+    output empty row,
+    before row={\toprule
+                \multicolumn{3}{c}{\multirow{2}{*}[-.5mm]{Class}} & With & \multicolumn{2}{c}{Named} \\
+                & & & a past & \multicolumn{2}{c}{right} \\},
+    after row=\midrule},
+  every last row/.style={after row=\bottomrule},
+]{tables/instances/wellpast.csv}

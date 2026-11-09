@@ -1,0 +1,237 @@
+%% Appendix: what the sections count but have no time to show.
+%%
+%% Timelines: the label changes across an unlabeled stretch.
+%% The Timelines section counts the unlabeled stretches a joined history keeps
+%% between two different labels (\tlGapChangeCount on 3W 2.0.0) and the returns
+%% to normal among them; here they are listed, then shown one by one in the
+%% instance window, around the change. The table, the crops and their captions
+%% come from tables/appendix/changes.csv and figures/appendix/, written by
+%% scripts/appendix.py.
+%%
+%% Availability: every variable's samples and instances, live, frozen and
+%% missing, as counts and shares, from figures/availability/coverage.csv.
+%%
+%% Faults and Features: the well state under the labels of every real Hydrate
+%% in Production Line, from tables/faults/hydrate.csv.
+%%
+%% Dispersions: every fault's coefficients of its pair, pooled, by label
+%% period, on every sample and measured, from tables/dispersions/pairs.csv;
+%% then every well's, from tables/appendix/wells.csv.
+%%
+%% Windows: every well's separations by every statistic at 512 samples, with
+%% its sensor and its windows, from tables/appendix/windows.csv, under a note
+%% on how the sensor is chosen and how little the window length matters.
+%%
+%% Instances: what places an instance, the descriptors of each representation
+%% (tables/appendix/descriptors.csv), and chance spelt out; how the embeddings
+%% are set and what they keep of the columns (tables/appendix/embeddings.csv).
+
+\pgfplotstableread{tables/appendix/changes.csv}\apchanges
+
+% \apchange{n}: the crop of change n (from 1) over its caption, half the
+% width of the frame; the caption is read off the table.
+\newcommand{\apchange}[1]{%
+  \pgfmathtruncatemacro{\aprow}{#1-1}%
+  \pgfplotstablegetelem{\aprow}{label}\of\apchanges\let\aplabel\pgfplotsretval
+  \pgfplotstablegetelem{\aprow}{at}\of\apchanges\let\apat\pgfplotsretval
+  \pgfplotstablegetelem{\aprow}{before}\of\apchanges\let\apbefore\pgfplotsretval
+  \pgfplotstablegetelem{\aprow}{after}\of\apchanges\let\apafter\pgfplotsretval
+  \pgfplotstablegetelem{\aprow}{unlabeled}\of\apchanges\let\apunlabeled\pgfplotsretval
+  \begin{minipage}[t]{0.49\linewidth}
+    \includegraphics[width=\linewidth]{figures/appendix/change-#1.png}\par
+    \vskip .5mm
+    {\tiny\raggedright\hyphenpenalty=10000
+     \textbf{#1}\quad \aplabel, \apat: \apbefore{} $\rightarrow$ \apunlabeled{} unlabeled
+     $\rightarrow$ \apafter\par}
+  \end{minipage}%
+}
+
+% \apgrid{a}{b}{c}{d}: four changes, two by two.
+\newcommand{\apgrid}[4]{%
+  \apchange{#1}\hfill\apchange{#2}\par
+  \vskip 3mm
+  \apchange{#3}\hfill\apchange{#4}%
+}
+
+% ---------------------------------------------------------------------------
+\begin{frame}[label=changes]{Appendix: label changes across an unlabeled stretch}
+  \framesubtitle{\tlquestion}
+  \footnotesize
+  The \tlGapChangeCount{} unlabeled stretches of a joined history between two different labels.
+  \vskip 2mm
+  \centering\scriptsize
+  \setlength{\tabcolsep}{4pt}
+  \input{tables/appendix/changes}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Appendix: label changes 1 to 4 (of 16)}
+  \framesubtitle{\tlquestion}
+  \apgrid{1}{2}{3}{4}
+\end{frame}
+
+\begin{frame}{Appendix: label changes 5 to 8 (of 16)}
+  \framesubtitle{\tlquestion}
+  \apgrid{5}{6}{7}{8}
+\end{frame}
+
+\begin{frame}{Appendix: label changes 9 to 12 (of 16)}
+  \framesubtitle{\tlquestion}
+  \apgrid{9}{10}{11}{12}
+\end{frame}
+
+\begin{frame}{Appendix: label changes 13 to 16 (of 16)}
+  \framesubtitle{\tlquestion}
+  \apgrid{13}{14}{15}{16}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}[label=coverage]{Appendix: what each variable recorded}
+  \framesubtitle{\avquestion}
+  \centering\tiny
+  \setlength{\tabcolsep}{2.4pt}
+  \input{tables/appendix/coverage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}[label=hydrate labels]{Appendix: hydrate instances transients and steadies}
+  \framesubtitle{\faquestion}
+  \centering\footnotesize
+  \input{tables/faults/hydrate}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+% The Dispersions section: every fault's coefficients, pooled; then every
+% well's, faults 1 to 5 (19 rows), 6 to 8 (17) and 9 (15), the first two
+% frames closing their tables themselves, the table's last row the third's.
+\begin{frame}[label=pairs]{Appendix: every fault's coefficients}
+  \framesubtitle{\dpquestion}
+  \centering
+  {%
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \def\arraystretch{1.5}
+    \input{tables/dispersions/pairs}
+    \vskip 1mm
+    \begin{description}
+      \item [Pair] of best covering variables available in all instances of a fault
+      \item [\dpsig{}] instances of a fault don't share a pair and defaulted to the best covered of its
+        signature~\cite{vargas2026, vargas2019}
+      \item [all] Pearson's coefficient over every plausible sample of the period, pooled over
+        the fault's instances
+      \item [measured] over the samples at which both were measured, their count in brackets,
+        \dpfew{set apart} below \dpFew
+    \end{description}
+  }
+\end{frame}
+
+\begin{frame}{Appendix: every well's coefficients (1 of 3)}
+  \framesubtitle{\dpquestion}
+  \centering\scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \pgfplotstableset{dp rows/.style={skip rows between index={19}{1000},
+                                    every row no 18/.style={after row=\bottomrule}}}
+  \input{tables/appendix/wells}
+\end{frame}
+
+\begin{frame}{Appendix: every well's coefficients (2 of 3)}
+  \framesubtitle{\dpquestion}
+  \centering\scriptsize
+  \def\arraystretch{1.1}
+  \setlength{\tabcolsep}{3pt}
+  \pgfplotstableset{dp rows/.style={skip rows between index={0}{19},
+                                    skip rows between index={36}{1000},
+                                    every row no 35/.style={after row=\bottomrule}}}
+  \input{tables/appendix/wells}
+\end{frame}
+
+\begin{frame}{Appendix: every well's coefficients (3 of 3)}
+  \framesubtitle{\dpquestion}
+  \centering\scriptsize
+  \def\arraystretch{1.3}
+  \setlength{\tabcolsep}{3pt}
+  \pgfplotstableset{dp rows/.style={skip rows between index={0}{36}}}
+  \input{tables/appendix/wells}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+% The Windows section: every well's separations at 512 samples, wells 1 to 21
+% (19 rows, under the note) and 22 to 42 (21); the first frame closes its
+% table itself.
+\begin{frame}[label=windows]{Appendix: every statistic, well by well (1 of 2)}
+  \framesubtitle{\wiquestion}
+  {\scriptsize\color{ws3wbrown} Each well's best covered analog sensor (most samples live; ties,
+  Tied, to the one separating best). A well's best separation at 512 samples in bold, its line
+  \alert{orange} on fewer than \wiFew{} windows of a kind; across window lengths it moves by
+  \wiSizeWellMax{} at most.\par}
+  \vskip .5mm
+  \centering\scriptsize
+  \setlength{\tabcolsep}{2pt}
+  \pgfplotstableset{wi rows/.style={skip rows between index={19}{1000},
+                                    every row no 18/.style={after row=\bottomrule}}}
+  \input{tables/appendix/windows}
+\end{frame}
+
+\begin{frame}{Appendix: every statistic, well by well (2 of 2)}
+  \framesubtitle{\wiquestion}
+  \centering\scriptsize
+  \setlength{\tabcolsep}{2pt}
+  \pgfplotstableset{wi rows/.style={skip rows between index={0}{19}}}
+  \input{tables/appendix/windows}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+% The Instances section: what places an instance (the descriptors of each
+% representation) and what chance is; then how the embeddings lay the
+% instances out, and how much of the columns' neighbourhoods each keeps.
+\begin{frame}[label=instances]{Appendix: what places an instance on the maps}
+  \framesubtitle{\isquestion}
+  {\scriptsize\color{ws3wbrown} Per instance, the \isSensors{} sensors live in at least \isCoverage{}
+  of the instances (\isSensorList), each by the descriptors below: all of them (Descriptors,
+  \isColumns{} columns) or those that leave the level out (Shape only, \isShapeColumns). They are
+  taken on the instance's labeled samples, over the 1\,Hz grid (interpolated) or over the samples
+  the historian measured (measurements), the sampling ones alike. Every column is standardized, and
+  a cell an instance lacks (its sensor absent or frozen) takes the column's median.\par}
+  \vskip 2mm
+  \begin{columns}[T]
+    \begin{column}{0.53\textwidth}
+      \centering\scriptsize\setlength{\tabcolsep}{2.4pt}
+      \def\arraystretch{1.25}
+      \input{tables/appendix/descriptors}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \scriptsize
+      \textbf{Chance.} Two different instances drawn at random, the second from those left,
+      share a fault class with probability
+      \begin{align*}
+        \sum_{c=\isChanceFirst}^{\isChanceLast} \frac{n_c}{N} \frac{n_c-1}{N-1}
+          &= \frac{\isChanceTerms}{\isChanceTotalTerms} \\
+          &= \frac{\text{\isChancePairs}}{\text{\isChanceTotal}} = \text{\isChanceExact},
+      \end{align*}
+      \(n_c\) the instances of class \(c\) and \(N\) all of them.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Appendix: how the maps lay the instances out}
+  \framesubtitle{\isquestion}
+  \scriptsize
+  \begin{itemize}
+    \item[] \textbf{PCA}: the two principal components of the standardized columns (numpy's SVD),
+      which carry the share of the variance below.
+    \item[] \textbf{t-SNE}: scikit-learn's, perplexity \isPerplexity, initialized by PCA, Euclidean
+      distances, seed \isSeed.
+    \item[] \textbf{UMAP}: umap-learn's, \isUmapNeighbours{} neighbours, Euclidean distances, seed
+      \isSeed, its other settings the defaults.
+  \end{itemize}
+  \vskip 2mm
+  \centering
+  \setlength{\tabcolsep}{4pt}
+  \def\arraystretch{1.5}
+  \input{tables/appendix/embeddings}
+  \par 
+  \vskip 2mm
+  \begin{description}
+    \item [Neighbours kept] of an instance's \isKeep{} nearest neighbours in the columns, the share still among its \isKeep{} nearest on the map.
+  \end{description}
+\end{frame}

@@ -1,0 +1,115 @@
+% A simulated hydrate as the viewer's instance window would draw it, which the
+% viewer cannot, since it reads only the real instances: the state band, the
+% class band, and P-TPT over the label periods shaded behind it, with the
+% figures in the corner. Drawn in the window's own units, one point per pixel
+% of the crops beside it (figures/faults/well19.png and well25.png, 704 by 260
+% from the state band down), at the window's font sizes, so that scaled to the
+% same width the three read alike: \resizebox it to the width of the crops.
+%
+% The data are scripts/faults.py's: the trace (simulated.csv, in hours from
+% the start, the measurements flagged for the dots), the periods with the
+% window's colors and names (simulated-bands.csv), and the note, the time
+% ticks and the theme's colors (\faSim... in numbers.tex).
+%
+% Everything is inside the picture, where the ends of lines make no spaces:
+% outside it, in the \resizebox, they would widen the box and shrink the plot.
+\begin{tikzpicture}[font=\fontsize{11}{13}\selectfont, text=fasimfg]
+  \definecolor{fasimtrace}{HTML}{\faSimTraceColor}
+  \definecolor{fasimfg}{HTML}{\faSimForeground}
+  \definecolor{fasimnotefill}{HTML}{\faSimNoteFill}
+  \definecolor{fasimnoteborder}{HTML}{\faSimNoteBorder}
+  \pgfplotstableread{figures/faults/simulated-bands.csv}\fasimbands
+  \pgfplotstablegetrowsof{\fasimbands}
+  \pgfmathtruncatemacro{\fasimlast}{\pgfplotsretval - 1}
+  % The colors of every period, before the axis, which replays its drawing
+  % later; ungrouped, so that they outlive the loop. A state has no shade.
+  \pgfplotsforeachungrouped \row in {0,...,\fasimlast} {
+    \pgfplotstablegetelem{\row}{fill}\of\fasimbands\edef\fasimhex{\pgfplotsretval}
+    \definecolor{fasimfill\row}{HTML}{\fasimhex}
+    \pgfplotstablegetelem{\row}{text}\of\fasimbands\edef\fasimhex{\pgfplotsretval}
+    \definecolor{fasimtext\row}{HTML}{\fasimhex}
+    \pgfplotstablegetelem{\row}{shade}\of\fasimbands\edef\fasimhex{\pgfplotsretval}
+    \ifx\fasimhex\empty\else\definecolor{fasimshade\row}{HTML}{\fasimhex}\fi
+    % Whether the label fits inside its span with 6 pt to spare, as the window
+    % draws one only then (items.SegmentsItem); the axis is 613 pt wide. By
+    % pgfmath's width(), as a picture's boxes measure nothing, in the current
+    % font scaled to the band's 11 pt, as width() measures nothing either
+    % once the size is changed inside it.
+    \pgfplotstablegetelem{\row}{start}\of\fasimbands\let\fasimstart\pgfplotsretval
+    \pgfplotstablegetelem{\row}{end}\of\fasimbands\let\fasimend\pgfplotsretval
+    \pgfplotstablegetelem{\row}{label}\of\fasimbands\let\fasimlabel\pgfplotsretval
+    \pgfmathsetmacro{\fasimwidth}{width("\fasimlabel") * 11 / \csname f@size\endcsname}
+    \pgfmathtruncatemacro{\fasimfit}{\fasimwidth + 6 <= (\fasimend - \fasimstart) * 613 / \faSimEnd}
+    \expandafter\let\csname fasimfits\row\endcsname\fasimfit
+  }
+  \begin{axis}[
+      scale only axis, width=613pt, height=201pt,
+      xmin=0, xmax=\faSimEnd, ymin=\faSimYmin, ymax=\faSimYmax,
+      axis x line*=bottom, axis y line*=left, axis line style={draw=fasimfg, line width=.8pt},
+      tick style={draw=fasimfg, line width=.6pt}, major tick length=5pt, minor tick length=3pt,
+      tick label style={font=\fontsize{12}{14}\selectfont, text=fasimfg},
+      xtick=\faSimTicks, xticklabels/.expanded=\faSimTickLabels, minor x tick num=3,
+      minor y tick num=1, tick align=outside,
+      ylabel=\faSimLabel,
+      every axis y label/.style={at={(rel axis cs:0,0.5)}, xshift=-76pt, rotate=90,
+                                 font=\fontsize{12}{14}\selectfont},
+      clip=false, axis on top, set layers,
+    ]
+    % The label periods behind the trace, the bands above the plot.
+    \pgfplotsinvokeforeach{0,...,\fasimlast}{
+      \pgfplotstablegetelem{#1}{band}\of\fasimbands\let\fasimband\pgfplotsretval
+      \pgfplotstablegetelem{#1}{start}\of\fasimbands\let\fasimstart\pgfplotsretval
+      \pgfplotstablegetelem{#1}{end}\of\fasimbands\let\fasimend\pgfplotsretval
+      \pgfplotstablegetelem{#1}{label}\of\fasimbands\let\fasimlabel\pgfplotsretval
+      \def\fasimclass{class}
+      % The class band sits 4 pt over the plot, the state band 4 pt over that.
+      \ifx\fasimband\fasimclass
+        \def\fasimrise{4pt}
+        \edef\fasimdraw{\noexpand\fill [fasimshade#1]
+          (axis cs:\fasimstart,\faSimYmin) rectangle (axis cs:\fasimend,\faSimYmax);}
+        \fasimdraw
+      \else
+        \def\fasimrise{24pt}
+      \fi
+      % The label only where it fits (measured above).
+      \ifnum\csname fasimfits#1\endcsname=1
+        \edef\fasimnode{node [midway, text=fasimtext#1] {\fasimlabel}}
+      \else
+        \def\fasimnode{}
+      \fi
+      \edef\fasimdraw{\noexpand\fill [fasimfill#1]
+        ([yshift=\fasimrise]axis cs:\fasimstart,\faSimYmax)
+        rectangle ([yshift=\fasimrise+16pt]axis cs:\fasimend,\faSimYmax) \fasimnode;}
+      \fasimdraw
+    }
+    \node [anchor=east, font=\fontsize{12}{14}\selectfont] at ([xshift=-8pt, yshift=12pt]rel axis cs:0,1) {class};
+    \node [anchor=east, font=\fontsize{12}{14}\selectfont] at ([xshift=-8pt, yshift=32pt]rel axis cs:0,1) {state};
+    % The trace: the line faint between measurements, dots on them, where the
+    % window would dot the series at all.
+    \ifnum\faSimDotted=1
+      \addplot [fasimtrace, line width=1pt, draw opacity=.45, no marks]
+        table [x=hours, y=value] {figures/faults/simulated.csv};
+      \addplot [only marks, mark=*, mark size=1.6pt, mark options={draw=none, fill=fasimtrace}]
+        table [x=hours, y=value, restrict expr to domain={\thisrow{measured}}{1:1}]
+        {figures/faults/simulated.csv};
+    \else
+      \addplot [fasimtrace, line width=1pt, no marks] table [x=hours, y=value]
+        {figures/faults/simulated.csv};
+    \fi
+    % The figures in the corner, on a see-through box over the trace, as the
+    % window lays it: on the foreground layer, the plots being drawn last.
+    \begin{pgfonlayer}{axis foreground}
+      \node [anchor=south east, draw=fasimnoteborder, line width=.6pt, fill=fasimnotefill,
+             fill opacity=.43, text opacity=1, inner xsep=5pt, inner ysep=3pt,
+             font=\fontsize{10.5}{12}\selectfont]
+        at ([xshift=-14pt, yshift=5pt]rel axis cs:1,0) {\faSimNote};
+    \end{pgfonlayer}
+    \coordinate (fasim-sw) at (rel axis cs:0,0);
+    \coordinate (fasim-ne) at (rel axis cs:1,1);
+  \end{axis}
+  % The crops' frame: 84 pt of labels on the left, 7 on the right, the bands
+  % and their gaps above (43 pt), the time ticks below (16 pt).
+  \pgfresetboundingbox
+  \path [use as bounding box]
+    ([xshift=-84pt, yshift=-16pt]fasim-sw) rectangle ([xshift=7pt, yshift=43pt]fasim-ne);
+\end{tikzpicture}

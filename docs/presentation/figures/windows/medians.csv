@@ -1,0 +1,13 @@
+row,name,short,group,median,wins
+0,Mean,Mean,level,0.891,8
+1,Median,Median,level,0.891,7
+2,Min,Min,level,0.902,17
+3,Q1,Q1,level,0.892,9
+4,Q3,Q3,level,0.858,8
+5,Max,Max,level,0.832,9
+6,Std,Std,spread,0.616,6
+7,Skewness,Skew,shape,0.106,0
+8,Kurtosis,Kurt,shape,0.141,0
+9,Autocorrelation time,ACF,shape,0.179,1
+10,Signal-to-noise ratio,SNR,shape,0.286,2
+11,Gaussianity slope,Gauss,shape,0.118,0

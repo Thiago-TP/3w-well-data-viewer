@@ -1,0 +1,33 @@
+% The separation, drawn. The ROC of a statistic: a window is flagged when its
+% statistic passes a threshold, and as the threshold sweeps from the highest
+% value to the lowest, the share of event windows flagged rises against the
+% share of normal ones. Chance runs along the diagonal (AUC 0.5); the area
+% between the curve and the diagonal is AUC - 0.5, out of the triangle of 0.5
+% above the diagonal, so that the separation, |AUC - 0.5| * 2, is the share
+% of that triangle the curve takes. A drawing, not data: the curve is
+% y = x^(1/4), of AUC 0.8 and so of separation 0.6.
+\begin{tikzpicture}[x=27mm, y=27mm, font=\tiny]
+  % The triangle above chance, and the share of it the curve takes (the
+  % curve drawn as x = t^4, y = t, so that its steep start is sampled).
+  \fill [ws3wteal!18] (0,0) -- (0,1) -- (1,1) -- cycle;
+  \fill [ws3wteal!75] plot [domain=0:1, samples=60] ({\x^4}, \x) -- cycle;
+  \draw [ws3wgrey, line width=.3pt] (0,0) rectangle (1,1);
+  \draw [ws3wbrown, dashed, line width=.4pt] (0,0) -- (1,1)
+    node [midway, below, sloped, text=ws3wbrown] {Chance: AUC 0.5};
+  \draw [ws3wnavy, line width=.9pt] plot [domain=0:1, samples=60] ({\x^4}, \x);
+  \node [text=ws3wnavy, anchor=west] at (0.03, 0.90) {Statistic's ROC};
+  \node [text=ws3wnavy] at (0.33, 0.55) {AUC\thinspace\textminus\thinspace{}0.5};
+  % The axes.
+  \node [text=ws3wbrown, anchor=north east] at (0,0) {0};
+  \node [text=ws3wbrown, anchor=north] at (1,0) {1};
+  \node [text=ws3wbrown, anchor=east] at (0,1) {1};
+  \node [text=ws3wbrown, anchor=north] at (0.5,0) {Normal windows flagged};
+  \node [text=ws3wbrown, anchor=south, rotate=90] at (0,0.5) {Event windows flagged};
+  % The separation, the share of the triangle the curve takes.
+  \node [text=ws3wnavy, anchor=west, align=left] at (1.06, 0.5) {%
+    Separation better than chance\\[1mm]
+    $=$ 2\texttimes|AUC\thinspace\textminus\thinspace{}0.5|\\[1mm]
+    $=\dfrac{\textcolor{ws3wteal!75}{\rule{3ex}{1.6ex}}}
+            {\textcolor{ws3wteal!75}{\rule{3ex}{1.6ex}}+\textcolor{ws3wteal!18}{\rule{3ex}{1.6ex}}}$\\[1mm]
+    $=$ 0.6 here, of AUC 0.8};
+\end{tikzpicture}

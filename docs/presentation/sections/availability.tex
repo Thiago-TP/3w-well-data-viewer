@@ -1,0 +1,39 @@
+%% Availability page: how well do sensors and states cover the dataset?
+%%
+%% Every figure quoted here is a macro of figures/availability/numbers.tex;
+%% the charts are figures/availability/*.tikz, the coverage chart reading the
+%% CSV table beside it, and the tabulars are tables/availability/*.tex. The
+%% numbers and the CSV table are written by scripts/availability.py (see
+%% README.md), from the footers of the files and the viewer's profile pass.
+%% One frame: what each variable recorded, its readings no instrument could
+%% produce and those the checks contradict among them, beside the checks and
+%% the ranges; the appendix sets the counts.
+
+\input{figures/availability/numbers}
+
+\newcommand{\avquestion}{\wspage{Availability page} \raisebox{.75pt}{$\blacktriangleright$}~How well do sensors and states cover the dataset?}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What each variable recorded}
+  \framesubtitle{\avquestion}
+  \begin{columns}[T]
+    \begin{column}{0.425\textwidth}
+      {\scriptsize\color{ws3wbrown} See the detailed spread in the \hyperlink{coverage}{\beamergotobutton{Appendix}}\par}
+      \vskip 1mm
+      \input{figures/availability/coverage.tikz}
+    \end{column}
+    \begin{column}{0.575\textwidth}
+      \footnotesize
+      \input{figures/availability/checks.tikz}
+      \vskip 2mm
+      \textbf{Valve checks}
+      \vskip 1mm
+      \scriptsize
+      \input{tables/availability/states}
+      \vskip 2mm
+      \textbf{Plausible ranges}
+      \vskip 1mm
+      \input{tables/availability/ranges}
+    \end{column}
+  \end{columns}
+\end{frame}

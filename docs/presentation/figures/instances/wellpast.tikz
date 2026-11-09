@@ -1,0 +1,13 @@
+% The map that best gathers the faults (\isBestKey, figures/instances/
+% numbers.tex), twice: every instance in the color of its fault class, then
+% in that of the class its well's past names, the class most of the earlier
+% instances of its well hold; grey for a well's first instance, which has no
+% past. The places and both classes are those of maps/<map>.csv, written by
+% scripts/instances.py.
+\begin{tikzpicture}[font=\tiny]
+  \pgfplotsset{is pair/.style={is map={50mm}{32.1mm}}}
+  \begin{axis}[is pair, at={(0mm,0mm)}, name=byfault]\isplot[.7pt]{\isBestKey}{fault}\end{axis}
+  \begin{axis}[is pair, at={(53mm,0mm)}, name=bypast]\isplot[.7pt]{\isBestKey}{pred}\end{axis}
+  \node [anchor=south, text=ws3wnavy] at (byfault.north) {by fault};
+  \node [anchor=south, text=ws3wnavy] at (bypast.north) {by the well's past};
+\end{tikzpicture}

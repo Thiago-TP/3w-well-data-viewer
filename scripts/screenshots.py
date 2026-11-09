@@ -117,9 +117,18 @@ def main(argv=None) -> int:
     app.setOrganizationName(styling.SETTINGS[0])
     app.setApplicationName(styling.SETTINGS[1])
     app.setStyle("Fusion")
+    # Arial, as the figures were first taken in (the offscreen platform's own
+    # fallback is wider, and the bars' labels then drop their seconds).
+    font = app.font()
+    font.setFamily("Arial")
+    app.setFont(font)
     print(f"platform: {app.platformName()} | fonts: {len(QFontDatabase.families())}", flush=True)
 
-    window = build_window(parse_args(["--raw-dir", str(opts.raw_dir), "--theme", "light"]))
+    # Not verbose, as a first look is: the figures show what a page draws, and
+    # the docs beside them say what the hints and notes would have said.
+    window = build_window(
+        parse_args(["--raw-dir", str(opts.raw_dir), "--theme", "light", "--no-verbose"])
+    )
     if window is None:
         print("could not build the window", file=sys.stderr)
         return 1
@@ -132,6 +141,9 @@ def main(argv=None) -> int:
     # the docs beside each figure describe them.
     for each in window.pages:
         each.options.setChecked(True)
+    # The Timelines' color key opens retracted too; the overview and the color
+    # key figures show it whole, since Timelines.md and ColorCode.md describe it.
+    window.timelines._legend.set_collapsed(False)
 
     def page(widget, name, size=PAGE, wait=1.5):
         if not shooter.wants(name):

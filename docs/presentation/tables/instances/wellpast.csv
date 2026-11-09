@@ -1,0 +1,11 @@
+dot,fault,name,past,right,share
+\isdot{0},0,Normal Operation,591,432,73\%
+\isdot{1},1,Abrupt Increase of BSW,3,0,0\%
+\isdot{2},2,Spurious Closure of DHSV,15,13,87\%
+\isdot{3},3,Severe Slugging,32,12,38\%
+\isdot{4},4,Flow Instability,341,290,85\%
+\isdot{5},5,Rapid Productivity Loss,10,8,80\%
+\isdot{6},6,Quick Restriction in PCK,6,0,0\%
+\isdot{7},7,Scaling in PCK,32,29,91\%
+\isdot{8},8,Hydrate in Production Line,5,5,100\%
+\isdot{9},9,Hydrate in Service Line,44,36,82\%

@@ -1,0 +1,60 @@
+%% The 3W Well Data Viewer at the 5th Workshop on the 3W.
+%%
+%% Build: `latexmk` in this folder (see latexmkrc and README.md). The look is
+%% the workshop's PowerPoint template, reproduced by beamerthemews3w.sty.
+%%
+%% The talk follows issue #24: one section per page of the viewer, each the
+%% page's research question and what looking at 3W through it finds, then the
+%% recommendations those findings add up to. A section lives in sections/, its
+%% figures and numbers in figures/<section>/, written by scripts/<section>.py.
+%% Fifteen minutes: one to three frames a page, about a minute a frame.
+
+\documentclass[aspectratio=169, 10pt, t]{beamer}
+\usetheme{ws3w}
+
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\pgfplotsset{
+  compat=1.18,
+  table/col sep=comma,                     % the scripts write CSV
+  /pgf/number format/assume math mode=true,  % tick labels in the text font, not the math one
+}
+\usetikzlibrary{patterns,patterns.meta,arrows.meta}
+\hypersetup{colorlinks=true, urlcolor=ws3wblue, linkcolor=ws3wnavy}
+
+\title{3W Well Data Viewer}
+\subtitle{A desktop GUI to inspect the real instances of the 3W dataset}
+\author{Thiago Tom\'as de Paula}
+\institute{University of Brasília}
+\date{5th Workshop on the 3W dataset\\ November 2026}
+
+\begin{document}
+
+\wstitleframe
+
+\input{sections/timelines}
+\input{sections/availability}
+\input{sections/faults}           % the Faults and Features pages together
+\input{sections/dispersions}
+\input{sections/windows}
+\input{sections/instances}
+% Next, once the one before is reviewed:
+% \input{sections/recommendations}
+\input{sections/references}       % the paper and the thesis the slides cite
+
+\wsclosingframe{%
+  Thank you!
+}{%
+  github.com/Thiago-TP/3w-well-data-viewer
+}{%
+  thiagotomasdepaula@gmail.com
+}
+
+% Backup frames, after the talk: what a section counts but has no time to show.
+\appendix
+\input{sections/appendix}
+
+\end{document}
