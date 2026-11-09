@@ -14,13 +14,13 @@ The package is laid out by focus, and the dependencies grow from one layer to th
   main window. PySide6 and pyqtgraph.
 
 `app.py` is the command line and start-up; it is the one module of the top level that imports from
-all three. `__main__.py` lets `python -m overlap_viewer` run it the same way `main.py` does from a
+all three. `__main__.py` lets `python -m well_data_viewer` run it the same way `main.py` does from a
 checkout.
 
 ```
-src/overlap_viewer/
+src/well_data_viewer/
 ├── app.py                command line and start-up
-├── __main__.py           python -m overlap_viewer
+├── __main__.py           python -m well_data_viewer
 ├── backend/              what the data is: pandas, numpy and pyarrow only
 │   ├── config.py         dataset fallbacks, plausible ranges, the tint ladder, signatures, layout, cache
 │   ├── dataset.py        dataset.ini, instance catalogue and its cache, sensor figures from the footers, from merged recordings and pair by pair, overlaps and joins per well
@@ -93,8 +93,8 @@ choices.
   measurement.
 - `asset_path(name)`: locates one help-window illustration under `ASSET_DIRS`, `None` if not
   shipped.
-- `cache_dir()`: the platform cache directory (`%LOCALAPPDATA%/overlap-viewer` on Windows,
-  `$XDG_CACHE_HOME/overlap-viewer` or `~/.cache/overlap-viewer` elsewhere).
+- `cache_dir()`: the platform cache directory (`%LOCALAPPDATA%/3w-well-data-viewer` on Windows,
+  `$XDG_CACHE_HOME/3w-well-data-viewer` or `~/.cache/3w-well-data-viewer` elsewhere).
 
 Notable constants: `DEFAULT_FAULT_NAMES`, `DEFAULT_TRANSIENT_OFFSET`, `DEFAULT_SENSOR_UNITS`,
 `WELL_STATES`, `FAULT_SIGNATURES` (the sensors that reproduce the 2.0.0 paper's example figures per
@@ -105,7 +105,7 @@ illustrate (read off the thesis), documentation the help shows and no page ticks
 on), `REAL_PREFIX = "WELL-"`, `PLAUSIBLE_RANGES` and `EXTREME_VALUE_LIMIT` (the plausibility
 survey's results), `REACH_TINTS`/`REACH_LABELS`/`BACKGROUND_TINTS` (the tint ladder `palette.py`
 uses), layout numbers (`DEFAULT_GAP_HOURS`, `BAR_HEIGHT`, `MAX_OVERLAID_INSTANCES`, …),
-`RAW_DIR_ENV = "OVERLAP_VIEWER_RAW_DATA_DIR"` and `RAW_DIR_CANDIDATES`, `PACKAGE_DIR`/`PROJECT_DIR`/
+`RAW_DIR_ENV = "WELL_DATA_VIEWER_RAW_DATA_DIR"` and `RAW_DIR_CANDIDATES`, `PACKAGE_DIR`/`PROJECT_DIR`/
 `ASSET_DIRS`.
 
 ### `dataset.py`

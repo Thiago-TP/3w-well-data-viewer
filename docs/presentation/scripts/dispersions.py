@@ -56,7 +56,7 @@ from pathlib import Path
 import numpy as np
 from timelines import number, write_csv
 
-from overlap_viewer.algorithms.dispersion import (
+from well_data_viewer.algorithms.dispersion import (
     NORMAL,
     STEADY,
     TRANSIENT,
@@ -64,16 +64,16 @@ from overlap_viewer.algorithms.dispersion import (
     DispersionPass,
     InstanceRef,
 )
-from overlap_viewer.backend import theme
-from overlap_viewer.backend.availability import LIVE, sensor_state
-from overlap_viewer.backend.config import (
+from well_data_viewer.backend import theme
+from well_data_viewer.backend.availability import LIVE, sensor_state
+from well_data_viewer.backend.config import (
     BEST_EFFORT_SIGNATURES,
     FAULT_SIGNATURES,
     plausible_range,
 )
-from overlap_viewer.backend.dataset import DatasetInfo, load_catalogue, load_instance_columns
-from overlap_viewer.backend.labels import sensor_stats_from_json
-from overlap_viewer.backend.palette import well_colors
+from well_data_viewer.backend.dataset import DatasetInfo, load_catalogue, load_instance_columns
+from well_data_viewer.backend.labels import sensor_stats_from_json
+from well_data_viewer.backend.palette import well_colors
 
 ROOT = Path(__file__).resolve().parents[1]
 FIGURES = ROOT / "figures" / "dispersions"

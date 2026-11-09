@@ -39,10 +39,10 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from overlap_viewer.backend.config import plausible_range
-from overlap_viewer.backend.dataset import DatasetInfo, load_catalogue, load_instance
-from overlap_viewer.backend.labels import column_as_float
-from overlap_viewer.backend.model_outputs import ModelSpec, write_outputs
+from well_data_viewer.backend.config import plausible_range
+from well_data_viewer.backend.dataset import DatasetInfo, load_catalogue, load_instance
+from well_data_viewer.backend.labels import column_as_float
+from well_data_viewer.backend.model_outputs import ModelSpec, write_outputs
 
 MIN_NORMAL = 600  # samples of normal operation a model needs
 VARIANCE_KEPT = 0.90  # the components kept explain at least this share of the normal variance

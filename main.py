@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
-from overlap_viewer.app import main
+from well_data_viewer.app import main
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -7,8 +7,8 @@ interpolations, straight segments between the few instants that were measured. A
 of a million points is a smear; this one names the instance and the instant of every dot on hover
 and lights up every other dot of that instance, opens the instance on a click, and thins itself to
 the measurements alone
-([`algorithms/dispersion.py`](../../src/overlap_viewer/algorithms/dispersion.py),
-[`frontend/dispersion_page.py`](../../src/overlap_viewer/frontend/dispersion_page.py)).
+([`algorithms/dispersion.py`](../../src/well_data_viewer/algorithms/dispersion.py),
+[`frontend/dispersion_page.py`](../../src/well_data_viewer/frontend/dispersion_page.py)).
 
 ![Dispersions page](../assets/dispersion.png)
 

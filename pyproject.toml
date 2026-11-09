@@ -1,5 +1,5 @@
 [project]
-name = "overlap-viewer"
+name = "3w-well-data-viewer"
 version = "0.1.0"
 description = "GUI to inspect how the real instances of a 3W well overlap in time and how their fault labels differ."
 readme = "README.md"
@@ -18,7 +18,7 @@ dependencies = [
 # Optional groups, one per capability. The viewer runs without them; a control
 # that needs one is greyed with a tooltip naming the group and this command:
 #     uv sync --extra <group>        (or: uv sync --all-extras)
-# What each enables is listed in src/overlap_viewer/backend/extras.py and in the
+# What each enables is listed in src/well_data_viewer/backend/extras.py and in the
 # README, and the tests check that the two lists and this one agree.
 [project.optional-dependencies]
 analysis = ["scikit-learn>=1.5"]
@@ -26,11 +26,17 @@ umap = ["umap-learn>=0.5.7"]
 dtw = ["dtaidistance>=2.3.12"]
 
 [project.scripts]
-overlap-viewer = "overlap_viewer.app:main"
+3w-well-data-viewer = "well_data_viewer.app:main"
 
 [build-system]
 requires = ["uv_build>=0.11,<0.13"]
 build-backend = "uv_build"
+
+# The project is named after the repository, 3w-well-data-viewer, which uv_build
+# would turn into the module 3w_well_data_viewer: no Python name starts with a
+# digit, so the package is named here.
+[tool.uv.build-backend]
+module-name = "well_data_viewer"
 
 [dependency-groups]
 dev = [
@@ -43,7 +49,7 @@ target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint.isort]
-known-first-party = ["overlap_viewer"]
+known-first-party = ["well_data_viewer"]
 
 [tool.ruff.format]
 quote-style = "double"

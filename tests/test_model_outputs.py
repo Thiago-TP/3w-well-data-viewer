@@ -8,8 +8,8 @@ import pandas as pd
 import pytest
 from conftest import hours
 
-from overlap_viewer.backend import model_outputs as mo
-from overlap_viewer.backend.labels import Segment, label_segments
+from well_data_viewer.backend import model_outputs as mo
+from well_data_viewer.backend.labels import Segment, label_segments
 
 
 def outputs_frame(start, labels, score=None) -> pd.DataFrame:

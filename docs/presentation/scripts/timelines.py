@@ -53,8 +53,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from overlap_viewer.backend.dataset import DatasetInfo, WellData, load_catalogue, split_wells
-from overlap_viewer.backend.labels import (
+from well_data_viewer.backend.dataset import DatasetInfo, WellData, load_catalogue, split_wells
+from well_data_viewer.backend.labels import (
     label_fault,
     label_kind,
     labels_agree,

@@ -38,13 +38,13 @@ import numpy as np
 import pandas as pd
 from timelines import duration, joined_history, label_text, write_csv
 
-from overlap_viewer.backend.config import (
+from well_data_viewer.backend.config import (
     BEST_EFFORT_SIGNATURES,
     DEFAULT_FEATURES,
     FAULT_SIGNATURES,
 )
-from overlap_viewer.backend.dataset import DatasetInfo, WellData, load_catalogue, split_wells
-from overlap_viewer.backend.labels import label_fault, sensor_stats_from_json
+from well_data_viewer.backend.dataset import DatasetInfo, WellData, load_catalogue, split_wells
+from well_data_viewer.backend.labels import label_fault, sensor_stats_from_json
 
 ROOT = Path(__file__).resolve().parents[1]
 FIGURES = ROOT / "figures" / "appendix"

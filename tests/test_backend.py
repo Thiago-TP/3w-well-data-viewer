@@ -9,17 +9,17 @@ import pyarrow.parquet as pq
 import pytest
 from conftest import CACHE_HOME, T0, hours
 
-from overlap_viewer.algorithms.faults import (
+from well_data_viewer.algorithms.faults import (
     onset,
     onset_from_runs,
     plausible_extent,
     relative_hours,
     zscore,
 )
-from overlap_viewer.algorithms.interpolation import GENUINE, sample_kinds
-from overlap_viewer.backend import dataset as ds
-from overlap_viewer.backend import help_text, theme
-from overlap_viewer.backend.availability import (
+from well_data_viewer.algorithms.interpolation import GENUINE, sample_kinds
+from well_data_viewer.backend import dataset as ds
+from well_data_viewer.backend import help_text, theme
+from well_data_viewer.backend.availability import (
     ABSENT,
     FROZEN,
     LIVE,
@@ -30,7 +30,7 @@ from overlap_viewer.backend.availability import (
     outside_range,
     sensor_state,
 )
-from overlap_viewer.backend.config import (
+from well_data_viewer.backend.config import (
     BEST_EFFORT_SIGNATURES,
     BEST_EFFORT_SOURCES,
     DEFAULT_FAULT_NAMES,
@@ -48,7 +48,7 @@ from overlap_viewer.backend.config import (
     placement_of,
     plausible_range,
 )
-from overlap_viewer.backend.labels import (
+from well_data_viewer.backend.labels import (
     Segment,
     column_as_float,
     coverage_counts,
@@ -68,7 +68,7 @@ from overlap_viewer.backend.labels import (
     sensor_stats_from_json,
     sensor_stats_to_json,
 )
-from overlap_viewer.backend.palette import (
+from well_data_viewer.backend.palette import (
     background_color,
     bar_color,
     blend,
@@ -83,11 +83,11 @@ from overlap_viewer.backend.palette import (
     unknown_background,
     well_colors,
 )
-from overlap_viewer.backend.timemap import TimeMap
-from overlap_viewer.frontend.help import valve_rule_text
-from overlap_viewer.frontend.legend import row_breaks
-from overlap_viewer.frontend.overview import bar_tooltip
-from overlap_viewer.frontend.series_page import SeriesPage, sample_counts
+from well_data_viewer.backend.timemap import TimeMap
+from well_data_viewer.frontend.help import valve_rule_text
+from well_data_viewer.frontend.legend import row_breaks
+from well_data_viewer.frontend.overview import bar_tooltip
+from well_data_viewer.frontend.series_page import SeriesPage, sample_counts
 
 
 def segments(*spans) -> list[Segment]:
@@ -732,7 +732,7 @@ def test_every_state_names_its_valves_in_the_help():
 def test_cache_dir_sits_under_the_platform_cache_home(tmp_path: Path, monkeypatch):
     """The catalogue cache goes where this platform keeps caches, named after the app."""
     monkeypatch.setenv(CACHE_HOME, str(tmp_path / "somewhere"))
-    assert cache_dir() == tmp_path / "somewhere" / "overlap-viewer"
+    assert cache_dir() == tmp_path / "somewhere" / "3w-well-data-viewer"
 
 
 def test_cache_dir_falls_back_to_the_home_directory(monkeypatch):
@@ -1262,7 +1262,7 @@ def test_faults_are_aligned_where_the_event_begins_and_scaled_to_their_level():
 
 def test_a_series_is_prepared_for_a_transform_or_declines():
     """Implausible readings masked, holes interpolated, trend removed; too little or flat declines."""
-    from overlap_viewer.algorithms.spectral import prepare
+    from well_data_viewer.algorithms.spectral import prepare
 
     t = np.arange(600, dtype=float)
     y = 5.0 + 0.01 * t + np.sin(2 * np.pi * t / 60)
@@ -1282,7 +1282,7 @@ def test_a_series_is_prepared_for_a_transform_or_declines():
 
 
 def test_welch_finds_the_period_of_a_sine_and_says_what_it_resolves():
-    from overlap_viewer.algorithms.spectral import TransformParams, prepare, welch
+    from well_data_viewer.algorithms.spectral import TransformParams, prepare, welch
 
     t = np.arange(6 * 3600, dtype=float)
     rng = np.random.default_rng(1)
@@ -1310,7 +1310,7 @@ def test_welch_finds_the_period_of_a_sine_and_says_what_it_resolves():
 
 
 def test_histogram_stacks_by_group_and_leaves_the_implausible_out():
-    from overlap_viewer.algorithms.spectral import histogram
+    from well_data_viewer.algorithms.spectral import histogram
 
     values = np.array([1.0, 1.5, 2.0, 2.5, 3.0, np.nan, 1.0e9, 3.5])
     groups = np.array([0, 0, 1, 1, 1, 0, 0, 1])
@@ -1336,7 +1336,12 @@ def test_histogram_stacks_by_group_and_leaves_the_implausible_out():
 
 def test_spectra_are_pooled_by_averaging_the_bands_they_reach():
     """Instances are cut from different months, so their spectra average; they never concatenate."""
-    from overlap_viewer.algorithms.spectral import TransformParams, average_spectra, prepare, welch
+    from well_data_viewer.algorithms.spectral import (
+        TransformParams,
+        average_spectra,
+        prepare,
+        welch,
+    )
 
     params = TransformParams()
     # Two stretches of the same process, of different lengths, so their
@@ -1370,7 +1375,7 @@ def test_spectra_are_pooled_by_averaging_the_bands_they_reach():
 
 def test_a_histogram_counts_the_implausible_only_when_it_is_asked_to():
     """The clamp is what a histogram leaves out, and unticking it must let the garbage in."""
-    from overlap_viewer.algorithms.spectral import TransformParams, histogram
+    from well_data_viewer.algorithms.spectral import TransformParams, histogram
 
     assert TransformParams().clamp is True  # what a histogram is normally asked for
     values = np.concatenate([np.linspace(1.0e7, 1.1e7, 200), np.full(20, 9.0e12)])
@@ -1394,7 +1399,7 @@ def test_a_histogram_counts_the_implausible_only_when_it_is_asked_to():
 
 def test_a_stamp_is_searched_at_the_resolution_the_frame_is_indexed_in():
     """A view edge carries nanoseconds; a 3W file read through pyarrow is indexed in microseconds."""
-    from overlap_viewer.backend.labels import at_index_unit
+    from well_data_viewer.backend.labels import at_index_unit
 
     index = pd.date_range(T0, periods=5, freq="1s", name="timestamp").as_unit("us")
     frame = pd.DataFrame({"P-PDG": np.arange(5.0)}, index=index)
@@ -1415,7 +1420,7 @@ def test_a_stamp_is_searched_at_the_resolution_the_frame_is_indexed_in():
 
 def test_the_peak_of_a_histogram_is_the_fullest_bin():
     """What the readings pile up at, which a skewed or two-humped shape hides from the mean."""
-    from overlap_viewer.algorithms.spectral import Histogram, histogram
+    from well_data_viewer.algorithms.spectral import Histogram, histogram
 
     # A long tail to the right: the mean is dragged out of the hump, the peak is not.
     values = np.concatenate([np.full(40, 1.0), np.linspace(2.0, 11.0, 10)])
@@ -1438,8 +1443,8 @@ def test_the_optional_groups_are_declared_once_and_answer_for_themselves(monkeyp
     """pyproject.toml, extras.py and the README name the same groups, and a group says how to install itself."""
     import tomllib
 
-    from overlap_viewer.backend import extras
-    from overlap_viewer.backend.config import PROJECT_DIR
+    from well_data_viewer.backend import extras
+    from well_data_viewer.backend.config import PROJECT_DIR
 
     declared = tomllib.loads((PROJECT_DIR / "pyproject.toml").read_text(encoding="utf-8"))
     groups = declared["project"]["optional-dependencies"]
