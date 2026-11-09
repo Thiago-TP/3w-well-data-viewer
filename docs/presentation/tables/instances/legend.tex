@@ -1,0 +1,9 @@
+% The fault classes as the maps color them, five to a row: each its dot (in the
+% color figures/instances/numbers.tex defines, the viewer's), number and name
+% (\isentry). Written by scripts/instances.py into the CSV beside this file.
+\pgfplotstabletypeset[
+  string type,
+  columns={c1, c2, c3, c4, c5},
+  every head row/.style={output empty row},
+  column type={l},
+]{tables/instances/legend.csv}

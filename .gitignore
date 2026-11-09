@@ -5,5 +5,7 @@ __pycache__/
 .pytest_cache/
 .claude/
 docs/papers/
+docs/presentation/build/
+docs/presentation/*.synctex.gz
 IDEAS.md
 TODO.md

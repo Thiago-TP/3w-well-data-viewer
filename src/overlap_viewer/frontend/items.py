@@ -879,14 +879,24 @@ class AnchoredText(pg.TextItem):
             border=pg.mkPen(colors.note_border, width=0.6) if boxed else None,
         )
         self._frac = frac
+        self._plot = None
         self._vb = None
         self.setZValue(60)
 
     def attach(self, plot) -> None:
         plot.addItem(self, ignoreBounds=True)
+        self._plot = plot
         self._vb = plot.getViewBox()
         self._vb.sigRangeChanged.connect(self._reposition)
         self._reposition()
+
+    def detach(self) -> None:
+        """Take the note off its plot, and stop following the plot's range."""
+        if self._vb is None:
+            return
+        self._vb.sigRangeChanged.disconnect(self._reposition)
+        self._plot.removeItem(self)
+        self._plot = self._vb = None
 
     def _reposition(self, *args) -> None:
         if self._vb is None:

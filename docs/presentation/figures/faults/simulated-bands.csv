@@ -1,0 +1,5 @@
+band,start,end,fill,text,shade,label
+state,0.0,7.499,4C9E4C,FFFFFF,,Open
+class,0.0,0.5,EEEEC8,1A1A1A,F3F3D7,Normal Operation
+class,0.5,3.056,DADB85,1A1A1A,E6E6AB,Hydrate in Production Line - Transient
+class,3.056,7.499,BCBD22,1A1A1A,D5D676,Hydrate in Production Line

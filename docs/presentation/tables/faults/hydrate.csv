@@ -1,0 +1,15 @@
+well,start,transient_hours,transient_state,transient_share,transient_open,steady_hours,steady_state,steady_share,steady_open
+WELL-00019,2012-06-01,32,Restart,94,0,6,Restart,100,0
+WELL-00019,2014-11-17,73,Shut-In,98,0,2,Flushing Diesel,100,0
+WELL-00019,2015-06-14,30,Shut-In,92,0,1,Bullheading,100,0
+WELL-00019,2021-06-17,53,Shut-In,86,0,2,Flushing Diesel,100,0
+WELL-00025,2020-06-29,165,Closed With Gas,93,0,11,Restart,100,0
+WELL-00026,2016-06-01,43,Open,100,1,2,Open,100,1
+WELL-00026,2017-02-07,126,Open,100,1,,never,,
+WELL-00026,2017-06-08,79,Open,100,1,,never,,
+WELL-00027,2023-09-18,166,Shut-In,100,0,8,Flushing Diesel,100,0
+WELL-00028,2021-06-17,76,Shut-In,65,0,2,Restart,100,0
+WELL-00029,2020-10-20,23,Shut-In,72,0,1,Bullheading,100,0
+WELL-00030,2014-11-08,33,Shut-In,81,0,2,Flushing Diesel,100,0
+WELL-00031,2014-04-03,92,Shut-In,90,0,1,Bullheading,100,0
+WELL-00032,2011-08-30,24,Shut-In,98,0,2,Flushing Diesel,100,0

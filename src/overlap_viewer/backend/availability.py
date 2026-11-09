@@ -535,24 +535,6 @@ class Availability:
         """The row of one bar of one well's view."""
         return self._index[(int(well), int(bar))]
 
-    def measured_of(self, rows: Sequence[int], sensor: int) -> tuple[float, float]:
-        """Of one sensor's live readings over some bars, the share measured, and the seconds per measurement.
-
-        What tints a timeline bar by how a sensor was measured. Both are NaN
-        without profiles, or where the sensor is live in none of the bars.
-        """
-        if not self.measured:
-            return (float("nan"), float("nan"))
-        rows = np.asarray(list(rows), dtype=int)
-        live = self.state[rows, sensor] == LIVE
-        genuine = float(self.genuine[rows, sensor][live].sum())
-        filled = float(self.filled[rows, sensor][live].sum())
-        if genuine + filled <= 0:
-            return (float("nan"), float("nan"))
-        share = genuine / (genuine + filled)
-        spacing = float(self.n_valid[rows, sensor][live].sum()) / genuine if genuine else np.nan
-        return (share, spacing)
-
     def shares_of(self, rows: Sequence[int], sensor: int) -> tuple[np.ndarray, bool]:
         """The sample shares of one sensor over some bars, and whether any of them reads implausibly.
 

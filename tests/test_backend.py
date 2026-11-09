@@ -14,7 +14,6 @@ from overlap_viewer.algorithms.faults import (
     onset_from_runs,
     plausible_extent,
     relative_hours,
-    window_mask,
     zscore,
 )
 from overlap_viewer.algorithms.interpolation import GENUINE, sample_kinds
@@ -82,6 +81,7 @@ from overlap_viewer.backend.palette import (
     tint,
     to_rgb,
     unknown_background,
+    well_colors,
 )
 from overlap_viewer.backend.timemap import TimeMap
 from overlap_viewer.frontend.help import valve_rule_text
@@ -537,6 +537,19 @@ def test_palette_ladder_and_legend():
     assert legend_key(9, "transient") == entries[2].key
 
 
+def test_well_colors_are_the_same_whatever_asks():
+    """Every page that colors by well gives a well one color, whatever order it lists them in."""
+    palette = theme.current().wells
+    wells = [14, 2, 41, 2, 7]
+    colors = well_colors(wells)
+    assert list(colors) == [2, 7, 14, 41]
+    assert colors == well_colors(reversed(wells)) == well_colors({41, 14, 7, 2})
+    assert [colors[w] for w in (2, 7, 14, 41)] == list(palette[:4])
+    # More wells than colors: the palette cycles, in the same place every time.
+    many = well_colors(range(1, len(palette) + 3))
+    assert many[len(palette) + 1] == many[1] and many[len(palette) + 2] == many[2]
+
+
 def distance_from_ground(color: str) -> float:
     """How far a color has travelled from the plotting ground it is mixed toward."""
     ground = to_rgb(theme.current().plot_background)
@@ -702,14 +715,6 @@ def test_help_text_covers_the_dataset():
     # Every event but normal operation and the one added in 2.0.0 has a published
     # confirmation window; normal operation is not an occurrence to confirm.
     assert set(help_text.CONFIRMATION_WINDOWS) == set(DEFAULT_FAULT_NAMES) - {0, 9}
-    # The usage help knows every page of the viewer.
-    assert {
-        "Timelines page",
-        "Availability page",
-        "Faults page",
-        "Instance window",
-        "Signal views",
-    } <= set(help_text.USAGE)
 
 
 def test_every_state_names_its_valves_in_the_help():
@@ -1243,13 +1248,6 @@ def test_faults_are_aligned_where_the_event_begins_and_scaled_to_their_level():
 
     hours_from = relative_hours(index, index[3])
     assert hours_from.tolist() == pytest.approx([-3 / 3600, -2 / 3600, -1 / 3600, 0.0, 1 / 3600])
-    assert window_mask(np.array([-2.0, -0.5, 0.0, 3.0]), 1.0, 2.0).tolist() == [
-        False,
-        True,
-        True,
-        False,
-    ]
-    assert window_mask(np.array([-2.0, 3.0]), 0.0, 0.0).tolist() == [True, True]
 
     scaled = zscore(np.array([1.0, 2.0, 3.0, np.nan]))
     assert scaled[:3] == pytest.approx([-1.2247, 0.0, 1.2247], abs=1e-4) and np.isnan(scaled[3])

@@ -1,0 +1,11 @@
+folder,name,files,hours,normal,transient,steady,unknown,reach_normal,reach_transient,reach_steady
+0,Normal Operation,594,3377.273,82.412,0.0,0.0,17.588,594,0,0
+1,Abrupt Increase of BSW,4,65.776,62.194,27.594,4.131,6.081,0,0,4
+2,Spurious Closure of DHSV,22,76.945,31.565,32.163,7.68,28.592,0,11,11
+3,Severe Slugging,32,190.098,0.0,0.0,83.167,16.833,0,0,32
+4,Flow Instability,343,1024.912,0.0,0.0,66.534,33.466,0,0,343
+5,Rapid Productivity Loss,11,122.058,15.005,72.978,3.005,9.012,0,4,7
+6,Quick Restriction in PCK,6,21.521,46.495,8.479,17.147,27.879,0,0,6
+7,Scaling in PCK,36,2184.707,13.152,84.814,0.386,1.648,0,31,5
+8,Hydrate in Production Line,14,1335.843,20.01,76.011,2.93,1.048,0,2,12
+9,Hydrate in Service Line,57,732.048,84.124,7.416,0.674,7.786,43,11,3

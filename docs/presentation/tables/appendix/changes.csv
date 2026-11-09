@@ -1,0 +1,17 @@
+n,well,label,bar,at,before,after,unlabeled,unlabeled_s,from_folder,to_folder,sensor,shown_from,shown_to
+1,1,WELL-00001,9,2017-04-21 15:55,normal,Flow Instability (steady),4\thinspace{}min,270.0,0,4,P-MON-CKP,2017-04-21 15:15:30,2017-04-21 16:40:00
+2,1,WELL-00001,9,2017-04-22 03:59,Flow Instability (steady),normal,25\thinspace{}s,25.0,4,0,P-MON-CKP,2017-04-22 03:19:35,2017-04-22 04:40:00
+3,1,WELL-00001,12,2017-06-26 09:59,Flow Instability (steady),normal,3\thinspace{}min,191.0,4,0,P-MON-CKP,2017-06-26 09:19:35,2017-06-26 10:42:46
+4,2,WELL-00002,2,2013-12-12 08:59,normal,Flow Instability (steady),41\thinspace{}s,41.0,0,4,P-TPT,2013-12-12 08:19:19,2013-12-12 09:40:00
+5,2,WELL-00002,3,2013-12-14 22:00,normal,Flow Instability (steady),9\thinspace{}s,9.0,0,4,P-ANULAR,2013-12-14 21:20:01,2013-12-14 22:40:10
+6,4,WELL-00004,0,2014-08-06 22:00,Flow Instability (steady),normal,32\thinspace{}s,32.0,4,0,P-MON-CKP,2014-08-06 21:20:01,2014-08-06 22:40:33
+7,4,WELL-00004,2,2017-10-31 19:14,Quick Restriction in PCK (steady),normal,5\thinspace{}s,5.0,6,6,P-MON-CKP,2017-10-31 18:34:55,2017-10-31 19:55:00
+8,4,WELL-00004,2,2017-10-31 19:48,Quick Restriction in PCK (steady),normal,15\thinspace{}s,15.0,6,6,P-MON-CKP,2017-10-31 19:08:24,2017-10-31 20:28:39
+9,6,WELL-00006,6,2018-06-18 11:00,Abrupt Increase of BSW (steady),normal,30\thinspace{}min,1799.0,1,7,P-MON-CKP,2018-06-18 10:00:03,2018-06-18 12:29:58
+10,16,WELL-00016,2,2018-04-26 14:44,Rapid Productivity Loss (transient),normal,7\thinspace{}min,423.0,5,5,P-MON-CKP,2018-04-26 14:04:05,2018-04-26 15:31:08
+11,20,WELL-00020,2,2014-03-18 01:30,Rapid Productivity Loss (steady),normal,29\thinspace{}min,1739.0,5,5,P-MON-CKP,2014-03-18 00:32:03,2014-03-18 02:56:58
+12,20,WELL-00020,2,2014-03-18 13:57,Rapid Productivity Loss (transient),normal,53\thinspace{}min,3159.0,5,5,P-MON-CKP,2014-03-18 12:12:41,2014-03-18 16:35:56
+13,20,WELL-00020,3,2014-03-19 11:00,Rapid Productivity Loss (transient),normal,1\thinspace{}h,3599.0,5,5,P-MON-CKP,2014-03-19 09:00:03,2014-03-19 13:59:58
+14,24,WELL-00024,12,2016-09-11 07:00,Scaling in PCK (transient),normal,40\thinspace{}min,2373.0,7,7,P-MON-CKP,2016-09-11 05:40:55,2016-09-11 08:58:40
+15,42,WELL-00042,0,2014-12-18 00:53,Hydrate in Service Line (transient),normal,48\thinspace{}min,2859.0,9,9,P-MON-CKP,2014-12-17 23:18:12,2014-12-18 03:16:27
+16,42,WELL-00042,2,2014-12-22 03:37,Hydrate in Service Line (transient),normal,8\thinspace{}min,476.0,9,9,P-MON-CKP,2014-12-22 02:57:39,2014-12-22 04:25:35

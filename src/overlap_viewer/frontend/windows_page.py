@@ -18,7 +18,7 @@ name, and placed on the well's time axis in a strip above the grid. The
 window selected is drawn large at the bottom, beside the instance it was cut
 from with the window's place in it. *View* can swap the signal for one figure
 of every window, among the viewer's own descriptors (those of the instance
-window's statistics table and of the Timelines' descriptor coloring): one
+window's statistics table and of the Instances map): one
 point per window along the well, colored by label period, beside the
 distribution of the figure per period and how well it tells normal windows from
 event ones.
@@ -32,7 +32,7 @@ import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, QTimer, Signal
-from PySide6.QtGui import QBrush, QColor
+from PySide6.QtGui import QAction, QBrush, QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -71,6 +71,7 @@ from overlap_viewer.backend.palette import (
 )
 from overlap_viewer.backend.profiles import DESCRIPTOR_CHOICES, GRID_CAVEAT
 from overlap_viewer.backend.timemap import TimeMap
+from overlap_viewer.frontend import styling
 from overlap_viewer.frontend.items import (
     ScrollFriendlyViewBox,
     SegmentsItem,
@@ -79,6 +80,7 @@ from overlap_viewer.frontend.items import (
     restyle_axes,
 )
 from overlap_viewer.frontend.loading import progress_dialog
+from overlap_viewer.frontend.options import OptionsAction, bar_row, toolbar
 from overlap_viewer.frontend.overview import ElidedLabel
 
 HINT = (
@@ -141,7 +143,7 @@ VIEW_TIP = (
     "The signal of every window as a thumbnail, or one figure of every window: one point per "
     "window along the well, colored by label period, beside its distribution per period. The "
     "figures are the viewer's own descriptors, those of the instance window's statistics table "
-    "and of the Timelines' descriptor coloring, taken over a window's real samples (the padding "
+    "and of the Instances map, taken over a window's real samples (the padding "
     "and the missing readings left out); the first figure asked of a cut computes them all, "
     f"behind a progress dialog, and keeps them for the session. {GRID_CAVEAT.capitalize()}."
 )
@@ -345,6 +347,7 @@ class WindowsPage(QWidget):
         self._caption = ElidedLabel("")
         self._caption.setContentsMargins(8, 0, 8, 0)
         layout.addWidget(self._caption)
+        self.verbose = True  # whether the caption and the detail's heading explain
 
         self._model = WindowsModel(self)
         self._table = QTableView()
@@ -363,6 +366,7 @@ class WindowsPage(QWidget):
             lambda current, previous: self._on_row(current.row())
         )
         self._table.doubleClicked.connect(lambda index: self.open_selected())
+        self._table.setVisible(self._show_details.isChecked())
 
         self._stack = QStackedWidget()
         self._stack.addWidget(self._build_grid_box())
@@ -390,9 +394,17 @@ class WindowsPage(QWidget):
 
     # -- construction
 
-    def _build_toolbar(self) -> QToolBar:
-        bar = QToolBar("Windows")
-        bar.setMovable(False)
+    def _build_toolbar(self) -> QWidget:
+        """The first row: the well, the sensor and the instance; the cut behind *Options*.
+
+        At its right end, *Open instance* and *Details*, which shows the table of
+        the windows at the top left: hidden at first, since the strip, the
+        thumbnails and the window drawn large already say what most look for.
+        """
+        self.options = OptionsAction(self)
+        bar = lead = toolbar("Windows")
+        lead.addAction(self.options)
+        lead.addSeparator()
         bar.addWidget(QLabel(" Well "))
         self._well = QComboBox()
         self._well.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
@@ -408,11 +420,12 @@ class WindowsPage(QWidget):
         bar.addWidget(QLabel(" Instance "))
         self._instance = QComboBox()
         self._instance.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-        self._instance.setMaxVisibleItems(25)
+        styling.limit_popup(self._instance, 25)
         self._instance.setToolTip(INSTANCE_TIP)
         self._instance.currentIndexChanged.connect(self._on_instance_changed)
         bar.addWidget(self._instance)
 
+        bar = self.options.add(toolbar("Windows options"))
         bar.addSeparator()
         bar.addWidget(QLabel(" Size "))
         self._size = QComboBox()
@@ -435,17 +448,26 @@ class WindowsPage(QWidget):
         self._view.setToolTip(VIEW_TIP)
         self._view.currentIndexChanged.connect(self._on_view_changed)
         bar.addWidget(self._view)
-        bar.addSeparator()
-        open_action = bar.addAction("Open instance")
+        trailing = toolbar("Windows actions")
+        open_action = trailing.addAction("Open instance")
         open_action.setToolTip(
             "Open the instance of the window selected in an instance window, on this sensor"
         )
         open_action.triggered.connect(self.open_selected)
-        return bar
+        trailing.addSeparator()
+        self._show_details = QAction("Details", self)
+        self._show_details.setCheckable(True)
+        self._show_details.setToolTip(
+            "Show or hide the table of the windows at the top left, one row per window with its "
+            "instance, fault, start, label and the statistic on show"
+        )
+        self._show_details.toggled.connect(lambda shown: self._table.setVisible(shown))
+        trailing.addAction(self._show_details)
+        return bar_row(lead, bar, trailing=trailing)
 
     def _build_filter_bar(self) -> QToolBar:
-        bar = QToolBar("Filters")
-        bar.setMovable(False)
+        """The second row, the filters of the windows, all of it behind *Options*."""
+        bar = self.options.add(toolbar("Filters"))
         bar.addWidget(QLabel(" Fault "))
         self._fault = QComboBox()
         self._fault.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
@@ -538,6 +560,12 @@ class WindowsPage(QWidget):
         # given the new foreground themselves.
         restyle_axes(self._map.getPlotItem())
         self._caption.setStyleSheet(f"color: {colors.muted};")
+
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide the caption under the title and the heading of the instance in the detail."""
+        self.verbose = bool(verbose)
+        self._caption.setVisible(self.verbose)
+        self._draw_detail()
 
     def apply_theme(self) -> None:
         self._restyle()
@@ -1679,6 +1707,8 @@ class WindowsPage(QWidget):
             note += (
                 "<br>the hatched head repeats an earlier instance and is left out of the windows"
             )
+        if not self.verbose:
+            note = ""
         self._heading(self._detail, note, 0, 1)
         instance.setLabel("bottom", "hours since the instance's first sample")
         instance.getAxis("left").enableAutoSIPrefix(False)
@@ -1704,19 +1734,3 @@ class WindowsPage(QWidget):
                 item.getViewBox().autoRange()
         if self._feature_plot is not None:
             self._draw_features()
-
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances behind the windows on show, for the file list a Toolkit loader takes."""
-        if self._windows is None:
-            return []
-        positions = sorted(set(self._windows.instance[self._shown].tolist()))
-        return [(self._refs[p].fault, self._refs[p].file) for p in positions]
-
-    def shown_source(self) -> str:
-        """Where the file list came from, for its provenance."""
-        filters = [self._fault.currentText(), self._label.currentText()]
-        return (
-            f"the Windows page | {well_label(self.well)} | {self.sensor} | windows of "
-            f"{self.size} samples | {self._instance.currentText()} | "
-            + " | ".join(text.split(" (")[0] for text in filters)
-        )

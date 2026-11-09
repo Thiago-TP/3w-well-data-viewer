@@ -1,0 +1,105 @@
+%% Instances page: is fault behavior consistent across instances and unique to
+%% the fault?
+%%
+%% Every figure quoted here is a macro of figures/instances/numbers.tex; the
+%% maps are figures/instances/maps.tikz and wellpast.tikz, reading a table per
+%% map in maps/, the legend tables/instances/legend.tex, the well's past class
+%% by class tables/instances/wellpast.tex, and the appendix's account of the
+%% maps tables/appendix/descriptors.tex and embeddings.tex. All are written by
+%% scripts/instances.py (see README.md), from the viewer's profile pass, every
+%% instance placed as the page places it. Three frames: the instances on every
+%% map, gathered by well rather than by fault; the same on the measurements
+%% alone; and the faults a model would name by knowing the well alone.
+
+\input{figures/instances/numbers}
+
+\newcommand{\isquestion}{\wspage{Instances page} \raisebox{.75pt}{$\blacktriangleright$}~Is fault behavior consistent across instances and unique to the fault?}
+
+% A fault class's dot, in its color on the viewer's pages, and its entry in
+% the legend; class 10 is a well's first instance, which has no past to name
+% it.
+\newcommand{\isdot}[1]{\tikz[baseline=-.6ex]\fill[isc#1] (0,0) circle (1.7pt);}
+\newcommand{\isentry}[2]{\isdot{#1}\,#1~#2}
+\colorlet{isc10}{ws3wgrey}
+
+% A map: its box (width and height, in the proportions scripts/instances.py
+% scales the maps into, 1.68 by 1.08 with the margins), no axes, a thin
+% frame; and the dots of one class, in its color.
+\pgfplotsset{
+  is map/.style 2 args={
+    scale only axis, hide axis, width=#1, height=#2, anchor=south west,
+    xmin=-0.04, xmax=1.64, ymin=-0.04, ymax=1.04, clip=false,
+    axis background/.style={draw=ws3wgrey!80, line width=.3pt}},
+  is class/.style 2 args={
+    only marks, mark=*, mark size=#2,
+    mark options={draw=white, line width=.05pt, fill=isc#1}},
+}
+% \isplot[dot size]{map}{column}: the dots of one map (figures/instances/maps/
+% <map>.csv), colored by a column (the fault, or the class the well's past
+% names), class by class in the order \isClasses<column> lists them. A class
+% is a plot of its own, filtered out of the map's table: its dots then make
+% one path, where a scatter plot of 1,119 dots each styled on its own outgrows
+% pdfLaTeX's memory. (Expanded first, so that a map named through \ismode or
+% \isBestKey reaches the file name as its name.)
+\newcommand{\isplot}[3][.5pt]{%
+  \edef\isnext{\noexpand\pgfplotsinvokeforeach{\csname isClasses#3\endcsname}{%
+    \noexpand\addplot [is class={####1}{#1},
+                       restrict expr to domain={\noexpand\thisrow{#3}}{####1:####1}]
+      table [x=x, y=y] {figures/instances/maps/#2.csv};}}%
+  \isnext}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Instances gather by well, not by fault}
+  \framesubtitle{\isquestion}
+  {\scriptsize\color{ws3wbrown} Every real instance (\isInstances) placed as the page places it
+  \hyperlink{instances}{\beamergotobutton{Appendix}}, by its interpolated descriptors. Under each
+  map, how often an instance's nearest neighbour shares its well, its fault, and the nearest of
+  another well its fault (chance: \isChance).\par}
+  \vskip 1mm
+  {\centering\tiny\setlength{\tabcolsep}{4pt}\input{tables/instances/legend}\par}
+  \vskip 1mm
+  \centering
+  \def\ismode{i}\input{figures/instances/maps.tikz}
+  \par
+  \vfill
+  \alert{Neighbours share the well before the fault.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The measurements alone change little}
+  \framesubtitle{\isquestion}
+  {\scriptsize\color{ws3wbrown} The same maps on the descriptors of the measurements alone, the
+  samples the historian interpolated between them left out.\par}
+  \vskip 2mm
+  \centering
+  \def\ismode{m}
+  \input{figures/instances/maps.tikz}
+  \par
+  \vfill
+  \alert{The well still comes first on \isWellWinsMeas{} of the \isMapsMeas{} maps.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What knowing the well is worth}
+  \framesubtitle{\isquestion}
+  {\scriptsize\color{ws3wbrown} The map that best gathers the faults (\isBestRep, \isBestData,
+  \isBestEmb): every instance in the color of its fault, then in that of the class its well's past
+  names, the one most of the well's earlier instances hold.\par}
+  \vskip 2mm
+  \begin{columns}[T]
+    \begin{column}{0.68\textwidth}
+      \centering
+      \input{figures/instances/wellpast.tikz}
+    \end{column}
+    \begin{column}{0.30\textwidth}
+      \centering\tiny\setlength{\tabcolsep}{2pt}
+      \def\arraystretch{1.3}
+      \input{tables/instances/wellpast}
+      \vskip 1mm
+      \isdot{10}~a well's first instance
+    \end{column}
+  \end{columns}
+  \vfill
+  \centering
+  \alert{Knowing the well names three instances in four: a model can score by spotting wells.}
+\end{frame}

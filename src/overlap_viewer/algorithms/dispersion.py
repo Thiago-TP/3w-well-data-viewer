@@ -9,13 +9,18 @@ coefficient betrays and every scatter plot does. So the view draws the cloud thr
 sample as a dot, the density of the samples behind the dots, and the
 measurements alone, the readings the historian archived.
 
-A scope (every real instance, one fault class or one well, as instances or
-as the joined bars) is read once and kept for the session. Every instance contributes an even subsample of its rows, ``BUDGET``
+A scope (every real instance, one fault class, one well or one fault class on
+one well, as instances or as the joined bars) is read once and kept for the session. Every instance contributes an even subsample of its rows, ``BUDGET``
 rows in all, each row carrying every analog sensor, its label period, which
 of its readings were measured and when it was, so that changing the pair of
 sensors, the coloring, the label periods or the measurements filter costs
-nothing. The density is a two-dimensional histogram of the same rows, an
-unbiased if coarser estimate of the density of all of them.
+nothing. The density is a two-dimensional histogram of the same rows.
+Every instance gives about as many rows, however long it is (all of its rows
+when it has fewer), so the cloud, its density and the Pearson coefficient of
+a pair weigh the instances alike rather than the samples: an approximation of
+the scope's own figures, which strays from them where its instances differ in
+length and in relation, as the page's help states. A ``DispersionPass`` given
+a budget larger than the scope reads every row.
 """
 
 from collections.abc import Sequence

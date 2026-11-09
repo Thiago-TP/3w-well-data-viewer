@@ -1,0 +1,14 @@
+% The label changes across an unlabeled stretch of a joined history, one row
+% each; the table beside this file is written by scripts/appendix.py.
+\pgfplotstabletypeset[
+  columns={n, label, at, before, after, unlabeled, sensor},
+  columns/n/.style={column name={}, column type={r}},
+  columns/label/.style={string type, column name={Well}, column type={l}},
+  columns/at/.style={string type, column name={Unlabeled from}, column type={l}},
+  columns/before/.style={string type, column name={Label before}, column type={l}},
+  columns/after/.style={string type, column name={Label after}, column type={l}},
+  columns/unlabeled/.style={string type, column name={For}, column type={r}},
+  columns/sensor/.style={string type, column name={Shown on}, column type={l}},
+  every head row/.style={before row=\toprule, after row=\midrule},
+  every last row/.style={after row=\bottomrule},
+]{tables/appendix/changes.csv}

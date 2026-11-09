@@ -13,17 +13,16 @@ below; without it the plugin reports zero font families and every glyph comes
 out an empty box.
 
 Each figure is framed on what it has to show rather than on one window size:
-the availability matrix is eleven rows and no taller, the correlation matrix
-holds the analog sensors alone, and the color key is grabbed as a widget of its
-own. A few are set up before they are taken (a fault that oscillates, a sensor
-that is not a flat valve opening, a pointer resting on a cell so that the status
-line reads it) because the default state of a page is not always the state that
-shows what the page is for; every such choice is commented where it is made.
+the availability matrix is eleven rows and no taller, and the color key is
+grabbed as a widget of its own. A few are set up before they are taken (a fault
+that oscillates, a sensor that is not a flat valve opening, a pointer resting on
+a cell so that the status line reads it) because the default state of a page is
+not always the state that shows what the page is for; every such choice is
+commented where it is made.
 
 The passes over the data are cached (``~/.cache/overlap-viewer`` or the platform
 equivalent), so the first run is minutes and the next is seconds; the
-correlation and dispersion scopes are read per session and always cost their
-read.
+dispersion scopes are read per session and always cost their read.
 """
 
 import argparse
@@ -49,7 +48,6 @@ from overlap_viewer.frontend import styling
 
 PAGE = (1600, 900)  # wide enough that no page's toolbar falls behind the overflow chevron
 SHORT = (1600, 545)  # the availability matrix is eleven rows and no taller
-CORR = (1600, 680)  # the correlation matrix holds the analog sensors alone
 WIDE = (1600, 1000)
 TALL = (1500, 1000)
 HELP = (1000, 800)
@@ -119,9 +117,18 @@ def main(argv=None) -> int:
     app.setOrganizationName(styling.SETTINGS[0])
     app.setApplicationName(styling.SETTINGS[1])
     app.setStyle("Fusion")
+    # Arial, as the figures were first taken in (the offscreen platform's own
+    # fallback is wider, and the bars' labels then drop their seconds).
+    font = app.font()
+    font.setFamily("Arial")
+    app.setFont(font)
     print(f"platform: {app.platformName()} | fonts: {len(QFontDatabase.families())}", flush=True)
 
-    window = build_window(parse_args(["--raw-dir", str(opts.raw_dir), "--theme", "light"]))
+    # Not verbose, as a first look is: the figures show what a page draws, and
+    # the docs beside them say what the hints and notes would have said.
+    window = build_window(
+        parse_args(["--raw-dir", str(opts.raw_dir), "--theme", "light", "--no-verbose"])
+    )
     if window is None:
         print("could not build the window", file=sys.stderr)
         return 1
@@ -130,6 +137,13 @@ def main(argv=None) -> int:
     settle(1.5)
 
     tabs = window._tabs  # the main window offers no public accessor for its tabs
+    # Every page opens with its options hidden; the figures show them, since
+    # the docs beside each figure describe them.
+    for each in window.pages:
+        each.options.setChecked(True)
+    # The Timelines' color key opens retracted too; the overview and the color
+    # key figures show it whole, since Timelines.md and ColorCode.md describe it.
+    window.timelines._legend.set_collapsed(False)
 
     def page(widget, name, size=PAGE, wait=1.5):
         if not shooter.wants(name):
@@ -147,7 +161,7 @@ def main(argv=None) -> int:
         legend = window.timelines._legend
         shooter.save(legend, "color_key", (legend.width(), 186))
 
-    # -- Availability, its three matrices --------------------------------------
+    # -- Availability, its two matrices --------------------------------------
     if page(window.availability, "availability", wait=2.5):
         hover_cell(window.availability, 8, 20)  # P-TPT under Hydrate in Production Line
         settle(0.5)
@@ -158,12 +172,6 @@ def main(argv=None) -> int:
         hover_cell(window.availability, 19, 26)  # P-TPT × T-TPT, the best-covered pair
         settle(0.5)
         shooter.save(window, "pairs")
-    if page(window.availability, "correlations", wait=1.0):
-        window.availability._matrix.setCurrentText("Sensor correlations")
-        settle(180.0)  # reads every instance the first time
-        hover_cell(window.availability, 14, 17)  # T-JUS-CKP × T-TPT, the strongest common pair
-        settle(0.5)
-        shooter.save(window, "correlations", CORR)
     window.availability._matrix.setCurrentText("Sensor availability")
 
     # -- Faults ----------------------------------------------------------------
@@ -221,6 +229,8 @@ def main(argv=None) -> int:
     # a padded window side by side. The feature view is WELL-00014's P-TPT under
     # severe slugging, whose spread tells the event windows from the normal ones.
     windows = window.windows_page
+    # The table of the windows starts hidden too; the figures show it, which Windows.md describes.
+    windows._show_details.setChecked(True)
     if page(windows, "windows", wait=1.0):
         settle(8.0)  # reads one sensor of every instance of the well the first time
         shooter.save(window, "windows")
@@ -247,6 +257,7 @@ def main(argv=None) -> int:
         if instances is None:
             print("could not open the instance window", file=sys.stderr)
         else:
+            instances.options.setChecked(True)  # as the pages: the figure shows the options
             settle(3.0)
             if shooter.wants("instance_window"):
                 # As it opens: on the analog sensors of the seabed.

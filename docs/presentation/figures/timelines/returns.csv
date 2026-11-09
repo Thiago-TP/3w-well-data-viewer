@@ -1,0 +1,14 @@
+well,label,at,fault,kind,after_s,from_folder,to_folder
+1,WELL-00001,2017-04-22 03:59:35,Flow Instability,steady,25.0,4,0
+1,WELL-00001,2017-06-26 09:59:35,Flow Instability,steady,191.0,4,0
+4,WELL-00004,2014-08-06 22:00:01,Flow Instability,steady,32.0,4,0
+4,WELL-00004,2017-10-31 19:14:55,Quick Restriction in PCK,steady,5.0,6,6
+4,WELL-00004,2017-10-31 19:48:24,Quick Restriction in PCK,steady,15.0,6,6
+6,WELL-00006,2018-06-18 11:00:01,Abrupt Increase of BSW,steady,1799.0,1,7
+16,WELL-00016,2018-04-26 14:44:05,Rapid Productivity Loss,transient,423.0,5,5
+20,WELL-00020,2014-03-18 01:30:01,Rapid Productivity Loss,steady,1739.0,5,5
+20,WELL-00020,2014-03-18 13:57:59,Rapid Productivity Loss,transient,3159.0,5,5
+20,WELL-00020,2014-03-19 11:00:01,Rapid Productivity Loss,transient,3599.0,5,5
+24,WELL-00024,2016-09-11 07:00:01,Scaling in PCK,transient,2373.0,7,7
+42,WELL-00042,2014-12-18 00:53:30,Hydrate in Service Line,transient,2859.0,9,9
+42,WELL-00042,2014-12-22 03:37:39,Hydrate in Service Line,transient,476.0,9,9

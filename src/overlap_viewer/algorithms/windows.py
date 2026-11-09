@@ -25,7 +25,7 @@ ones the ``3w_estudo`` division writes to disk and audits):
 
 What a window amounts to is told by the viewer's own descriptors
 (``descriptors.describe``, the figures of the instance window's statistics
-table and of the Timelines' descriptor coloring), taken over the real samples
+table and of the Instances map), taken over the real samples
 of every window, and how well one of them tells event windows from normal ones
 by the separation ``|AUC − 0.5| · 2``.
 """

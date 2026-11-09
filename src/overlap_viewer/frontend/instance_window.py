@@ -118,6 +118,7 @@ from overlap_viewer.frontend.items import (
     conflict_brush,
 )
 from overlap_viewer.frontend.loading import FrameCache
+from overlap_viewer.frontend.options import OptionsAction, VerboseAction
 from overlap_viewer.frontend.overview import ElidedLabel
 from overlap_viewer.frontend.placements import PlacementChecks
 from overlap_viewer.frontend.spectral_items import (
@@ -196,6 +197,10 @@ def in_own_theme(method: Callable) -> Callable:
     return wrapper
 
 
+OPTIONS_TIP = (
+    "Show or hide the options of this window: its theme, the join of its instances and the row "
+    "of views of every signal. The actions and the feature panel's toggle stay in view."
+)
 NORMALIZE_TIP = (
     "Scale every trace to its own level: each reading as standard deviations from the mean of that "
     "sensor over the whole block, readings outside the plausible range left out first, as the "
@@ -240,6 +245,13 @@ VIEW_TIPS = {
 HINT = (
     "Tick features to add their plots | drag to pan | Ctrl + wheel to zoom (the wheel alone "
     "scrolls) | plots share the time axis, and the plots of one feature share their value axis"
+)
+WINDOW_VERBOSE_TIP = (
+    "Show or hide, in this window alone, the text that explains rather than shows: the hint in "
+    "the status bar, the second line of the heading, the details beside each instance's name, "
+    "the figures written inside the plots and the note under the features. The warnings and "
+    "the reading under the pointer stay either way. The window opens as the main window's "
+    "Verbose button is, and follows it when it changes."
 )
 
 
@@ -360,11 +372,15 @@ class InstanceWindow(QMainWindow):
         frames: FrameCache,
         passes=None,
         features: Sequence[str] = (),
+        verbose: bool = True,
         parent=None,
     ):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.info = info
+        # Whether the window explains as well as shows: its own, taken from the
+        # main window when it opens and whenever the main window's changes.
+        self.verbose = bool(verbose)
         self._frames = frames
         # The passes over the data, when the main window shares them: the
         # Toolkit's rule on the instances shown, if a page has fitted it, and
@@ -634,9 +650,14 @@ class InstanceWindow(QMainWindow):
         toolbar = QToolBar("View")
         toolbar.setMovable(False)
         self.addToolBar(toolbar)
+        # How the window draws (its theme, its join, the views row) sits behind
+        # *Options*; the actions and the panel toggles stay in view.
+        self.options = OptionsAction(self, OPTIONS_TIP)
+        toolbar.addAction(self.options)
+        toolbar.addSeparator()
         # In the main window's order: the theme, then the actions, then what
         # belongs to this window alone.
-        toolbar.addWidget(QLabel(" Theme "))
+        self.options.add(toolbar.addWidget(QLabel(" Theme ")))
         self._theme_box = QComboBox()
         for text, name in WINDOW_THEMES:
             self._theme_box.addItem(text, name)
@@ -644,8 +665,8 @@ class InstanceWindow(QMainWindow):
         self._theme_box.currentIndexChanged.connect(
             lambda *_: self.set_window_theme(self._theme_box.currentData())
         )
-        toolbar.addWidget(self._theme_box)
-        toolbar.addSeparator()
+        self.options.add(toolbar.addWidget(self._theme_box))
+        self.options.add(toolbar.addSeparator())
         reset = QAction("Reset views", self)
         reset.setShortcut("Ctrl+R")
         reset.setToolTip(
@@ -662,8 +683,8 @@ class InstanceWindow(QMainWindow):
         close.setShortcuts(["Esc", "Ctrl+W"])
         close.triggered.connect(self.close)
         toolbar.addAction(close)
-        toolbar.addSeparator()
-        toolbar.addWidget(self._build_join_check())
+        self.options.add(toolbar.addSeparator())
+        self.options.add(toolbar.addWidget(self._build_join_check()))
         toolbar.addSeparator()
         self._show_features = QAction("Features", self)
         self._show_features.setCheckable(True)
@@ -681,6 +702,10 @@ class InstanceWindow(QMainWindow):
         )
         statistics.triggered.connect(self.show_statistics)
         toolbar.addAction(statistics)
+        toolbar.addSeparator()
+        self._verbose_action = VerboseAction(self, self.verbose, WINDOW_VERBOSE_TIP)
+        self._verbose_action.toggled.connect(self.set_verbose)
+        toolbar.addAction(self._verbose_action)
         # The views and their parameters get a row of their own: on one row
         # with the rest they fell behind the toolbar's overflow chevron as soon
         # as the window was narrower than a screen.
@@ -688,6 +713,7 @@ class InstanceWindow(QMainWindow):
         views_bar = QToolBar("Views")
         views_bar.setMovable(False)
         self.addToolBar(views_bar)
+        self.options.add(views_bar)  # once in place: adding a toolbar shows it
         views_bar.addWidget(QLabel(" Views "))
         for view in VIEWS:
             check = QCheckBox(VIEW_NAMES[view])
@@ -736,7 +762,7 @@ class InstanceWindow(QMainWindow):
         outer.addLayout(body, 1)
         self.setCentralWidget(central)
 
-        self._status = ElidedLabel(HINT)
+        self._status = ElidedLabel(self._hint())
         self.statusBar().addWidget(self._status, 1)
         self._layout_widget.scene().sigMouseMoved.connect(self._on_mouse_moved)
         self._restyle()
@@ -764,6 +790,27 @@ class InstanceWindow(QMainWindow):
         if self._theme_name is not None:
             return  # the main window changed its mode; this window keeps its own
         self._repaint()
+
+    def _hint(self) -> str:
+        """What the status bar says over nothing in particular: the hint, if verbose."""
+        return HINT if self.verbose else ""
+
+    @in_own_theme
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide this window's explanations; the main window's own stay as they are."""
+        verbose = bool(verbose)
+        if self._verbose_action.isChecked() != verbose:  # a change made in code
+            self._verbose_action.blockSignals(True)
+            self._verbose_action.setChecked(verbose)
+            self._verbose_action.blockSignals(False)
+        if verbose == self.verbose:
+            return
+        self.verbose = verbose
+        self._note.setVisible(verbose)
+        self._header.setText(self._header_html())
+        if self._status.full_text() in ("", HINT):
+            self._status.setText(self._hint())
+        self._rebuild()
 
     def set_window_theme(self, name: str | None) -> None:
         """Paint this window alone ``light`` or ``dark``, or ``None`` to follow the main window again.
@@ -1018,6 +1065,7 @@ class InstanceWindow(QMainWindow):
         layout.addWidget(scroll, 1)
         self._note = QLabel(f"Greyed-out features were recorded by none of these {self._noun}s.")
         self._note.setWordWrap(True)
+        self._note.setVisible(self.verbose)
         layout.addWidget(self._note)
         return panel
 
@@ -1103,13 +1151,16 @@ class InstanceWindow(QMainWindow):
             if others
             else f" (overlaps no other {noun})"
         )
+        head = f'<span style="font-size:11pt;"><b>{self.well.label}</b> | {what}</span>'
+        if not self.verbose:
+            return head
         shown = f"{len(rows)} {noun}{'s' if len(rows) > 1 else ''} shown, chronological"
         if self._stitched:
             recordings = sum(len(pieces) for pieces in self.pieces)
             instances = sum(len(members) for members in self.members)
             days = (last - first).total_seconds() / 86400
             return (
-                f'<span style="font-size:11pt;"><b>{self.well.label}</b> | {what}</span><br>'
+                f"{head}<br>"
                 f'<span style="color:{theme.current().muted};">{first:%Y-%m-%d %H:%M:%S} → '
                 f"{last:%Y-%m-%d %H:%M:%S} | {float(rows['hours'].sum()):,.1f} h recorded over "
                 f"{days:,.0f} days | {instances} instances stitched from {recordings} recordings, "
@@ -1118,7 +1169,7 @@ class InstanceWindow(QMainWindow):
         if self.merged:
             shown += f", merged from {sum(len(members) for members in self.members)} instances"
         return (
-            f'<span style="font-size:11pt;"><b>{self.well.label}</b> | {what}</span><br>'
+            f"{head}<br>"
             f'<span style="color:{theme.current().muted};">{first:%Y-%m-%d %H:%M:%S} → {last:%Y-%m-%d %H:%M:%S} | {span_h:.1f} h spanned | '
             f"{shared_h:.1f} h recorded by two or more {noun}s | {shown}</span>"
         )
@@ -1158,26 +1209,37 @@ class InstanceWindow(QMainWindow):
             if position == self.clicked
             else ""
         )
+        # The warnings come before the long run of details, which a narrow
+        # window clips at the right; a warning clipped away is no warning. Not
+        # verbose, each is named without its details.
         flagged = self._flagged_sensors(position)
-        # The warning comes before the long run of details, which a narrow
-        # window clips at the right; a warning clipped away is no warning.
-        warning = (
-            f'<span style="font-size:9pt; color:{colors.warning};">&nbsp;⚠ outside the '
-            f"plausible range: {', '.join(flagged)} |</span>"
-            if flagged
-            else ""
-        )
         breaks = self._breaks[position]
-        if breaks:
-            warning += (
-                f'<span style="font-size:9pt; color:{colors.warning};">&nbsp;⚠ pressures out of '
-                f"order: {', '.join(self._order_text(brk) for brk in breaks)} |</span>"
-            )
         state_breaks = self._state_breaks[position]
-        if state_breaks:
-            warning += (
-                f'<span style="font-size:9pt; color:{colors.conflict};">&nbsp;⚠ state against '
-                f"valves: {', '.join(self._state_text(brk) for brk in state_breaks)} |</span>"
+        warnings = [
+            (colors.warning, "outside the plausible range", ", ".join(flagged)),
+            (
+                colors.warning,
+                "pressures out of order",
+                ", ".join(self._order_text(brk) for brk in breaks),
+            ),
+            (
+                colors.conflict,
+                "state against valves",
+                ", ".join(self._state_text(brk) for brk in state_breaks),
+            ),
+        ]
+        warning = "".join(
+            f'<span style="font-size:9pt; color:{color};">&nbsp;⚠ {name}'
+            + (f": {details} |" if self.verbose else "")
+            + "</span>"
+            for color, name, details in warnings
+            if details
+        )
+        if not self.verbose:
+            return (
+                f'<span style="font-size:10pt;"><b>{instance_title(row)}</b></span>{badge}'
+                f"&nbsp;&nbsp;{squares}{warning}"
+                f'<span style="font-size:9pt; color:{colors.muted};"> {what}</span>'
             )
         discarded = self._discarded_sensors(position)
         cleaning = (
@@ -1366,8 +1428,13 @@ class InstanceWindow(QMainWindow):
         row += 1
         for position in range(len(self.rows)):
             # Every block but the first carries the room that separates it from
-            # the one above, so the header reads as the title of what follows it.
-            header_px = HEADER_PX + CONTENTS_PX + (BLOCK_SPACING if position else 0)
+            # the one above, so the header reads as the title of what follows it;
+            # its second line, the contents, only while the window is verbose.
+            header_px = (
+                HEADER_PX
+                + (CONTENTS_PX if self.verbose else 0)
+                + (BLOCK_SPACING if position else 0)
+            )
             label = HeaderLabel(justify="left")
             label.setText(self._instance_html(position))
             label.setFixedHeight(header_px)
@@ -1601,12 +1668,16 @@ class InstanceWindow(QMainWindow):
                         f"{self._state_note(brk, feature)}</span>"
                     )
             # See-through: on a wide window the figures span much of the plot's
-            # top, and the trace under them must stay readable.
-            AnchoredText(
-                f'<span style="font-size:8pt; color:{colors.text};">'
-                f"{note} | coverage {stats.coverage:.1f} %{warning}</span>",
-                fill_alpha=FIGURES_ALPHA,
-            ).attach(plot)
+            # top, and the trace under them must stay readable. Not verbose, the
+            # figures are left out and the warnings alone, if any, stand there.
+            figures = f"{note} | coverage {stats.coverage:.1f} %{warning}"
+            if not self.verbose:
+                figures = warning.removeprefix(" | ")
+            if figures:
+                AnchoredText(
+                    f'<span style="font-size:8pt; color:{colors.text};">{figures}</span>',
+                    fill_alpha=FIGURES_ALPHA,
+                ).attach(plot)
         else:
             AnchoredText(
                 f'<span style="font-size:10pt; color:{colors.faint};">not recorded</span>',
@@ -2159,10 +2230,10 @@ class InstanceWindow(QMainWindow):
             line.setPos(x)
         if not inside:
             side = self._describe_side(pos)
-            self._status.setText(side if side else HINT)
+            self._status.setText(side if side else self._hint())
             return
         if stamp is None:
-            self._status.setText(HINT)
+            self._status.setText(self._hint())
             return
         parts = [f"{stamp:%Y-%m-%d %H:%M:%S}"]
         offset = self.info.transient_offset

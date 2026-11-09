@@ -1,0 +1,90 @@
+% Written by scripts/instances.py from the viewer's profile pass; do not edit by hand.
+\newcommand{\isInstances}{1,119}
+\newcommand{\isWells}{40}
+\newcommand{\isChance}{38\%}
+\newcommand{\isChanceTerms}{\text{594} \cdot \text{593} + \text{4} \cdot \text{3} + \dots + \text{57} \cdot \text{56}}
+\newcommand{\isChanceFirst}{0}
+\newcommand{\isChanceLast}{9}
+\newcommand{\isChancePairs}{475,788}
+\newcommand{\isChanceTotalTerms}{\text{1,119} \cdot \text{1,118}}
+\newcommand{\isChanceTotal}{1,251,042}
+\newcommand{\isChanceExact}{0.380}
+\newcommand{\isSensors}{5}
+\newcommand{\isSensorList}{P-ANULAR, P-JUS-CKGL, P-MON-CKP, P-TPT and T-TPT}
+\newcommand{\isCoverage}{50\%}
+\newcommand{\isColumns}{60}
+\newcommand{\isShapeColumns}{35}
+\newcommand{\isKeep}{10}
+\newcommand{\isSeed}{0}
+\newcommand{\isPerplexity}{30}
+\newcommand{\isUmapNeighbours}{15}
+\newcommand{\isMapsInterp}{6}
+\newcommand{\isWellWinsInterp}{6}
+\newcommand{\isAcrossLowInterp}{14\%}
+\newcommand{\isAcrossHighInterp}{35\%}
+\newcommand{\isMapsMeas}{6}
+\newcommand{\isWellWinsMeas}{4}
+\newcommand{\isAcrossLowMeas}{16\%}
+\newcommand{\isAcrossHighMeas}{38\%}
+\newcommand{\isBestRep}{Descriptors}
+\newcommand{\isBestData}{interpolated}
+\newcommand{\isBestEmb}{t-SNE}
+\newcommand{\isBestKey}{ditsne}
+\newcommand{\isPastInstances}{1,079}
+\newcommand{\isFirstInstances}{40}
+\newcommand{\isPastRight}{825}
+\newcommand{\isPastShare}{76\%}
+\newcommand{\isPastFaults}{81\%}
+\newcommand{\isPastFaultCount}{488}
+\newcommand{\isMajority}{55\%}
+\newcommand{\isClassesfault}{0,1,2,3,4,5,6,7,8,9}
+\newcommand{\isClassespred}{0,1,2,3,4,5,7,8,9,10}
+% The color of every fault class on the viewer's pages (palette.fault_color).
+\definecolor{isc0}{HTML}{4C9E4C}
+\definecolor{isc1}{HTML}{1F77B4}
+\definecolor{isc2}{HTML}{FF7F0E}
+\definecolor{isc3}{HTML}{D62728}
+\definecolor{isc4}{HTML}{9467BD}
+\definecolor{isc5}{HTML}{8C564B}
+\definecolor{isc6}{HTML}{E377C2}
+\definecolor{isc7}{HTML}{7F7F7F}
+\definecolor{isc8}{HTML}{BCBD22}
+\definecolor{isc9}{HTML}{17BECF}
+% Per map: \isScore{di|dm|si|sm}{pca|tsne|umap}{well|fault|across}.
+\expandafter\def\csname is@di@pca@well\endcsname{85\%}
+\expandafter\def\csname is@di@pca@fault\endcsname{83\%}
+\expandafter\def\csname is@di@pca@across\endcsname{35\%}
+\expandafter\def\csname is@di@tsne@well\endcsname{96\%}
+\expandafter\def\csname is@di@tsne@fault\endcsname{94\%}
+\expandafter\def\csname is@di@tsne@across\endcsname{26\%}
+\expandafter\def\csname is@di@umap@well\endcsname{93\%}
+\expandafter\def\csname is@di@umap@fault\endcsname{90\%}
+\expandafter\def\csname is@di@umap@across\endcsname{25\%}
+\expandafter\def\csname is@dm@pca@well\endcsname{83\%}
+\expandafter\def\csname is@dm@pca@fault\endcsname{83\%}
+\expandafter\def\csname is@dm@pca@across\endcsname{38\%}
+\expandafter\def\csname is@dm@tsne@well\endcsname{96\%}
+\expandafter\def\csname is@dm@tsne@fault\endcsname{93\%}
+\expandafter\def\csname is@dm@tsne@across\endcsname{25\%}
+\expandafter\def\csname is@dm@umap@well\endcsname{94\%}
+\expandafter\def\csname is@dm@umap@fault\endcsname{91\%}
+\expandafter\def\csname is@dm@umap@across\endcsname{16\%}
+\expandafter\def\csname is@si@pca@well\endcsname{67\%}
+\expandafter\def\csname is@si@pca@fault\endcsname{64\%}
+\expandafter\def\csname is@si@pca@across\endcsname{31\%}
+\expandafter\def\csname is@si@tsne@well\endcsname{92\%}
+\expandafter\def\csname is@si@tsne@fault\endcsname{90\%}
+\expandafter\def\csname is@si@tsne@across\endcsname{14\%}
+\expandafter\def\csname is@si@umap@well\endcsname{89\%}
+\expandafter\def\csname is@si@umap@fault\endcsname{85\%}
+\expandafter\def\csname is@si@umap@across\endcsname{19\%}
+\expandafter\def\csname is@sm@pca@well\endcsname{65\%}
+\expandafter\def\csname is@sm@pca@fault\endcsname{68\%}
+\expandafter\def\csname is@sm@pca@across\endcsname{23\%}
+\expandafter\def\csname is@sm@tsne@well\endcsname{94\%}
+\expandafter\def\csname is@sm@tsne@fault\endcsname{90\%}
+\expandafter\def\csname is@sm@tsne@across\endcsname{20\%}
+\expandafter\def\csname is@sm@umap@well\endcsname{89\%}
+\expandafter\def\csname is@sm@umap@fault\endcsname{87\%}
+\expandafter\def\csname is@sm@umap@across\endcsname{23\%}
+\newcommand{\isScore}[3]{\csname is@#1@#2@#3\endcsname}

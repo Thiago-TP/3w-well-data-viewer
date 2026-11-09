@@ -1,0 +1,16 @@
+% What the valves must read under each labeled well state: the 3W 2.0.0
+% article's definitions, as the viewer checks them (backend/config.py,
+% STATE_VALVE_RULES). PCK is the production choke, open above 0 %.
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{44mm}@{}}
+  \toprule
+  Open & M1, W1, SDV-P, PCK open; PXO, XO closed \\
+  \midrule
+  Restart & M1, W1, SDV-P, PCK open \\
+  \midrule
+  Shut-In, Closed With Diesel or Gas & one of M1, W1, SDV-P, PCK closed \\
+  \midrule
+  Flushing Diesel or Gas & M1 or W1 closed; PXO or XO open \\
+  \midrule
+  Depressurization & SDV-P, PCK open; M1 or W1 closed; PXO, XO closed \\
+  % \bottomrule
+\end{tabular}

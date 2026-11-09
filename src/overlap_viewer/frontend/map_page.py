@@ -1,24 +1,22 @@
 """The Instances map: every real instance as one point, placed by what its sensors amount to.
 
 The other pages look at the instances one well, one fault or one sensor at a
-time. This one looks at all of them at once, from above: each instance (or,
-with *Join overlapping instances* ticked, each bar of the joined view) is a
+time. This one looks at all of them at once, from above: each instance is a
 point, placed on the plane by an embedding of its **representation**
 (``algorithms.embedding``): the descriptors of its sensors, taken on the 1 Hz
 grid or on the measurements alone; the same less the levels; or the DTW
-distance between the instances of one class on one sensor. The points are
+distance between the instances of one class on one sensor. Every one of them
+is taken on the labeled samples of an instance alone: the windows of a well
+that overlap share samples, labeled in one window and not in the other, and
+counting them twice would pull the two points together. The points are
 colored by fault class, by well, by the cluster a clustering puts them in, by
 how typical an instance of its class each is, or by the verdict of a one-class
 model of the normal instances; hovering one names it, clicking one opens its
 time series.
 
-Two things the map computes are handed to the other pages: the clusters and
-the typicality become bar colorings of the Timelines, and the typicality and
-the novelty score become sort keys of the instance lists of the Faults and
-Features pages. What is on the right is the **label audit**: the instances
-whose label disagrees with the one-class verdict (a fault instance that looks
-normal, a normal instance that looks anomalous), class by class, each a click
-away.
+What is on the right is the **label audit**: the instances whose label
+disagrees with the one-class verdict (a fault instance that looks normal, a
+normal instance that looks anomalous), class by class, each a click away.
 
 The representation needs the profiles of the instances (``backend.profiles``),
 read once behind a progress dialog and shared with the other pages. The
@@ -37,7 +35,6 @@ from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
     QComboBox,
     QHBoxLayout,
     QLabel,
@@ -55,17 +52,18 @@ from overlap_viewer.algorithms import embedding as em
 from overlap_viewer.backend import theme
 from overlap_viewer.backend.dataset import DatasetInfo, WellData, instance_title, well_label
 from overlap_viewer.backend.extras import missing
-from overlap_viewer.backend.palette import fault_color, tint
-from overlap_viewer.backend.profiles import DESCRIPTOR_MODES, Profiles
+from overlap_viewer.backend.palette import fault_color, tint, well_colors
+from overlap_viewer.backend.profiles import DESCRIPTOR_MODES, Profiles, labeled_part
 from overlap_viewer.frontend.heatmap import ramp_color
 from overlap_viewer.frontend.items import ScrollFriendlyViewBox, restyle_axes
 from overlap_viewer.frontend.loading import progress_dialog
+from overlap_viewer.frontend.options import OptionsAction, bar_row, toolbar
 from overlap_viewer.frontend.overview import ElidedLabel
 from overlap_viewer.frontend.passes import Passes
 from overlap_viewer.frontend.series_page import LIST_WIDTH
 
 HINT = (
-    "Every point is one real instance, or one joined bar | hover a point to name it, click it to "
+    "Every point is one real instance | hover a point to name it, click it to "
     "open its time series | the boxes choose what places the points, what colors them and how "
     "they are grouped | the list on the right is the label audit, drag its edge to resize it | "
     "F1 for help"
@@ -88,7 +86,9 @@ REPRESENTATION_TIP = (
     "What an instance becomes a point by. Descriptors: per sensor the moments, the quantiles, "
     "the autocorrelation time, the signal-to-noise ratio, the Gaussianity slope and how it was "
     "measured, standardized column by column; a sensor enters only if it is live in at least half "
-    "of the points, and a cell the instance lacks takes the column's median. Shape only: the same "
+    "of the points, and a cell the instance lacks takes the column's median. Every representation "
+    "reads the labeled samples of an instance alone, so that a stretch two overlapping instances "
+    "share counts once, in the instance that labels it. Shape only: the same "
     "less the levels, so that the level of a well does not place its instances. DTW: the dynamic "
     "time warping distance between the instances of one class on one sensor, the 3W Toolkit's "
     "own comparison of shapes, each series z-scored and averaged into 400 blocks first."
@@ -124,45 +124,6 @@ CLUSTERING_TIP = (
     "the classes, or the wells, under other names, near 0 for one unrelated to them. On 3W the "
     "wells usually win."
 )
-JOIN_TIP = (
-    "Make the points the bars of the joined view: the instances of a well that overlap with "
-    "labels that agree, read as the single recording they were cut from and profiled as such, so "
-    "that a well recorded twice is one point where it was one recording."
-)
-
-
-@dataclass
-class MapResults:
-    """What the map computed, for the other pages to color and sort by.
-
-    Keyed as the profile table keys its rows: ``(fault_class, file)`` for the
-    instances, ``(well, bar)`` for the bars of the joined view; ``joined``
-    says which. ``clusters`` maps a key to its cluster (``-1`` for a point
-    DBSCAN left out) and is ``None`` when no clustering is on; ``typicality``
-    maps a key to its distance to the medoid of its class and its rank there;
-    ``novelty`` maps a key to the one-class score and whether it looks
-    anomalous, ``None`` when the model could not run.
-    """
-
-    joined: bool
-    representation: str
-    clusters: dict | None
-    typicality: dict
-    novelty: dict | None
-
-    def cluster_color(self, key) -> str | None:
-        """The color of the cluster a key sits in, ``None`` when it is not on the map."""
-        if self.clusters is None or key not in self.clusters:
-            return None
-        return cluster_color(self.clusters[key])
-
-    def typicality_rank(self, key) -> float:
-        entry = self.typicality.get(key)
-        return float("nan") if entry is None else entry[1]
-
-    def novelty_score(self, key) -> float:
-        entry = None if self.novelty is None else self.novelty.get(key)
-        return float("nan") if entry is None else entry[0]
 
 
 def cluster_color(label: int) -> str:
@@ -182,12 +143,12 @@ class Point:
     title: str
     fault: int
     well: int
-    data: WellData  # the view (plain or joined) the point belongs to
-    index: int  # its position in that view
+    data: WellData  # the well the point belongs to
+    index: int  # its position in that well
 
 
 class MapPage(QWidget):
-    """The page: the boxes, the map, the label audit, and what it hands to the other pages.
+    """The page: the boxes, the map and the label audit.
 
     Signals
     -------
@@ -198,14 +159,11 @@ class MapPage(QWidget):
     open_requested(WellData, int, list)
         A point was clicked: the view, the bar to open and the sensors to draw,
         the sensor the DTW compared, or none for the window's own default.
-    results_changed(MapResults)
-        The clusters, the typicality and the novelty were computed again.
     """
 
     status = Signal(str)
     summary_changed = Signal()
     open_requested = Signal(object, int, object)
-    results_changed = Signal(object)
 
     def hint(self) -> str:
         return HINT
@@ -273,9 +231,16 @@ class MapPage(QWidget):
 
     # -- construction
 
-    def _build_toolbar(self) -> QToolBar:
-        bar = QToolBar("Instances map")
-        bar.setMovable(False)
+    def _build_toolbar(self) -> QWidget:
+        """The first row: the representation, which decides what the map is of; the rest behind *Options*.
+
+        The audit's toggle sits at its right end, as the panel toggles of the
+        Faults and Features pages do.
+        """
+        self.options = OptionsAction(self)
+        bar = lead = toolbar("Instances map")
+        lead.addAction(self.options)
+        lead.addSeparator()
         bar.addWidget(QLabel(" Representation "))
         self._representation = QComboBox()
         for key in em.REPRESENTATIONS:
@@ -305,6 +270,7 @@ class MapPage(QWidget):
         self._class.currentIndexChanged.connect(self._recompute)
         self._dtw_actions.append(bar.addWidget(self._class))
 
+        bar = self.options.add(toolbar("Instances map options"))
         bar.addSeparator()
         bar.addWidget(QLabel(" Embedding "))
         self._embedding = QComboBox()
@@ -324,17 +290,23 @@ class MapPage(QWidget):
         self._coloring.model().item(COLORINGS.index("Model agreement")).setEnabled(False)
         bar.addWidget(self._coloring)
 
-        bar.addSeparator()
-        self._join = QCheckBox("Join overlapping instances")
-        self._join.setToolTip(JOIN_TIP)
-        self._join.toggled.connect(self._recompute)
-        bar.addWidget(self._join)
+        trailing = toolbar("Label audit")
+        self._show_audit = QAction("Label audit", self)
+        self._show_audit.setCheckable(True)
+        self._show_audit.setChecked(True)
+        self._show_audit.setToolTip(AUDIT_TOGGLE_TIP)
+        self._show_audit.toggled.connect(self._on_audit_toggled)
+        trailing.addAction(self._show_audit)
+        # What the user asked of the audit outside the DTW representation,
+        # which hides it: leaving DTW gives it back as it was.
+        self._audit_wanted = True
+
         self._sync_representation_controls()
-        return bar
+        return bar_row(lead, bar, trailing=trailing)
 
     def _build_second_bar(self) -> QToolBar:
-        bar = QToolBar("Clustering")
-        bar.setMovable(False)
+        """The second row, all of it behind *Options*: the clustering, and its scores."""
+        bar = self.options.add(toolbar("Clustering"))
         bar.addWidget(QLabel(" Clustering "))
         self._clustering = QComboBox()
         self._clustering.addItems(list(em.CLUSTERINGS))
@@ -358,16 +330,6 @@ class MapPage(QWidget):
         self._scores_label = QLabel("")
         self._scores_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         bar.addWidget(self._scores_label)
-        bar.addSeparator()
-        self._show_audit = QAction("Label audit", self)
-        self._show_audit.setCheckable(True)
-        self._show_audit.setChecked(True)
-        self._show_audit.setToolTip(AUDIT_TOGGLE_TIP)
-        self._show_audit.toggled.connect(self._on_audit_toggled)
-        bar.addAction(self._show_audit)
-        # What the user asked of the audit outside the DTW representation,
-        # which hides it: leaving DTW gives it back as it was.
-        self._audit_wanted = True
         self._sync_clustering_controls()
         return bar
 
@@ -446,6 +408,11 @@ class MapPage(QWidget):
         self._audit_note.setStyleSheet(f"color: {colors.muted}; font-size: 8pt;")
         self._scores_label.setStyleSheet(f"color: {colors.muted};")
 
+    def set_verbose(self, verbose: bool) -> None:
+        """Show or hide the note under the map and the one under the label audit."""
+        for note in (self._note, self._audit_note):
+            note.setVisible(bool(verbose))
+
     def apply_theme(self) -> None:
         """Take the colors of the theme now in force: the plot, the points, and the audit's headings.
 
@@ -478,10 +445,6 @@ class MapPage(QWidget):
     @property
     def clustering(self) -> str:
         return self._clustering.currentText()
-
-    @property
-    def joined(self) -> bool:
-        return self._join.isChecked()
 
     def set_coloring(self, name: str) -> None:
         self._coloring.setCurrentIndex(COLORINGS.index(name))
@@ -609,18 +572,17 @@ class MapPage(QWidget):
     # -- the points and their representation
 
     def _list_points(self, only_class: int | None = None) -> list[Point]:
-        """Every instance, or every joined bar, as a point; ``only_class`` keeps one class."""
+        """Every instance as a point; ``only_class`` keeps one class."""
         points: list[Point] = []
         for well in self._wells:
-            view = well.joined() if self.joined else well
-            rows = view.rows
+            rows = well.rows
             for index in range(len(rows)):
                 row = rows.iloc[index]
                 fault = int(row["fault_class"])
                 if only_class is not None and fault != only_class:
                     continue
-                key = (well.well, index) if self.joined else (fault, str(row["file"]))
-                points.append(Point(key, instance_title(row), fault, well.well, view, index))
+                key = (fault, str(row["file"]))
+                points.append(Point(key, instance_title(row), fault, well.well, well, index))
         return points
 
     def _build_representation(self) -> tuple[list[Point], em.Representation] | None:
@@ -631,10 +593,11 @@ class MapPage(QWidget):
         rep = em.feature_matrix(
             self._profiles,
             [p.key for p in points],
-            self.joined,
+            False,
             self.info,
             shape_only=self.representation == "shape",
             measured=self.measured,
+            labeled=True,
         )
         return points, rep
 
@@ -658,11 +621,13 @@ class MapPage(QWidget):
 
             for k, point in enumerate(candidates, start=1):
                 paths = point.data.origin.rows["path"]
-                frame = merge_instances(
-                    [
-                        self._passes.frames.get(paths.iloc[m])
-                        for m in point.data.members[point.index]
-                    ]
+                frame = labeled_part(
+                    merge_instances(
+                        [
+                            self._passes.frames.get(paths.iloc[m])
+                            for m in point.data.members[point.index]
+                        ]
+                    )
                 )
                 if sensor in frame.columns:
                     blocks = decimate(frame[sensor].to_numpy(dtype=float))
@@ -683,7 +648,12 @@ class MapPage(QWidget):
         note = (
             f"DTW of {sensor} within {self.info.fault_name(int(fault))}: {len(kept)} instances, "
             f"each z-scored and averaged into {N_BLOCKS} blocks, window {WINDOW_SHARE:.0%}"
-            + (f" | {left_out} left out, the sensor flat or missing in them" if left_out else "")
+            + " | labeled samples only"
+            + (
+                f" | {left_out} left out, the sensor flat or missing in their labeled samples"
+                if left_out
+                else ""
+            )
         )
         return kept, em.distance_representation([p.key for p in kept], D, note)
 
@@ -732,42 +702,15 @@ class MapPage(QWidget):
         self._scores_label.setText(self._scores.describe() if self._scores else "")
         self._note.setText(" | ".join(part for part in (rep.note, self._caption) if part))
         n = rep.n
-        noun = "bars" if self.joined else "instances"
-        self._summary = f"{n} {noun} on the map | {self._caption} "
+        self._summary = f"{n} instances on the map | {self._caption} "
         self.summary_changed.emit()
-        self.results_changed.emit(self.results())
         self.status.emit(HINT)
-
-    def results(self) -> MapResults:
-        """What the other pages take from the map: clusters, typicality and novelty by key."""
-        keys = [p.key for p in self._points]
-        clusters = (
-            None
-            if self._clusters is None
-            else {key: int(label) for key, label in zip(keys, self._clusters)}
-        )
-        typ = self._typicality
-        typicality = (
-            {}
-            if typ is None
-            else {key: (float(typ.distance[i]), float(typ.rank[i])) for i, key in enumerate(keys)}
-        )
-        nov = self._novelty
-        novelty = (
-            None
-            if nov is None
-            else {key: (float(nov.score[i]), bool(nov.anomalous[i])) for i, key in enumerate(keys)}
-        )
-        return MapResults(self.joined, self.representation, clusters, typicality, novelty)
 
     # -- drawing
 
     def _well_colors(self) -> dict[int, str]:
-        palette = theme.current().wells
-        return {
-            well.well: palette[k % len(palette)]
-            for k, well in enumerate(sorted(self._wells, key=lambda w: w.well))
-        }
+        """One color per well of the whole catalogue, the same on every page."""
+        return well_colors(well.well for well in self._wells)
 
     def _point_colors(self) -> tuple[list[str], list]:
         """The fill of every point under the coloring chosen, and the pen of each."""
@@ -958,25 +901,5 @@ class MapPage(QWidget):
     def reset_views(self) -> None:
         self._plot_widget.getPlotItem().getViewBox().autoRange(padding=0.08)
 
-    # -- what leaves the page
 
-    def shown_files(self) -> list[tuple[int, str]]:
-        """The instances behind the points on the map, for the file list a Toolkit loader takes."""
-        files = []
-        for point in self._points:
-            origin = point.data.origin.rows
-            for member in point.data.members[point.index]:
-                files.append(
-                    (int(origin["fault_class"].iloc[member]), str(origin["file"].iloc[member]))
-                )
-        return files
-
-    def shown_source(self) -> str:
-        """Where a file list from this page came from, for its provenance."""
-        what = em.REPRESENTATION_NAMES[self.representation]
-        if self.representation == "dtw":
-            what += f" | {self._sensor.currentText()} | {self._class.currentText()}"
-        return f"the Instances map | {what}" + (" | joined bars" if self.joined else "")
-
-
-__all__ = ["COLORINGS", "MapPage", "MapResults", "cluster_color", "tint"]
+__all__ = ["COLORINGS", "MapPage", "cluster_color", "tint"]

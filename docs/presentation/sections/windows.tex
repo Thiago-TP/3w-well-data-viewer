@@ -1,0 +1,46 @@
+%% Windows page: can statistical features calculated on short horizons
+%% represent faults well?
+%%
+%% Every figure quoted here is a macro of figures/windows/numbers.tex; the
+%% chart of every statistic is figures/windows/statistics.tikz, and the
+%% appendix's table of every well tables/appendix/windows.tex, each reading the
+%% CSV table beside it. All are written by scripts/windows.py (see README.md),
+%% from the files of 3W, cut and scored as the page cuts and scores them. The
+%% drawing of the separation, figures/windows/separation.tikz, is no data. One
+%% frame, at the page's default of 512 samples: the separation, drawn, beside
+%% every statistic's over the wells, the levels against the shapes.
+
+\input{figures/windows/numbers}
+
+\newcommand{\wiquestion}{\wspage{Windows page} \raisebox{.75pt}{$\blacktriangleright$}~Can statistical features calculated on short horizons represent faults well?}
+
+% A cell of the appendix's table without a separation.
+\newcommand{\winil}{--}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Separating normal from anomalous operation}
+  \framesubtitle{\wiquestion}
+  \vskip 2mm
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \begin{itemize}
+        \scriptsize
+        \item A binary classifier's separation power is AUC-based: 
+      \end{itemize}
+      \vskip 2mm
+      \centering
+      \input{figures/windows/separation.tikz}\par
+      \vskip 5mm
+      % (Under the drawing, the chart beside taking the column's height.)
+      \alert{Short windows tell faults by their level, but may indicate when an instance was recorded rather than its fault.}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      {\scriptsize\color{ws3wbrown} Statistics' separation
+      \hyperlink{windows}{\beamergotobutton{Appendix}} on windows of 512 samples.\par}
+      \centering
+      \resizebox{\linewidth}{!}{%
+        \input{figures/windows/statistics.tikz}
+      }
+    \end{column}
+  \end{columns}
+\end{frame}

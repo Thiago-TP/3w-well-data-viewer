@@ -22,6 +22,18 @@ trace). A band at the top marks the stretches recorded by two or more of the bar
   the color of the file that labeled it, so a normal period labeled by a *Normal Operation* file
   stays green inside a recording that goes on to develop a fault. Stacked slices also become
   unreadably thin long before seventy of them; one block does not.
+- **Options**, first in the toolbar, shows and hides **Theme**, **Join overlapping instances** and
+  the Views row; the actions, **Features**, **Statistics** and **Verbose** stay in view. A window
+  opens with them hidden.
+- **Verbose**, at the right of the toolbar, shows or hides the text that explains rather than shows:
+  the hint in the status bar, the second line of the heading, the details beside each instance's
+  name (the Toolkit's verdict, the times, the level, the samples per label period, the
+  measurements), the figures written inside the plots and the note under the features. Off, each
+  instance keeps its name, its colors and the name of its fault, and a warning keeps its name
+  (*⚠ outside the plausible range*, *⚠ pressures out of order*, *⚠ state against valves*) without
+  its details, which still stand inside the plot of the sensor they concern. A window opens as the
+  main window's **Verbose** is and follows it when it changes; this button changes this window
+  alone.
 - **Join overlapping instances** is also a checkbox in this window's own toolbar, and **the group a
   window opens on is all it is ever about**: the box merges exactly the instances on screen, so it
   answers what this group alone amounts to rather than what the whole well does. Two of them that
@@ -51,7 +63,7 @@ trace). A band at the top marks the stretches recorded by two or more of the bar
   tab. The placements are `config.PLACEMENTS`, from table 2 and figure 1 of the 2.0.0 article.
 - All plots **share the time axis**, and the plots of one feature **share their value axis** across
   instances, so the same reading is at the same height everywhere.
-- **Theme**, in the toolbar, paints this window alone light or dark, whatever the main window is
+- **Theme**, behind *Options*, paints this window alone light or dark, whatever the main window is
   in, and *As the main window* follows it again. A window with a theme of its own ignores the main
   window's switches; the others follow them, keeping their zoom.
 - **Normalize per instance**, in the Views row, draws every trace as z-scores over its own block
@@ -183,11 +195,9 @@ feature of every block, which is the scarce thing in a window that stacks them.
   either layout: the value that instance spends most of its time at,
   which the mean and the median both miss once a fault has skewed the readings or split them in
   two, and which hovering the curve reads out. *Normalize per instance*
-  puts different wells on one z-score axis. The hours before and after the onset pick the stretch
-  transformed, so "2 h after" gives the spectrum of the fault alone, which is the only way *Align
-  at* reaches these two domains, nothing being drawn against the hours from the onset, so with both
-  hour boxes at *all* the box is greyed and comes back as soon as hours are asked for. **Features**
-  and
+  puts different wells on one z-score axis. A distribution or a spectrum is taken over the whole
+  recording of every instance, nothing being drawn against the hours from the onset, so *Align at*
+  is greyed in these two domains and comes back on the time axis. **Features** and
   **Instances**, at the right end of the toolbar, hide the feature panel and the instance list to
   give the plots their width; the instance window has the same **Features** toggle beside *Join
   overlapping instances*.
